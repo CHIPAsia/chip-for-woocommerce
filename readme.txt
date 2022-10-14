@@ -1,4 +1,4 @@
-=== CHIP WooCommerce ===
+=== CHIP for WooCommerce ===
 Contributors: wanzulnet
 Tags: chip, cash, card, coin
 Requires at least: 4.7

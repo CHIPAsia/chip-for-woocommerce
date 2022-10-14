@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Plugin Name: CHIP WooCommerce
- * Plugin URI: https://wordpress.org/plugins/chip-woocommerce/
+ * Plugin Name: CHIP for WooCommerce
+ * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: CHIP E-commerce Gateway
  * Version: 1.1.3
  * Author: Chip In Sdn Bhd
@@ -168,50 +168,50 @@ function wc_chip_payment_gateway_init()
 
             $this->form_fields = array(
                 'enabled' => array(
-                    'title' => __('Enable API', 'chip-woocommerce'),
-                    'label' => __('Enable API', 'chip-woocommerce'),
+                    'title' => __('Enable API', 'chip-for-woocommerce'),
+                    'label' => __('Enable API', 'chip-for-woocommerce'),
                     'type' => 'checkbox',
                     'description' => '',
                     'default' => 'no',
                 ),
                 'hid' => array(
-                    'title' => __('Enable payment method selection', 'chip-woocommerce'),
-                    'label' => __('Enable payment method selection', 'chip-woocommerce'),
+                    'title' => __('Enable payment method selection', 'chip-for-woocommerce'),
+                    'label' => __('Enable payment method selection', 'chip-for-woocommerce'),
                     'type' => 'checkbox',
                     'description' => 'If set, buyers will be able to choose the desired payment method directly in WooCommerce',
                     'default' => 'yes',
 
                 ),
                 'method_desc' => array(
-                    'title' => __('Change payment method description', 'chip-woocommerce'),
-                    'label' => __('', 'chip-woocommerce'),
+                    'title' => __('Change payment method description', 'chip-for-woocommerce'),
+                    'label' => __('', 'chip-for-woocommerce'),
                     'type' => 'text',
                     'description' => 'If not set, "Choose payment method on next page" will be used',
                     'default' => 'Choose payment method on next page',
 
                 ),
                 'label' => array(
-                    'title' => __('Change payment method title', 'chip-woocommerce'),
+                    'title' => __('Change payment method title', 'chip-for-woocommerce'),
                     'type' => 'text',
                     'description' => 'If not set, "Select payment method" will be used. Ignored if payment method selection is enabled',
                     'default' => 'Select Payment Method',
 
                 ),
                 'brand-id' => array(
-                    'title' => __('Brand ID', 'chip-woocommerce'),
+                    'title' => __('Brand ID', 'chip-for-woocommerce'),
                     'type' => 'text',
                     'description' => __(
                         'Please enter your brand ID',
-                        'chip-woocommerce'
+                        'chip-for-woocommerce'
                     ),
                     'default' => '',
                 ),
                 'private-key' => array(
-                    'title' => __('Secret key', 'chip-woocommerce'),
+                    'title' => __('Secret key', 'chip-for-woocommerce'),
                     'type' => 'text',
                     'description' => __(
                         'Please enter your secret key',
-                        'chip-woocommerce'
+                        'chip-for-woocommerce'
                     ),
                     'default' => '',
                 ),
@@ -435,30 +435,6 @@ function wc_chip_payment_gateway_init()
             return $nameString;
         }
 
-        public function get_products() {
-            $cart = WC()->cart->get_cart();
-            $productArray = array();
-
-            foreach ($cart as $key => $item){
-                $data = $item['data'];
-
-                if ('taxable' === $data->get_tax_status()){
-                    $tax_rate = round($item['line_tax'] / $item['line_total'] * 100);
-                } else {
-                    $tax_rate = '0';
-                }
-
-                $productArray[] = array(
-                    'name' => $data->get_name(),
-                    'price' => round($data->get_price() * 100),
-                    'quantity' => $item['quantity'],
-                    'tax_percent' => $tax_rate,
-                );                
-            }
-
-            return $productArray;
-        }
-
         public function get_due_timestamp(){
             return time() + (absint( get_option( 'woocommerce_hold_stock_minutes', '60' ) ) * 60);
         }
@@ -521,7 +497,7 @@ function wc_chip_payment_gateway_init()
     {
         $new_links = array(
             'settings' => sprintf(
-              '<a href="%1$s">%2$s</a>', admin_url('admin.php?page=wc-settings&tab=checkout&section=chip'), esc_html__('Settings', 'chip-woocommerce')
+              '<a href="%1$s">%2$s</a>', admin_url('admin.php?page=wc-settings&tab=checkout&section=chip'), esc_html__('Settings', 'chip-for-woocommerce')
             )
         );
         return array_merge($new_links, $links);
