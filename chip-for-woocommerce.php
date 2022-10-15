@@ -300,7 +300,7 @@ function wc_chip_payment_gateway_init()
                                 $c = 4;
                             }
                             $c = $c * 50;
-                            echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".$c."px; max-width: ".$c."px;\">";
+                            echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".$c."px;\">";
                             foreach ($logo as $i) {
                                 echo "<img src='https://gate.chip-in.asia".esc_attr($i)."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
                             }
