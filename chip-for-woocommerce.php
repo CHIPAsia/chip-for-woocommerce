@@ -127,32 +127,33 @@ function wc_chip_payment_gateway_init()
 
             $this->chip_api()->log_info('received callback: '
                 . print_r($_GET, true));
-            $o = new WC_Order($_GET["id"]);
-            $this->log_order_info('received success callback', $o);
+            $order_id = preg_replace( '/[^0-9]/', '', $_GET["id"] );
+            $order = new WC_Order($order_id);
+            $this->log_order_info('received success callback', $order);
             $payment_id = WC()->session->get(
-                'chip_payment_id_' . $_GET["id"]
+                'chip_payment_id_' . $order_id
             );
             if (!$payment_id) {
                 $input = json_decode(file_get_contents('php://input'), true);
-                $payment_id = array_key_exists('id', $input) ? $input['id'] : '';
+                $payment_id = array_key_exists('id', $input) ? sanitize_key($input['id']) : '';
             }
 
             if ($this->chip_api()->was_payment_successful($payment_id)) {
-                if (!$o->is_paid()) {
-                    $o->payment_complete($payment_id);
-                    $o->add_order_note(
+                if (!$order->is_paid()) {
+                    $order->payment_complete($payment_id);
+                    $order->add_order_note(
                         sprintf( __( 'Payment Successful. Transaction ID: %s', 'woocommerce' ), $payment_id )
                     );
                 }
                 WC()->cart->empty_cart();
-                $this->log_order_info('payment processed', $o);
+                $this->log_order_info('payment processed', $order);
             } else {
-                if (!$o->is_paid()) {
-                    $o->update_status(
+                if (!$order->is_paid()) {
+                    $order->update_status(
                         'wc-failed',
                         __('ERROR: Payment was received, but order verification failed.')
                     );
-                    $this->log_order_info('payment not successful', $o);
+                    $this->log_order_info('payment not successful', $order);
                 }
             }
 
@@ -160,7 +161,7 @@ function wc_chip_payment_gateway_init()
                 "SELECT RELEASE_LOCK('chip_payment');"
             );
 
-            header("Location: " . $this->get_return_url($o));
+            header("Location: " . $this->get_return_url($order));
         }
 
         public function init_form_fields()
@@ -241,6 +242,7 @@ function wc_chip_payment_gateway_init()
                     get_woocommerce_currency(),
                     $this->get_language()
                 );
+
                 if (is_null($payment_methods)) {
                     echo('System error!');
                     return;
@@ -363,7 +365,7 @@ function wc_chip_payment_gateway_init()
                 'failure_redirect' => $u . "&action=cancel",
                 'cancel_redirect' => $u . "&action=cancel",
                 'creator_agent' => 'Chip Woocommerce module: '
-                    . CHIP_MODULE_VERSION,
+                    . WC_CHIP_MODULE_VERSION,
                 'reference' => (string)$o->get_order_number(),
                 'platform' => 'woocommerce',
                 'due' => apply_filters( 'wc_chip_due_timestamp', $this->get_due_timestamp() ),
@@ -415,7 +417,7 @@ function wc_chip_payment_gateway_init()
             $this->log_order_info('got checkout url, redirecting', $o);
             $u = $payment['checkout_url'];
             if (array_key_exists("chip-payment-method", $_REQUEST)) {
-                $u .= "?preferred=" . $_REQUEST["chip-payment-method"];
+                $u .= "?preferred=" . esc_attr($_REQUEST["chip-payment-method"]);
             }
             return array(
                 'result' => 'success',
@@ -488,15 +490,15 @@ function wc_chip_payment_gateway_init()
     }
 
     // Add the Gateway to WooCommerce
-    function woocommerce_add_chip_gateway($methods)
+    function wc_chip_add_gateway($methods)
     {
         $methods[] = 'WC_Chip_Gateway';
         return $methods;
     }
 
-    add_filter('woocommerce_payment_gateways', 'woocommerce_add_chip_gateway');
+    add_filter('woocommerce_payment_gateways', 'wc_chip_add_gateway');
 
-    function wp_add_chip_setting_link($links)
+    function wc_chip_setting_link($links)
     {
         $new_links = array(
             'settings' => sprintf(
@@ -508,6 +510,6 @@ function wc_chip_payment_gateway_init()
 
     add_filter(
         'plugin_action_links_' . plugin_basename(__FILE__),
-        'wp_add_chip_setting_link'
+        'wc_chip_setting_link'
     );
 }

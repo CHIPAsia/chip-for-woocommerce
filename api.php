@@ -5,8 +5,8 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-define('CHIP_MODULE_VERSION', 'v1.1.3');
-define("ROOT_URL", "https://gate.chip-in.asia");
+define('WC_CHIP_MODULE_VERSION', 'v1.1.3');
+define("WC_CHIP_ROOT_URL", "https://gate.chip-in.asia");
 
 class ChipAPI
 {
@@ -67,11 +67,11 @@ class ChipAPI
 
         $response = $this->request(
             $method,
-            sprintf("%s/api/v1%s", ROOT_URL, $route),
+            sprintf("%s/api/v1%s", WC_CHIP_ROOT_URL, $route),
             $params,
             [
-                'Content-type: application/json',
-                'Authorization: ' . "Bearer " . $private_key,
+                'Content-type' => 'application/json',
+                'Authorization' => 'Bearer ' . $private_key,
             ]
         );
         $this->log_info(sprintf('received response: %s', $response));
@@ -91,25 +91,6 @@ class ChipAPI
 
     private function request($method, $url, $params = [], $headers = [])
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        if ($method == 'POST') {
-            curl_setopt($ch, CURLOPT_POST, 1);
-        }
-        if ($method == 'PUT') {
-            curl_setopt($ch, CURLOPT_PUT, 1);
-        }
-        if ($method == 'PUT' or $method == 'POST') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-        }
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
-        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-        // curl_setopt($conn, CURLOPT_FAILONERROR, false);
-        // curl_setopt($conn, CURLOPT_HTTP200ALIASES, (array) 400);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
         $this->log_info(sprintf(
             "%s `%s`\n%s\n%s",
             $method,
@@ -117,8 +98,17 @@ class ChipAPI
             var_export($params, true),
             var_export($headers, true)
         ));
-        $response = curl_exec($ch);
-        switch ($code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) {
+
+        $wp_request = wp_remote_request( $url, array(
+            'method' => $method,
+            'sslverify' => apply_filters( 'wc_chip_ssl_verify', false),
+            'headers' => $headers,
+            'body' => $params,
+        ));
+
+        $response = wp_remote_retrieve_body($wp_request);
+
+        switch ($code = wp_remote_retrieve_response_code($wp_request)) {
             case 200:
             case 201:
                 break;
@@ -128,11 +118,9 @@ class ChipAPI
                     $response
                 );
         }
-        if (!$response) {
-            $this->log_error('curl', curl_error($ch));
+        if (is_wp_error($response) ) {
+            $this->log_error('wp_remote_request', $response->get_error_message());
         }
-
-        curl_close($ch);
 
         return $response;
     }
