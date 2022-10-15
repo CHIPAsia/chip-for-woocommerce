@@ -271,12 +271,13 @@ function wc_chip_payment_gateway_init()
                         $checked = true;
                     }
                     foreach ($methods as $key => $data) {
+                        $pm = esc_attr($data['payment_method']);
                         $countries = htmlspecialchars(json_encode($data["countries"]));
                         echo "<label style=\"padding: 1em; width: 250px; \">
                                 <input type=radio
                                     class=chip-payment-method
                                     name=chip-payment-method
-                                    value=\"{$data["payment_method"]}\"
+                                    value=\"{$pm}\"
                                     data-countries=\"{$countries}\" ";
 
                         if (!$checked) {
@@ -286,11 +287,13 @@ function wc_chip_payment_gateway_init()
 
                         echo ">";
 
-                        echo "<div style=\"font-size: 14px;\">{$payment_methods['names'][$data["payment_method"]]}</div>";
+                        $pm_name = esc_html($payment_methods['names'][$data["payment_method"]]);
+
+                        echo "<div style=\"font-size: 14px;\">{$pm_name}</div>";
 
                         $logo = $payment_methods['logos'][$data["payment_method"]];
                         if (!is_array($logo)) {
-                            echo "<div><img src='https://gate.chip-in.asia".$logo."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
+                            echo "<div><img src='https://gate.chip-in.asia".esc_attr($logo)."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
                         } else {
                             $c = count($logo);
                             if ($c > 4) {
@@ -299,7 +302,7 @@ function wc_chip_payment_gateway_init()
                             $c = $c * 50;
                             echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".$c."px; max-width: ".$c."px;\">";
                             foreach ($logo as $i) {
-                                echo "<img src='https://gate.chip-in.asia".$i."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
+                                echo "<img src='https://gate.chip-in.asia".esc_attr($i)."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
                             }
                             echo "<div style='clear: both;'></div></span>";
                         }

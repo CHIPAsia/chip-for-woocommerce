@@ -1,3 +1,5 @@
+
+
 === CHIP for WooCommerce ===
 Contributors: wanzulnet
 Tags: chip, cash, card, coin
