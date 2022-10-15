@@ -101,7 +101,7 @@ class ChipAPI
 
         $wp_request = wp_remote_request( $url, array(
             'method' => $method,
-            'sslverify' => apply_filters( 'wc_chip_ssl_verify', false),
+            'sslverify' => apply_filters( 'wc_chip_sslverify', true),
             'headers' => $headers,
             'body' => $params,
         ));
