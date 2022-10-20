@@ -295,7 +295,10 @@ function wc_chip_payment_gateway_init()
 
                         $logo = $payment_methods['logos'][$data["payment_method"]];
                         if (!is_array($logo)) {
-                            echo "<div><img src='https://gate.chip-in.asia".esc_attr($logo)."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
+                            $logo_array = explode('/', $logo);
+                            $pmlogo = htmlspecialchars(end($logo_array));
+                            $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
+                            echo "<div><img src='".$pmlogo_url."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
                         } else {
                             $c = count($logo);
                             if ($c > 4) {
@@ -304,7 +307,10 @@ function wc_chip_payment_gateway_init()
                             $c = $c * 50;
                             echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".$c."px;\">";
                             foreach ($logo as $i) {
-                                echo "<img src='https://gate.chip-in.asia".esc_attr($i)."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
+                                $logo_array = explode('/', $i);
+                                $pmlogo = htmlspecialchars(end($logo_array));
+                                $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
+                                echo "<img src='".$pmlogo_url."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
                             }
                             echo "<div style='clear: both;'></div></span>";
                         }
