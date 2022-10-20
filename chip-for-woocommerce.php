@@ -127,7 +127,7 @@ function wc_chip_payment_gateway_init()
 
             $this->chip_api()->log_info('received callback: '
                 . print_r($_GET, true));
-            $order_id = preg_replace( '/[^0-9]/', '', $_GET["id"] );
+            $order_id = intval($_GET["id"]);
             $order = new WC_Order($order_id);
             $this->log_order_info('received success callback', $order);
             $payment_id = WC()->session->get(
@@ -417,7 +417,8 @@ function wc_chip_payment_gateway_init()
             $this->log_order_info('got checkout url, redirecting', $o);
             $u = $payment['checkout_url'];
             if (array_key_exists("chip-payment-method", $_REQUEST)) {
-                $u .= "?preferred=" . esc_attr($_REQUEST["chip-payment-method"]);
+                $payment_method = htmlspecialchars($_REQUEST["chip-payment-method"]);
+                $u .= "?preferred=" . $payment_method;
             }
             return array(
                 'result' => 'success',
