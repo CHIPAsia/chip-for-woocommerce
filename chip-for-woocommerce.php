@@ -50,7 +50,7 @@ function wc_chip_payment_gateway_init()
         public $description = " ";
         public $method_description = "";
         public $debug = true;
-        public $supports = array( 'products', 'refunds' );
+        public $supports = array( 'products', 'refunds', 'subscriptions', 'subscription_suspension', 'subscription_reactivation' );
 
         private $cached_api;
 
@@ -89,7 +89,10 @@ function wc_chip_payment_gateway_init()
                 'woocommerce_api_wc_gateway_' . $this->id,
                 array($this, 'handle_callback')
             );
-
+            add_action(
+                'woocommerce_scheduled_subscription_payment_' . $this->id,
+                array( $this, 'scheduled_subscription_payment' ), 10, 2
+            );
 
         }
 
@@ -146,6 +149,16 @@ function wc_chip_payment_gateway_init()
                     );
                 }
                 WC()->cart->empty_cart();
+
+                /* Prototype based on assumption the id can be used for tokenization */
+                /* This needs to be checked if method exists */
+                $subscriptions = wcs_get_subscriptions_for_order( $order, array( 'order_type' => array( 'parent', 'renewal' ) ) );
+
+                foreach ( $subscriptions as $subscription ) {
+                    $subscription->update_meta_data( 'initial_chip_purchase_id', $payment_id );
+                    $subscription->save();
+                }
+
                 $this->log_order_info('payment processed', $order);
             } else {
                 if (!$order->is_paid()) {
@@ -493,6 +506,50 @@ function wc_chip_payment_gateway_init()
             }
 
             return true;
+        }
+
+        /* This is prototype when recurring payment available */
+        public function scheduled_subscription_payment($amount_to_charge, $order){
+            error_log('first!! #' . $order->get_id());
+            $initial_purchase_id = $order->get_meta( 'initial_chip_purchase_id' );
+            error_log('second!! #' . $initial_purchase_id);
+            return;
+            $chip = $this->chip_api();
+
+            $params = [
+                'purchase' => [
+                    "products" => [
+                        [
+                            'name' => 'Order #' . $order->get_id() . ' '. home_url(),
+                            'price' => round($amount_to_charge * 100),
+                            'quantity' => 1,
+                        ],
+                    ],
+                ],
+                'brand_id' => $this->settings['brand-id'],
+                'client' => [
+                    'email' => $order->get_billing_email()
+                ],
+            ];
+
+            $payment = $chip->create_payment($params);
+
+            if (!array_key_exists('id', $payment)) {
+                $order->update_status( 'failed' );
+                return;
+            }
+
+            $new_purchase_id = $payment['id'];
+
+            $charge_payment = $chip->charge_payment($new_purchase_id, ['recurring_token' => $initial_purchase_id]);
+
+            if ( !array_key_exists('id', $charge_payment) ) {
+                $order->update_status( 'failed' );
+                return;
+            }
+
+            $order->update_meta_data( 'initial_chip_purchase_id', $initial_purchase_id );
+			$order->save();
         }
     }
 

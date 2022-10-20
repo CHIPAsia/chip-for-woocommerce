@@ -58,6 +58,20 @@ class ChipAPI
         return $result;
     }
 
+    public function charge_payment($payment_id, $params)
+    {
+        $this->log_info(sprintf("charging payment: %s", $payment_id));
+
+        $result = $this->call('POST', "/purchases/{$payment_id}/charge/", $params);
+
+        $this->log_info(sprintf(
+            "payment charge result: %s",
+            var_export($result, true)
+        ));
+
+        return $result;
+    }
+
     private function call($method, $route, $params = [])
     {
         $private_key = $this->private_key;
