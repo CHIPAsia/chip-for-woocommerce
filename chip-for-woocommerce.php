@@ -20,6 +20,8 @@
 // http://docs.woothemes.com/document/woocommerce-payment-gateway-plugin-base/
 // docs http://docs.woothemes.com/document/payment-gateway-api/
 
+define('WC_CHIP_MODULE_VERSION', 'v1.1.3');
+
 require_once dirname(__FILE__) . '/api.php';
 
 add_action('plugins_loaded', 'wc_chip_payment_gateway_init');
@@ -96,7 +98,7 @@ function wc_chip_payment_gateway_init()
         private function chip_api()
         {
             if (!$this->cached_api) {
-                $this->cached_api = new ChipAPI(
+                $this->cached_api = new WC_Chip_API(
                     $this->settings['private-key'],
                     $this->settings['brand-id'],
                     new ChipWCLogger(),

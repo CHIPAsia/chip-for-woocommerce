@@ -5,10 +5,9 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-define('WC_CHIP_MODULE_VERSION', 'v1.1.3');
 define("WC_CHIP_ROOT_URL", "https://gate.chip-in.asia");
 
-class ChipAPI
+class WC_Chip_API
 {
     public function __construct($private_key, $brand_id, $logger, $debug)
     {
