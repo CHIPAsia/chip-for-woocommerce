@@ -510,10 +510,14 @@ function wc_chip_payment_gateway_init()
 
         /* This is prototype when recurring payment available */
         public function scheduled_subscription_payment($amount_to_charge, $order){
-            error_log('first!! #' . $order->get_id());
-            $initial_purchase_id = $order->get_meta( 'initial_chip_purchase_id' );
-            error_log('second!! #' . $initial_purchase_id);
+            
+            /* This is test */
+
+            $order->payment_complete('testid12345');
             return;
+
+            /* end of test */
+
             $chip = $this->chip_api();
 
             $params = [
