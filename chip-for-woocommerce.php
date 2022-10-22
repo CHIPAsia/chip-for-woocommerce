@@ -291,30 +291,30 @@ function wc_chip_payment_gateway_init()
 
                         echo ">";
 
-                        $pm_name = esc_html($payment_methods['names'][$data["payment_method"]]);
+                        $pm_name = $payment_methods['names'][$data["payment_method"]];
 
-                        echo wp_kses_post("<div style=\"font-size: 14px;\">{$pm_name}</div>");
+                        echo "<div style=\"font-size: 14px;\">" . esc_html($pm_name) . "</div>";
 
                         $logo = $payment_methods['logos'][$data["payment_method"]];
                         if (!is_array($logo)) {
                             $logo_array = explode('/', $logo);
                             $pmlogo = htmlspecialchars(end($logo_array));
                             $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
-                            echo wp_kses_post("<div><img src='".$pmlogo_url."' height='30' style='max-width: 160px; max-height: 30px;'></div>");
+                            echo "<div><img src='".esc_url($pmlogo_url)."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
                         } else {
                             $c = count($logo);
                             if ($c > 4) {
                                 $c = 4;
                             }
                             $c = $c * 50;
-                            echo wp_kses_post("<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".$c."px;\">");
+                            echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".esc_attr($c)."px;\">";
                             foreach ($logo as $i) {
                                 $logo_array = explode('/', $i);
                                 $pmlogo = htmlspecialchars(end($logo_array));
                                 $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
-                                echo wp_kses_post("<img src='".$pmlogo_url."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>");
+                                echo "<img src='".esc_url($pmlogo_url)."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
                             }
-                            echo wp_kses_post("<div style='clear: both;'></div></span>");
+                            echo "<div style='clear: both;'></div></span>";
                         }
 
                         echo "</label>";
