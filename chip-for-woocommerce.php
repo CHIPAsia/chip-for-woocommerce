@@ -127,10 +127,12 @@ function wc_chip_payment_gateway_init()
                 "SELECT GET_LOCK('chip_payment', 15);"
             );
 
-            $this->chip_api()->log_info('received callback: '
-                . print_r($_GET, true));
+            $get_input = print_r($_GET, true);
+            $this->chip_api()->log_info('received callback: ' . esc_html($get_input));
+
             $order_id = intval($_GET["id"]);
             $order = new WC_Order($order_id);
+
             $this->log_order_info('received success callback', $order);
             $payment_id = WC()->session->get(
                 'chip_payment_id_' . $order_id
@@ -222,7 +224,7 @@ function wc_chip_payment_gateway_init()
                     'title' => __('Debug Log', 'woocommerce'),
                     'type' => 'checkbox',
                     'label' => __('Enable logging', 'woocommerce'),
-                    'default' => 'yes',
+                    'default' => 'no',
                     'description' =>
                     sprintf(
                         __(
@@ -237,7 +239,7 @@ function wc_chip_payment_gateway_init()
 
         public function payment_fields() {
            if ($this->hid === 'no') {
-               echo $this->method_description;
+               echo wp_kses_post($this->method_description);
            }
            else {
                 $payment_methods = $this->chip_api()->payment_methods(
@@ -259,7 +261,7 @@ function wc_chip_payment_gateway_init()
                         foreach ($pms as $pm) {
                             if (!array_key_exists($pm, $methods)) {
                                 $methods[$pm] = [
-                                    "payment_method" => $pm,
+                                    "payment_method" => sanitize_key($pm),
                                     "countries" => [],
                                 ];
                             }
@@ -275,14 +277,12 @@ function wc_chip_payment_gateway_init()
                         $checked = true;
                     }
                     foreach ($methods as $key => $data) {
-                        $pm = esc_attr($data['payment_method']);
-                        $countries = htmlspecialchars(json_encode($data["countries"]));
+                        $pm = $data['payment_method'];
                         echo "<label style=\"padding: 1em; width: 250px; \">
                                 <input type=radio
                                     class=chip-payment-method
                                     name=chip-payment-method
-                                    value=\"{$pm}\"
-                                    data-countries=\"{$countries}\" ";
+                                    value=\"" . esc_attr($pm) . "\"";
 
                         if (!$checked) {
                             echo "checked=\"checked\" ";
@@ -293,28 +293,28 @@ function wc_chip_payment_gateway_init()
 
                         $pm_name = esc_html($payment_methods['names'][$data["payment_method"]]);
 
-                        echo "<div style=\"font-size: 14px;\">{$pm_name}</div>";
+                        echo wp_kses_post("<div style=\"font-size: 14px;\">{$pm_name}</div>");
 
                         $logo = $payment_methods['logos'][$data["payment_method"]];
                         if (!is_array($logo)) {
                             $logo_array = explode('/', $logo);
                             $pmlogo = htmlspecialchars(end($logo_array));
                             $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
-                            echo "<div><img src='".$pmlogo_url."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
+                            echo wp_kses_post("<div><img src='".$pmlogo_url."' height='30' style='max-width: 160px; max-height: 30px;'></div>");
                         } else {
                             $c = count($logo);
                             if ($c > 4) {
                                 $c = 4;
                             }
                             $c = $c * 50;
-                            echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".$c."px;\">";
+                            echo wp_kses_post("<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".$c."px;\">");
                             foreach ($logo as $i) {
                                 $logo_array = explode('/', $i);
                                 $pmlogo = htmlspecialchars(end($logo_array));
                                 $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
-                                echo "<img src='".$pmlogo_url."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
+                                echo wp_kses_post("<img src='".$pmlogo_url."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>");
                             }
-                            echo "<div style='clear: both;'></div></span>";
+                            echo wp_kses_post("<div style='clear: both;'></div></span>");
                         }
 
                         echo "</label>";
@@ -426,11 +426,14 @@ function wc_chip_payment_gateway_init()
             $u = $payment['checkout_url'];
             if (array_key_exists("chip-payment-method", $_REQUEST)) {
                 $payment_method = htmlspecialchars($_REQUEST["chip-payment-method"]);
-                $u .= "?preferred=" . $payment_method;
+
+                if (in_array($payment_method, ['billplz', 'fpx', 'fpxb2b1', 'card'])){
+                    $u .= "?preferred=" . $payment_method;
+                }
             }
             return array(
                 'result' => 'success',
-                'redirect' => $u,
+                'redirect' => esc_url($u),
             );
         }
 

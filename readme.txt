@@ -1,5 +1,5 @@
 === CHIP for WooCommerce ===
-Contributors: wanzulnet
+Contributors: chipasia, wanzulnet
 Tags: chip, cash, card, coin
 Requires at least: 4.7
 Tested up to: 6.0
@@ -12,9 +12,11 @@ Cash, Card and Coin Handling Integrated Platform
 
 == Description ==
 
-This is a CHIP plugin for WooCommerce.
+This is an official CHIP plugin for WooCommerce.
 
-CHIP allows you to securely sell your products and get paid with Cash, Card and Coin.
+CHIP is an abbreviation of Cash, Card and Coin Handling Integrated Platform. CHIP allows you to securely sell your products and get paid.
+
+This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://gate.chip-in.asia/api/#/Purchases/purchases_create).
 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
@@ -63,10 +65,29 @@ No.
 
 = Where can I find documentation? =
 
-You can refer to our website for API documentation.
+You can visit our [API documentation](https://gate.chip-in.asia/api/) for your reference.
+
+= What CHIP API services used in this plugin? =
+
+This plugin rely on CHIP AP ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
+
+  - **/payment_methods/**
+    - This is for getting available payment method specific to your account
+  - **/purchases/**
+    - This is for accepting payment
+  - **/purchases/<id\>**
+    - This is for getting payment status from CHIP
+  - **/purchases/<id\>/refund**
+    - This is for refunding payment
 
 == Links ==
 
-[CHIP. Cash, Card, Coin Handling Integrated Platform](https://www.chip-in.asia)
+[CHIP Website](https://www.chip-in.asia)
 
-[Merchants & DEV Community](https://www.facebook.com/groups/3210496372558088)
+[Terms of Service](https://www.chip-in.asia/terms-of-service)
+
+[Privacy Policy](https://www.chip-in.asia/privacy-policy)
+
+[API Documentation](https://gate.chip-in.asia/api/)
+
+[CHIP Merchants & DEV Community](https://www.facebook.com/groups/3210496372558088)

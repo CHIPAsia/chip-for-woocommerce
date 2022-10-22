@@ -5,6 +5,7 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
 
+// This is CHIP API URL Endpoint as per documented in: https://gate.chip-in.asia/api/
 define("WC_CHIP_ROOT_URL", "https://gate.chip-in.asia");
 
 class WC_Chip_API
