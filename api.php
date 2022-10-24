@@ -21,7 +21,9 @@ class WC_Chip_API
     public function create_payment($params)
     {
         $this->log_info("loading payment form");
-        return $this->call('POST', '/purchases/', $params);
+
+        // time() is to force fresh instead cache
+        return $this->call('POST', '/purchases/?time=' . time(), $params);
     }
 
     public function payment_methods($currency, $language)
@@ -36,7 +38,9 @@ class WC_Chip_API
     public function was_payment_successful($payment_id)
     {
         $this->log_info(sprintf("validating payment: %s", $payment_id));
-        $result = $this->call('GET', "/purchases/{$payment_id}/");
+
+        // time() is to force fresh instead cache
+        $result = $this->call('GET', "/purchases/{$payment_id}/?time" . time());
         $this->log_info(sprintf(
             "success check result: %s",
             var_export($result, true)
