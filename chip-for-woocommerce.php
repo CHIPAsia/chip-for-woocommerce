@@ -6,14 +6,14 @@
  * Description: Cash, Card and Coin Handling Integrated Platform
  * Version: 1.1.3
  * Author: Chip In Sdn Bhd
- * Author URI: http://www.chip-in.asia
+ * Author URI: https://www.chip-in.asia
 
  * WC requires at least: 3.3.4
  * WC tested up to: 7.0.0
  *
  * Copyright: © 2022 CHIP
  * License: GNU General Public License v3.0
- * License URI: http://www.gnu.org/licenses/gpl-3.0.html
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
 
 // based on
@@ -77,6 +77,10 @@ function wc_chip_payment_gateway_init()
                 $pmeth = "Choose payment method on next page";
                 $this->method_description = $pmeth;
             };
+
+            if ($this->unsupported_currency()) {
+                $this->enabled = 'no';
+            }
 
             add_action(
                 'woocommerce_update_options_payment_gateways_' . $this->id,
@@ -377,14 +381,14 @@ function wc_chip_payment_gateway_init()
                 'platform' => 'woocommerce',
                 'due' => apply_filters( 'wc_chip_due_timestamp', $this->get_due_timestamp() ),
                 'purchase' => [
-                    "currency" => $o->get_currency(),
+                    "currency" => apply_filters( 'wc_chip_purchase_currency', $o->get_currency()),
                     "language" => $this->get_language(),
                     "notes" => $notes,
                     "due_strict" => apply_filters( 'wc_chip_purchase_due_strict', true ),
                     "products" => [
                         [
                             'name' => 'Order #' . $o_id . ' '. home_url(),
-                            'price' => $total,
+                            'price' => apply_filters( 'wc_chip_purchase_products_price', $total),
                             'quantity' => 1,
                         ],
                     ],
@@ -497,6 +501,15 @@ function wc_chip_payment_gateway_init()
             }
 
             return true;
+        }
+
+        public function unsupported_currency(){
+            $woocommerce_currency = get_woocommerce_currency();
+            $supported_currencies = apply_filters('wc_chip_supported_currencies', array('MYR'));
+            if (!in_array($woocommerce_currency, $supported_currencies, true)){
+                return true;
+            }
+            return false;
         }
     }
 
