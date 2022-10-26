@@ -127,10 +127,9 @@ function wc_chip_payment_gateway_init()
                 "SELECT GET_LOCK('chip_payment', 15);"
             );
 
-            $get_input = wp_json_encode($_GET);
-            $this->chip_api()->log_info('received callback: ' . $get_input);
-
             $order_id = intval($_GET["id"]);
+            $this->chip_api()->log_info('received callback for order id: ' . $order_id);
+
             $order = new WC_Order($order_id);
 
             $this->log_order_info('received success callback', $order);
