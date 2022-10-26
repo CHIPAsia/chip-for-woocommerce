@@ -427,7 +427,7 @@ function wc_chip_payment_gateway_init()
             if (array_key_exists("chip-payment-method", $_REQUEST)) {
                 $payment_method = sanitize_key($_REQUEST["chip-payment-method"]);
 
-                if (in_array($payment_method, ['billplz', 'fpx', 'fpxb2b1', 'card'])){
+                if (in_array($payment_method, ['billplz', 'fpx', 'fpx_b2b1', 'card'])){
                     $u .= "?preferred=" . $payment_method;
                 }
             }
