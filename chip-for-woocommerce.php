@@ -127,8 +127,8 @@ function wc_chip_payment_gateway_init()
                 "SELECT GET_LOCK('chip_payment', 15);"
             );
 
-            $get_input = print_r($_GET, true);
-            $this->chip_api()->log_info('received callback: ' . esc_html($get_input));
+            $get_input = wp_json_encode($_GET);
+            $this->chip_api()->log_info('received callback: ' . $get_input);
 
             $order_id = intval($_GET["id"]);
             $order = new WC_Order($order_id);
@@ -425,7 +425,7 @@ function wc_chip_payment_gateway_init()
             $this->log_order_info('got checkout url, redirecting', $o);
             $u = $payment['checkout_url'];
             if (array_key_exists("chip-payment-method", $_REQUEST)) {
-                $payment_method = htmlspecialchars($_REQUEST["chip-payment-method"]);
+                $payment_method = sanitize_key($_REQUEST["chip-payment-method"]);
 
                 if (in_array($payment_method, ['billplz', 'fpx', 'fpxb2b1', 'card'])){
                     $u .= "?preferred=" . $payment_method;
