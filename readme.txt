@@ -21,6 +21,9 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
 * Checkout and pay with CHIP
+* CHIP payment page
+* WooCommerce order received page
+* WooCommerce dashboard order page
 
 == Changelog ==
 
