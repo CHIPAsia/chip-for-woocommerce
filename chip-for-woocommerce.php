@@ -388,7 +388,7 @@ function wc_chip_payment_gateway_init()
                     "products" => [
                         [
                             'name' => 'Order #' . $o_id . ' '. home_url(),
-                            'price' => apply_filters( 'wc_chip_purchase_products_price', $total),
+                            'price' => apply_filters( 'wc_chip_purchase_products_price', $total, $o->get_currency()),
                             'quantity' => 1,
                         ],
                     ],
