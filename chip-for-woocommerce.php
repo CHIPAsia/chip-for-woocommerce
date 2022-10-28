@@ -66,10 +66,10 @@ function wc_chip_payment_gateway_init()
             $this->method_desc = $this->get_option( 'method_desc' );
             $this->title = $this->label;
             $this->method_description = $this->method_desc;
-            $this->icon = null;
+            $this->icon = plugins_url("assets/logo.png", __FILE__);
 
             if ($this->title === '') {
-                $ptitle = "Select Payment Method";
+                $ptitle = "CHIP";
                 $this->title = $ptitle;
             };
 
