@@ -48,7 +48,7 @@ function wc_chip_payment_gateway_init()
     {
         public $id = "chip";
         public $title = "";
-        public $method_title = "CHIP E-commerce Gateway";
+        public $method_title = "CHIP Payment Gateway";
         public $description = " ";
         public $method_description = "";
         public $debug = true;
@@ -69,7 +69,7 @@ function wc_chip_payment_gateway_init()
             $this->icon = plugins_url("assets/logo.png", __FILE__);
 
             if ($this->title === '') {
-                $ptitle = "CHIP";
+                $ptitle = "CHIP - Cash, Card and Coin Integrated Platform";
                 $this->title = $ptitle;
             };
 
@@ -97,6 +97,12 @@ function wc_chip_payment_gateway_init()
             );
 
 
+        }
+
+        public function get_icon()
+        {
+            $icon = $this->icon ? '<img src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style=\'max-width: 80px; height: auto\' />' : '';
+            return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
         }
 
         private function chip_api()
@@ -296,7 +302,7 @@ function wc_chip_payment_gateway_init()
 
                         $pm_name = $payment_methods['names'][$data["payment_method"]];
 
-                        echo "<div style=\"font-size: 14px;\">" . esc_html($pm_name) . "</div>";
+                        echo "<div style=\"font-size: 14px; min-height: 23px\">" . esc_html($pm_name) . "</div>";
 
                         $logo = $payment_methods['logos'][$data["payment_method"]];
                         if (!is_array($logo)) {
