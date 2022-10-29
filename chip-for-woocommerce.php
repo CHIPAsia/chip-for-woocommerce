@@ -101,7 +101,7 @@ function wc_chip_payment_gateway_init()
 
         public function get_icon()
         {
-            $icon = $this->icon ? '<img src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style=\'max-width: 80px; height: auto\' />' : '';
+            $icon = $this->icon ? '<img src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style=\'max-height: 25px; width: auto\' />' : '';
             return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
         }
 
