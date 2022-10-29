@@ -24,7 +24,7 @@ define('WC_CHIP_MODULE_VERSION', 'v1.1.3');
 
 require_once dirname(__FILE__) . '/api.php';
 
-add_action('plugins_loaded', 'wc_chip_payment_gateway_init');
+add_action('plugins_loaded', 'wc_chip_payment_gateway_init', 100);
 function wc_chip_payment_gateway_init()
 {
     if (!class_exists('WC_Payment_Gateway')) {
@@ -247,10 +247,11 @@ function wc_chip_payment_gateway_init()
         }
 
         public function payment_fields() {
-           if ($this->hid === 'no') {
-               echo wp_kses_post($this->method_description);
-           }
-           else {
+           if (has_action('wc_chip_payment_fields')) {
+                do_action('wc_chip_payment_fields', $this);
+           } else if ($this->hid === 'no'){
+                echo wp_kses_post( wptexturize( $this->get_method_description() ) );
+           } else {
                 $payment_methods = $this->chip_api()->payment_methods(
                     get_woocommerce_currency(),
                     $this->get_language()
