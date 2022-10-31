@@ -16,7 +16,7 @@ This is an official CHIP plugin for WooCommerce.
 
 CHIP is an abbreviation of Cash, Card and Coin Handling Integrated Platform. CHIP allows you to securely sell your products and get paid.
 
-This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://gate.chip-in.asia/api/#/Purchases/purchases_create).
+This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://developer.chip-in.asia/api#online_purchases_custom_payment_flow_direct_post).
 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
@@ -68,7 +68,7 @@ No.
 
 = Where can I find documentation? =
 
-You can visit our [API documentation](https://gate.chip-in.asia/api/) for your reference.
+You can visit our [API documentation](https://developer.chip-in.asia/) for your reference.
 
 = What CHIP API services used in this plugin? =
 
@@ -91,6 +91,6 @@ This plugin rely on CHIP AP ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as f
 
 [Privacy Policy](https://www.chip-in.asia/privacy-policy)
 
-[API Documentation](https://gate.chip-in.asia/api/)
+[API Documentation](https://developer.chip-in.asia/)
 
 [CHIP Merchants & DEV Community](https://www.facebook.com/groups/3210496372558088)
