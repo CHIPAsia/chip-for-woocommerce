@@ -268,6 +268,9 @@ function wc_chip_payment_gateway_init()
                     $data = $payment_methods["by_country"];
                     $methods = [];
                     foreach ($data as $country => $pms) {
+                        if (in_array('billplz', $pms)){
+                            continue;
+                        }
                         foreach ($pms as $pm) {
                             if (!array_key_exists($pm, $methods)) {
                                 $methods[$pm] = [
@@ -301,7 +304,9 @@ function wc_chip_payment_gateway_init()
 
                         echo ">";
 
-                        $pm_name = $payment_methods['names'][$data["payment_method"]];
+                        $pm_name_list = array('FPX B2C' => 'FPX', 'FPX B2B1' => 'FPX Business', 'Bank cards' => 'Bank Cards');
+                        $pm_name = $pm_name_list[$payment_methods['names'][$data['payment_method']]];
+                        $pm_name = apply_filters( 'wc_chip_payment_method_name', $pm_name);
 
                         echo "<div style=\"font-size: 14px; min-height: 23px\">" . esc_html($pm_name) . "</div>";
 
@@ -437,7 +442,7 @@ function wc_chip_payment_gateway_init()
             if (array_key_exists("chip-payment-method", $_REQUEST)) {
                 $payment_method = sanitize_key($_REQUEST["chip-payment-method"]);
 
-                if (in_array($payment_method, ['billplz', 'fpx', 'fpx_b2b1', 'card'])){
+                if (in_array($payment_method, ['fpx', 'fpx_b2b1', 'card'])){
                     $u .= "?preferred=" . $payment_method;
                 }
             }
