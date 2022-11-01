@@ -10,9 +10,9 @@ define("WC_CHIP_ROOT_URL", "https://gate.chip-in.asia");
 
 class WC_Chip_API
 {
-    public function __construct($private_key, $brand_id, $logger, $debug)
+    public function __construct($secret_key, $brand_id, $logger, $debug)
     {
-        $this->private_key = $private_key;
+        $this->secret_key = $secret_key;
         $this->brand_id = $brand_id;
         $this->logger = $logger;
         $this->debug = $debug;
@@ -64,7 +64,7 @@ class WC_Chip_API
 
     private function call($method, $route, $params = [])
     {
-        $private_key = $this->private_key;
+        $secret_key = $this->secret_key;
         if (!empty($params)) {
             $params = json_encode($params);
         }
@@ -75,7 +75,7 @@ class WC_Chip_API
             $params,
             [
                 'Content-type' => 'application/json',
-                'Authorization' => 'Bearer ' . $private_key,
+                'Authorization' => 'Bearer ' . $secret_key,
             ]
         );
         $this->log_info(sprintf('received response: %s', $response));

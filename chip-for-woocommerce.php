@@ -109,7 +109,7 @@ function wc_chip_payment_gateway_init()
         {
             if (!$this->cached_api) {
                 $this->cached_api = new WC_Chip_API(
-                    $this->settings['private-key'],
+                    $this->settings['secret-key'],
                     $this->settings['brand-id'],
                     new ChipWCLogger(),
                     $this->debug
@@ -220,7 +220,7 @@ function wc_chip_payment_gateway_init()
                     ),
                     'default' => '',
                 ),
-                'private-key' => array(
+                'secret-key' => array(
                     'title' => __('Secret key', 'chip-for-woocommerce'),
                     'type' => 'text',
                     'description' => __(
@@ -472,7 +472,7 @@ function wc_chip_payment_gateway_init()
         }
 
         public function can_refund_order( $order ) {
-            $has_api_creds = $this->get_option( 'enabled' ) && $this->get_option( 'private-key' ) && $this->get_option( 'brand-id' );
+            $has_api_creds = $this->get_option( 'enabled' ) && $this->get_option( 'secret-key' ) && $this->get_option( 'brand-id' );
 
             return $order && $order->get_transaction_id() && $has_api_creds;
         }
