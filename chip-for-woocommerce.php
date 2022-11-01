@@ -151,6 +151,14 @@ function wc_chip_payment_gateway_init()
                 $payment_id = array_key_exists('id', $input) ? sanitize_key($input['id']) : '';
             }
 
+            // Compare payment_id with internally stored to avoid spoofing
+            $chip_payment_id = get_post_meta( $order_id, 'chip_payment_id', true );
+            if ($payment_id != $chip_payment_id) {
+              $message = 'Payment ID not match with stored values';
+              $this->log_order_info( $message, $order );
+              exit( $message );
+            }
+
             if ($this->chip_api()->was_payment_successful($payment_id)) {
                 if (!$order->is_paid()) {
                     $order->payment_complete($payment_id);
@@ -431,6 +439,9 @@ function wc_chip_payment_gateway_init()
                     'result' => 'failure',
                 );
             }
+
+            // Store chip payment id for anti-spoofing
+            update_post_meta($o_id, 'chip_payment_id', $payment['id']);
 
             WC()->session->set(
               'chip_payment_id_' . $o_id,
