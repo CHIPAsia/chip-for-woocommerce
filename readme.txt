@@ -8,7 +8,7 @@ Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Cash, Card and Coin Handling Integrated Platform
+CHIP - Cash, Card and Coin Handling Integrated Platform. Securely accept payment with CHIP for WooCommerce.
 
 == Description ==
 
