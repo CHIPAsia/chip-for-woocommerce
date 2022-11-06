@@ -2,8 +2,8 @@
 Contributors: chipasia, wanzulnet
 Tags: chip, cash, card, coin
 Requires at least: 4.7
-Tested up to: 6.0
-Stable tag: 1.1.3
+Tested up to: 6.1
+Stable tag: 1.1.4
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -24,8 +24,17 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * CHIP payment page
 * WooCommerce order received page
 * WooCommerce dashboard order page
+* WooCommerce refund order
 
 == Changelog ==
+
+= 1.1.4 - 2022-11-7 =
+* Add - Check payment id to avoid spoofing
+* Add - Add hooks to allow checkout page to be customized
+* Add - CHIP Icon on checkout page
+* Tweak - Prevent unsupported currencies to be paid
+* Update - Standardize terminology for secret key
+* Update - Change FPX B2C to FPX
 
 = 1.1.3 - 2022-10-12 =
 * New - Intial Repack Release.

@@ -4,7 +4,7 @@
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: Cash, Card and Coin Handling Integrated Platform
- * Version: 1.1.3
+ * Version: 1.1.4
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
 
