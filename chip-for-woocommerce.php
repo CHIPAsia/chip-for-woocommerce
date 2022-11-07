@@ -50,6 +50,7 @@ function wc_chip_payment_gateway_init()
         public $description = " ";
         public $method_description = "";
         public $debug = true;
+	//maybe should look for 'tokenization' support. refer to WooCommerce Stripe Gateway plugin
         public $supports = array( 'products', 'refunds', 'subscriptions', 'subscription_suspension', 'subscription_reactivation' );
 
         private $cached_api;
