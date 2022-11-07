@@ -69,7 +69,7 @@ function wc_chip_payment_gateway_init()
             $this->icon = plugins_url("assets/logo.png", __FILE__);
 
             if ($this->title === '') {
-                $ptitle = "CHIP - Cash, Card and Coin Integrated Platform";
+                $ptitle = "Online Banking and Cards";
                 $this->title = $ptitle;
             };
 
@@ -312,33 +312,15 @@ function wc_chip_payment_gateway_init()
 
                         echo ">";
 
-                        $pm_name_list = array('FPX B2C' => 'FPX', 'FPX B2B1' => 'FPX Business', 'Bank cards' => 'Bank Cards');
+                        $pm_name_list = array('FPX B2C' => 'Online Banking (Personal)', 'FPX B2B1' => 'Online Banking (Business)', 'Bank cards' => 'Credit card');
                         $pm_name = $pm_name_list[$payment_methods['names'][$data['payment_method']]];
                         $pm_name = apply_filters( 'wc_chip_payment_method_name', $pm_name);
 
                         echo "<div style=\"font-size: 14px; min-height: 23px\">" . esc_html($pm_name) . "</div>";
 
-                        $logo = $payment_methods['logos'][$data["payment_method"]];
-                        if (!is_array($logo)) {
-                            $logo_array = explode('/', $logo);
-                            $pmlogo = htmlspecialchars(end($logo_array));
-                            $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
-                            echo "<div><img src='".esc_url($pmlogo_url)."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
-                        } else {
-                            $c = count($logo);
-                            if ($c > 4) {
-                                $c = 4;
-                            }
-                            $c = $c * 50;
-                            echo "<span style=\"display: block; padding-bottom: 3px; min-width: ".esc_attr($c)."px; max-width: ".esc_attr($c)."px;\">";
-                            foreach ($logo as $i) {
-                                $logo_array = explode('/', $i);
-                                $pmlogo = htmlspecialchars(end($logo_array));
-                                $pmlogo_url = plugins_url("assets/$pmlogo", __FILE__);
-                                echo "<img src='".esc_url($pmlogo_url)."' width='40' height='35' style='margin: 0 10px 10px 0; float: left;'>";
-                            }
-                            echo "<div style='clear: both;'></div></span>";
-                        }
+                        $pmlogo_url = plugins_url("assets/" . $data["payment_method"] . '.png', __FILE__);
+
+                        echo "<div><img src='".esc_url($pmlogo_url)."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
 
                         echo "</label>";
                     }
