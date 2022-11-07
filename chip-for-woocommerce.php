@@ -52,7 +52,6 @@ function wc_chip_payment_gateway_init()
         public $description = " ";
         public $method_description = "";
         public $debug = true;
-        public $supports = array( 'products', 'refunds' );
 
         private $cached_api;
 
@@ -67,6 +66,7 @@ function wc_chip_payment_gateway_init()
             $this->title = $this->label;
             $this->method_description = $this->method_desc;
             $this->icon = plugins_url("assets/logo.png", __FILE__);
+            $this->supports = apply_filters( 'wc_chip_supports', ['products', 'refunds'] );
 
             if ($this->title === '') {
                 $ptitle = "Online Banking and Cards";
@@ -467,7 +467,8 @@ function wc_chip_payment_gateway_init()
         public function can_refund_order( $order ) {
             $has_api_creds = $this->get_option( 'enabled' ) && $this->get_option( 'secret-key' ) && $this->get_option( 'brand-id' );
 
-            return $order && $order->get_transaction_id() && $has_api_creds;
+            $can_refund_order = $order && $order->get_transaction_id() && $has_api_creds;
+            return apply_filters( 'wc_chip_can_refund_order', $can_refund_order, $order );
         }
 
         public function process_refund( $order_id, $amount = null, $reason = '' ) {
@@ -475,7 +476,7 @@ function wc_chip_payment_gateway_init()
 
             if ( ! $this->can_refund_order( $order ) ) {
                 $this->log_order_info( 'Cannot refund order', $order );
-                return new WP_Error( 'error', __( 'Refund failed.', 'woocommerce' ) );
+                return new WP_Error( 'error', __( 'Refund failed.', 'chip-for-woocommerce' ) );
             }
 
             $chip = $this->chip_api();
@@ -487,7 +488,7 @@ function wc_chip_payment_gateway_init()
 
             if ( is_wp_error( $result ) || isset($result['__all__']) ) {
                 $this->chip_api()
-                    ->log_error($result['__all__'] . ': ' . $order->get_order_number());
+                    ->log_error(var_export($result['__all__'], true) . ': ' . $order->get_order_number());
 
                 return new WP_Error( 'error', var_export($result['__all__'], true) );
             }
@@ -500,7 +501,7 @@ function wc_chip_payment_gateway_init()
 
                     $order->add_order_note(
                     /* translators: 1: Refund amount, 2: Refund ID */
-                        sprintf( __( 'Refunded %1$s - Refund ID: %2$s', 'woocommerce' ), $refund_amount, $result['id'] )
+                        sprintf( __( 'Refunded %1$s - Refund ID: %2$s', 'chip-for-woocommerce' ), $refund_amount, $result['id'] )
                     );
                     return true;
             }
