@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip, cash, card, coin
 Requires at least: 4.7
 Tested up to: 6.1
-Stable tag: 1.1.4
+Stable tag: 1.2.0
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -27,6 +27,13 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.2.0 - 2022-11-8 =
+* Add - Add filters wc_chip_supports to allow refund to be disabled
+* Add - Timezone support for due strict
+* Tweak - Revamp how preferred payment option being presented
+* Tweak - Hide custom field for chip_transaction_id as it is not meant to be edited
+* Update - New logo
 
 = 1.1.4 - 2022-11-7 =
 * Add - Check payment id to avoid spoofing

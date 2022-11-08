@@ -35,6 +35,19 @@ class WC_Chip_API
         );
     }
 
+    public function get_payment($payment_id)
+    {
+        $this->log_info(sprintf("validating payment: %s", $payment_id));
+
+        // time() is to force fresh instead cache
+        $result = $this->call('GET', "/purchases/{$payment_id}/?time" . time());
+        $this->log_info(sprintf(
+            "success check result: %s",
+            var_export($result, true)
+        ));
+        return $result;
+    }
+
     public function was_payment_successful($payment_id)
     {
         $this->log_info(sprintf("validating payment: %s", $payment_id));

@@ -4,7 +4,7 @@
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: Cash, Card and Coin Handling Integrated Platform
- * Version: 1.1.4
+ * Version: 1.2.0
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
 
@@ -20,7 +20,7 @@
 // http://docs.woothemes.com/document/woocommerce-payment-gateway-plugin-base/
 // docs http://docs.woothemes.com/document/payment-gateway-api/
 
-define('WC_CHIP_MODULE_VERSION', 'v1.1.3');
+define('WC_CHIP_MODULE_VERSION', 'v1.2.0');
 
 require_once dirname(__FILE__) . '/api.php';
 
@@ -31,6 +31,9 @@ function wc_chip_payment_gateway_init()
         return;
     }
 
+    require_once dirname( __FILE__ ) . '/includes/class-wc-chip-default.php';
+    require_once dirname( __FILE__ ) . '/includes/class-wc-chip-fpxb2b1.php';
+    require_once dirname( __FILE__ ) . '/includes/class-wc-chip-card.php';
     class ChipWCLogger
     {
         public function __construct()
@@ -44,485 +47,28 @@ function wc_chip_payment_gateway_init()
         }
     }
 
-    class WC_Chip_Gateway extends WC_Payment_Gateway
-    {
-        public $id = "chip";
-        public $title = "";
-        public $method_title = "CHIP Payment Gateway";
-        public $description = " ";
-        public $method_description = "";
-        public $debug = true;
-
-        private $cached_api;
-
-        public function __construct()
-        {
-            // TODO: Set icon. Probably can be an external URL.
-            $this->init_form_fields();
-            $this->init_settings();
-            $this->hid = $this->get_option( 'hid' );
-            $this->label = $this->get_option( 'label' );
-            $this->method_desc = $this->get_option( 'method_desc' );
-            $this->title = $this->label;
-            $this->method_description = $this->method_desc;
-            $this->icon = plugins_url("assets/logo.png", __FILE__);
-            $this->supports = apply_filters( 'wc_chip_supports', ['products', 'refunds'] );
-
-            if ($this->title === '') {
-                $ptitle = "Online Banking and Cards";
-                $this->title = $ptitle;
-            };
-
-            if ($this->method_description === '') {
-                $pmeth = "Choose payment method on next page";
-                $this->method_description = $pmeth;
-            };
-
-            if ($this->unsupported_currency()) {
-                $this->enabled = 'no';
-            }
-
-            add_action(
-                'woocommerce_update_options_payment_gateways_' . $this->id,
-                array($this, 'process_admin_options')
-            );
-            str_replace(
-                'https:',
-                'http:',
-                add_query_arg('wc-api', 'WC_Chip_Gateway', home_url('/'))
-            );
-            add_action(
-                'woocommerce_api_wc_gateway_' . $this->id,
-                array($this, 'handle_callback')
-            );
-
-
-        }
-
-        public function get_icon()
-        {
-            $icon = $this->icon ? '<img src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style=\'max-height: 25px; width: auto\' />' : '';
-            return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
-        }
-
-        private function chip_api()
-        {
-            if (!$this->cached_api) {
-                $this->cached_api = new WC_Chip_API(
-                    $this->settings['secret-key'],
-                    $this->settings['brand-id'],
-                    new ChipWCLogger(),
-                    $this->debug
-                );
-            }
-            return $this->cached_api;
-        }
-
-        private function log_order_info($msg, $o)
-        {
-            $this->chip_api()
-                ->log_info($msg . ': ' . $o->get_order_number());
-        }
-
-        function handle_callback()
-        {
-            // Docs http://docs.woothemes.com/document/payment-gateway-api/
-            // http://127.0.0.1/wordpress/?wc-api=wc_gateway_chip&id=&action={paid,sent}
-            // The new URL scheme
-            // (http://127.0.0.1/wordpress/wc-api/wc_gateway_chip) is broken
-            // for some reason.
-            // Old one still works.
-
-            $GLOBALS['wpdb']->get_results(
-                "SELECT GET_LOCK('chip_payment', 15);"
-            );
-
-            $order_id = intval($_GET["id"]);
-            $this->chip_api()->log_info('received callback for order id: ' . $order_id);
-
-            $order = new WC_Order($order_id);
-
-            $this->log_order_info('received success callback', $order);
-            $payment_id = WC()->session->get(
-                'chip_payment_id_' . $order_id
-            );
-            if (!$payment_id) {
-                $input = json_decode(file_get_contents('php://input'), true);
-                $payment_id = array_key_exists('id', $input) ? sanitize_key($input['id']) : '';
-            }
-
-            // Compare payment_id with internally stored to avoid spoofing
-            $chip_payment_id = get_post_meta( $order_id, 'chip_payment_id', true );
-            if ($payment_id != $chip_payment_id) {
-              $message = 'Payment ID not match with stored values';
-              $this->log_order_info( $message, $order );
-              exit( $message );
-            }
-
-            if ($this->chip_api()->was_payment_successful($payment_id)) {
-                if (!$order->is_paid()) {
-                    $order->payment_complete($payment_id);
-                    $order->add_order_note(
-                        sprintf( __( 'Payment Successful. Transaction ID: %s', 'woocommerce' ), $payment_id )
-                    );
-                }
-                WC()->cart->empty_cart();
-                $this->log_order_info('payment processed', $order);
-            } else {
-                if (!$order->is_paid()) {
-                    $order->update_status(
-                        'wc-failed',
-                        __('ERROR: Payment was received, but order verification failed.')
-                    );
-                    $this->log_order_info('payment not successful', $order);
-                }
-            }
-
-            $GLOBALS['wpdb']->get_results(
-                "SELECT RELEASE_LOCK('chip_payment');"
-            );
-
-            header("Location: " . $this->get_return_url($order));
-        }
-
-        public function init_form_fields()
-        {
-
-            $this->form_fields = array(
-                'enabled' => array(
-                    'title' => __('Enable API', 'chip-for-woocommerce'),
-                    'label' => __('Enable API', 'chip-for-woocommerce'),
-                    'type' => 'checkbox',
-                    'description' => '',
-                    'default' => 'no',
-                ),
-                'hid' => array(
-                    'title' => __('Enable payment method selection', 'chip-for-woocommerce'),
-                    'label' => __('Enable payment method selection', 'chip-for-woocommerce'),
-                    'type' => 'checkbox',
-                    'description' => 'If set, buyers will be able to choose the desired payment method directly in WooCommerce',
-                    'default' => 'yes',
-
-                ),
-                'method_desc' => array(
-                    'title' => __('Change payment method description', 'chip-for-woocommerce'),
-                    'label' => __('', 'chip-for-woocommerce'),
-                    'type' => 'text',
-                    'description' => 'If not set, "Choose payment method on next page" will be used',
-                    'default' => 'Choose payment method on next page',
-
-                ),
-                'label' => array(
-                    'title' => __('Change payment method title', 'chip-for-woocommerce'),
-                    'type' => 'text',
-                    'description' => 'If not set, "Select payment method" will be used. Ignored if payment method selection is enabled',
-                    'default' => 'Select Payment Method',
-
-                ),
-                'brand-id' => array(
-                    'title' => __('Brand ID', 'chip-for-woocommerce'),
-                    'type' => 'text',
-                    'description' => __(
-                        'Please enter your brand ID',
-                        'chip-for-woocommerce'
-                    ),
-                    'default' => '',
-                ),
-                'secret-key' => array(
-                    'title' => __('Secret key', 'chip-for-woocommerce'),
-                    'type' => 'text',
-                    'description' => __(
-                        'Please enter your secret key',
-                        'chip-for-woocommerce'
-                    ),
-                    'default' => '',
-                ),
-                'debug' => array(
-                    'title' => __('Debug Log', 'woocommerce'),
-                    'type' => 'checkbox',
-                    'label' => __('Enable logging', 'woocommerce'),
-                    'default' => 'no',
-                    'description' =>
-                    sprintf(
-                        __(
-                            'Log events to <code>%s</code>',
-                            'woocommerce'
-                        ),
-                        wc_get_log_file_path('chip')
-                    ),
-                ),
-            );
-        }
-
-        public function payment_fields() {
-           if (has_action('wc_chip_payment_fields')) {
-                do_action('wc_chip_payment_fields', $this);
-           } else if ($this->hid === 'no'){
-                echo wp_kses_post( wptexturize( $this->get_method_description() ) );
-           } else {
-                $payment_methods = $this->chip_api()->payment_methods(
-                    get_woocommerce_currency(),
-                    $this->get_language()
-                );
-
-                if (is_null($payment_methods)) {
-                    echo('System error!');
-                    return;
-                }
-
-                if (!array_key_exists("by_country", $payment_methods)) {
-                    echo 'Plugin configuration error!';
-                } else {
-                    $data = $payment_methods["by_country"];
-                    $methods = [];
-                    foreach ($data as $country => $pms) {
-                        if (in_array('billplz', $pms)){
-                            continue;
-                        }
-                        foreach ($pms as $pm) {
-                            if (!array_key_exists($pm, $methods)) {
-                                $methods[$pm] = [
-                                    "payment_method" => sanitize_key($pm),
-                                    "countries" => [],
-                                ];
-                            }
-                            if (!in_array($country, $methods[$pm]["countries"])) {
-                                $methods[$pm]["countries"][] = $country;
-                            }
-                        }
-                    }
-
-                    echo "<span style=\"display: flex; flex-flow: row wrap;\" >";
-                    $checked = false;
-                    if (count($methods) != 1) {
-                        $checked = true;
-                    }
-                    foreach ($methods as $key => $data) {
-                        $pm = $data['payment_method'];
-                        echo "<label style=\"padding: 1em; width: 250px; \">
-                                <input type=radio
-                                    class=chip-payment-method
-                                    name=chip-payment-method
-                                    value=\"" . esc_attr($pm) . "\"";
-
-                        if (!$checked) {
-                            echo "checked=\"checked\" ";
-                            $checked = true;
-                        }
-
-                        echo ">";
-
-                        $pm_name_list = array('FPX B2C' => 'Online Banking (Personal)', 'FPX B2B1' => 'Online Banking (Business)', 'Bank cards' => 'Credit card');
-                        $pm_name = $pm_name_list[$payment_methods['names'][$data['payment_method']]];
-                        $pm_name = apply_filters( 'wc_chip_payment_method_name', $pm_name);
-
-                        echo "<div style=\"font-size: 14px; min-height: 23px\">" . esc_html($pm_name) . "</div>";
-
-                        $pmlogo_url = plugins_url("assets/" . $data["payment_method"] . '.png', __FILE__);
-
-                        echo "<div><img src='".esc_url($pmlogo_url)."' height='30' style='max-width: 160px; max-height: 30px;'></div>";
-
-                        echo "</label>";
-                    }
-                    echo '</span>';
-                }
-            }
-        }
-
-        public function get_language()
-        {
-            if (defined('ICL_LANGUAGE_CODE')) {
-                $ln = ICL_LANGUAGE_CODE;
-            } else {
-                $ln = get_locale();
-            }
-            switch ($ln) {
-            case 'et_EE':
-                $ln = 'et';
-                break;
-            case 'ru_RU':
-                $ln = 'ru';
-                break;
-            case 'lt_LT':
-                $ln = 'lt';
-                break;
-            case 'lv_LV':
-                $ln = 'lv';
-                break;
-            case 'et':
-            case 'lt':
-            case 'lv':
-            case 'ru':
-               break;
-            default:
-               $ln = 'en';
-            }
-
-            return $ln;
-        }
-
-        public function process_payment($o_id)
-        {
-            $o = new WC_Order($o_id);
-            $total = round($o->calculate_totals() * 100);
-            $notes = $this->get_notes();
-//             if ($o->get_total_discount() > 0) {
-//                 $total -= round($o->get_total_discount() * 100);
-//             }
-
-            $chip = $this->chip_api();
-            $u = home_url() . '/?wc-api=wc_gateway_chip&id=' . $o_id;
-            $params = [
-                'success_callback' => $u . "&action=paid",
-                'success_redirect' => $u . "&action=paid",
-                'failure_redirect' => $u . "&action=cancel",
-                'cancel_redirect' => $u . "&action=cancel",
-                'creator_agent' => 'Chip Woocommerce module: '
-                    . WC_CHIP_MODULE_VERSION,
-                'reference' => (string)$o->get_order_number(),
-                'platform' => 'woocommerce',
-                'due' => apply_filters( 'wc_chip_due_timestamp', $this->get_due_timestamp() ),
-                'purchase' => [
-                    "currency" => apply_filters( 'wc_chip_purchase_currency', $o->get_currency()),
-                    "language" => $this->get_language(),
-                    "notes" => $notes,
-                    "due_strict" => apply_filters( 'wc_chip_purchase_due_strict', true ),
-                    "products" => [
-                        [
-                            'name' => 'Order #' . $o_id . ' '. home_url(),
-                            'price' => apply_filters( 'wc_chip_purchase_products_price', $total, $o->get_currency()),
-                            'quantity' => 1,
-                        ],
-                    ],
-                ],
-                'brand_id' => $this->settings['brand-id'],
-                'client' => [
-                    'email' => $o->get_billing_email(),
-                    'phone' => $o->get_billing_phone(),
-                    'full_name' => $o->get_billing_first_name() . ' '
-                        . $o->get_billing_last_name(),
-                    'street_address' => $o->get_billing_address_1() . ' '
-                        . $o->get_billing_address_2(),
-                    'country' => $o->get_billing_country(),
-                    'city' => $o->get_billing_city(),
-                    'zip_code' => $o->get_shipping_postcode(),
-                    'shipping_street_address' => $o->get_shipping_address_1()
-                        . ' ' . $o->get_shipping_address_2(),
-                    'shipping_country' => $o->get_shipping_country(),
-                    'shipping_city' => $o->get_shipping_city(),
-                    'shipping_zip_code' => $o->get_shipping_postcode(),
-                ],
-            ];
-
-            $payment = $chip->create_payment($params);
-
-            if (!array_key_exists('id', $payment)) {
-                return array(
-                    'result' => 'failure',
-                );
-            }
-
-            // Store chip payment id for anti-spoofing
-            update_post_meta($o_id, 'chip_payment_id', $payment['id']);
-
-            WC()->session->set(
-              'chip_payment_id_' . $o_id,
-              $payment['id']
-            );
-
-            $this->log_order_info('got checkout url, redirecting', $o);
-            $u = $payment['checkout_url'];
-            if (array_key_exists("chip-payment-method", $_REQUEST)) {
-                $payment_method = sanitize_key($_REQUEST["chip-payment-method"]);
-
-                if (in_array($payment_method, ['fpx', 'fpx_b2b1', 'card'])){
-                    $u .= "?preferred=" . $payment_method;
-                }
-            }
-            return array(
-                'result' => 'success',
-                'redirect' => esc_url($u),
-            );
-        }
-
-        public function get_notes() {
-            $cart = WC()->cart->get_cart();
-            $nameString = '';
-            foreach ($cart as $key => $cart_item) {
-                $cart_product = $cart_item['data'];
-                $name = method_exists( $cart_product, 'get_name' ) === true ? $cart_product->get_name() : $cart_product->name;
-                if (array_keys($cart)[0] == $key) {
-                    $nameString = $name;
-                } else {
-                    $nameString = $nameString . ';' . $name;
-                }
-            }
-            return $nameString;
-        }
-
-        public function get_due_timestamp(){
-            return time() + (absint( get_option( 'woocommerce_hold_stock_minutes', '60' ) ) * 60);
-        }
-
-        public function can_refund_order( $order ) {
-            $has_api_creds = $this->get_option( 'enabled' ) && $this->get_option( 'secret-key' ) && $this->get_option( 'brand-id' );
-
-            $can_refund_order = $order && $order->get_transaction_id() && $has_api_creds;
-            return apply_filters( 'wc_chip_can_refund_order', $can_refund_order, $order );
-        }
-
-        public function process_refund( $order_id, $amount = null, $reason = '' ) {
-            $order = wc_get_order( $order_id );
-
-            if ( ! $this->can_refund_order( $order ) ) {
-                $this->log_order_info( 'Cannot refund order', $order );
-                return new WP_Error( 'error', __( 'Refund failed.', 'chip-for-woocommerce' ) );
-            }
-
-            $chip = $this->chip_api();
-            $params = [
-                'amount' => round($amount * 100),
-            ];
-
-            $result = $chip->refund_payment($order->get_transaction_id(), $params);
-
-            if ( is_wp_error( $result ) || isset($result['__all__']) ) {
-                $this->chip_api()
-                    ->log_error(var_export($result['__all__'], true) . ': ' . $order->get_order_number());
-
-                return new WP_Error( 'error', var_export($result['__all__'], true) );
-            }
-
-            $this->log_order_info( 'Refund Result: ' . wc_print_r( $result, true ), $order );
-
-            switch ( strtolower( $result['status'] ) ) {
-                case 'success':
-                    $refund_amount = round($result['payment']['amount'] / 100, 2) . $result['payment']['currency'];
-
-                    $order->add_order_note(
-                    /* translators: 1: Refund amount, 2: Refund ID */
-                        sprintf( __( 'Refunded %1$s - Refund ID: %2$s', 'chip-for-woocommerce' ), $refund_amount, $result['id'] )
-                    );
-                    return true;
-            }
-
-            return true;
-        }
-
-        public function unsupported_currency(){
-            $woocommerce_currency = get_woocommerce_currency();
-            $supported_currencies = apply_filters('wc_chip_supported_currencies', array('MYR'));
-            if (!in_array($woocommerce_currency, $supported_currencies, true)){
-                return true;
-            }
-            return false;
-        }
-    }
-
     // Add the Gateway to WooCommerce
     function wc_chip_add_gateway($methods)
     {
         $methods[] = 'WC_Chip_Gateway';
+
+        $chip_settings = get_option( 'woocommerce_chip_settings', null );
+        $chip_payments = get_option( 'chip_woocommerce_payment_method', null );
+
+        $class_name = array(
+          'fpx_b2b1' => WC_Chip_Fpxb2b1::class,
+          'card'     => WC_Chip_Card::class,
+        );
+
+        if ( $chip_settings && $chip_settings['hid'] == 'yes' && $chip_payments ) {
+          
+          foreach($chip_payments as $cp) {
+            if ($cp == 'fpx') {
+              continue;
+            }
+            $methods[] = $class_name[$cp];
+          }
+        }
         return $methods;
     }
 
