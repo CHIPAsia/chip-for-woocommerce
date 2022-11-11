@@ -26,6 +26,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     
     $this->method_desc        = $this->get_option( 'method_desc' );
     $this->method_description = $this->method_desc;
+    $this->public_key         = $this->get_option( 'public-key' );
     
     if ($this->title === '') {
       $this->title = __('Online Banking and Cards', 'chip-for-woocommerce');
@@ -39,6 +40,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     if ($this->method_description === '') {
       $this->method_description = __('Pay with Online Banking or Card', 'chip-for-woocommerce');
     };
+
     if ($this->unsupported_currency()) {
       $this->enabled = 'no';
     }
@@ -104,19 +106,20 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
     $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
     if (!$payment_id) {
-      $input = json_decode(file_get_contents('php://input'), true);
-      $payment_id = array_key_exists('id', $input) ? sanitize_key($input['id']) : '';
-    }
+      // since it doesn't get from session, this is callback
+      $content = file_get_contents('php://input');
 
-    // Compare payment_id with internally stored to avoid spoofing
-    $chip_payment_id = get_post_meta( $order_id, '_chip_payment_id', true );
-    if ($payment_id != $chip_payment_id) {
-      $message = 'Payment ID not match with stored values';
-      $this->log_order_info( $message, $order );
-      exit( $message );
-    }
+      if (openssl_verify( $content,  base64_decode($_SERVER['HTTP_X_SIGNATURE']), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1) {
+        $message = __('Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce');
+        $this->log_order_info( $message, $order );
+        exit( $message );
+      }
 
-    $payment = $this->chip_api()->get_payment($payment_id);
+      $payment    = json_decode($content, true);
+      $payment_id = array_key_exists('id', $payment) ? sanitize_key($payment['id']) : '';
+    } else {
+      $payment = $this->chip_api()->get_payment($payment_id);
+    }
 
     if ($payment['status'] == 'paid') {
       if (!$order->is_paid()) {
@@ -453,12 +456,23 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     return false;
   }
 
+  public function get_public_key() {
+    if ( empty($this->public_key) ){
+      $this->public_key = str_replace('\n',"\n",$this->chip_api()->public_key());
+      $this->update_option( 'public-key', $this->public_key );
+    }
+
+    return $this->public_key;
+  }
+
   public function process_admin_options() {
     parent::process_admin_options();
 
     if ($this->id != 'chip') {
       return;
     }
+
+    $this->update_option( 'public-key', null );
 
     $post_data = $this->get_post_data();
     $this->settings['brand-id']   = $post_data['woocommerce_chip_brand-id'];

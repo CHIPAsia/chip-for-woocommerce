@@ -75,6 +75,20 @@ class WC_Chip_API
         return $result;
     }
 
+    public function public_key()
+    {
+        $this->log_info("getting public key");
+
+        $result = $this->call('GET', "/public_key/");
+
+        $this->log_info(sprintf(
+            "public key: %s",
+            var_export($result, true)
+        ));
+
+        return $result;
+    }
+
     private function call($method, $route, $params = [])
     {
         $secret_key = $this->secret_key;
