@@ -354,9 +354,6 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
         'result' => 'failure',
       );
     }
-
-    // Store chip payment id for anti-spoofing
-    update_post_meta($order_id, '_chip_payment_id', $payment['id']);
     
     WC()->session->set(
       'chip_payment_id_' . $order_id,
