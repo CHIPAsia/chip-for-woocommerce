@@ -149,6 +149,12 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
         $order->add_order_note(
           sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment_id )
         );
+
+        if ( $payment['is_test'] === true ) {
+          $order->add_order_note(
+            sprintf( __( 'The payment made in test mode where doesn\'t involve real payment.', 'chip-for-woocommerce' ), $payment_id )
+          );
+        }
       }
       WC()->cart->empty_cart();
 
