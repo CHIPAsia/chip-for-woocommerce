@@ -92,20 +92,20 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     // (http://127.0.0.1/wordpress/wc-api/wc_gateway_chip) is broken
     // for some reason.
     // Old one still works.
-    $GLOBALS['wpdb']->get_results(
-      "SELECT GET_LOCK('chip_payment', 15);"
-    );
-
     $order_id = intval($_GET["id"]);
 
     $this->chip_api()->log_info('received callback for order id: ' . $order_id);
+
+    $GLOBALS['wpdb']->get_results(
+      "SELECT GET_LOCK('chip_payment_$order_id', 15);"
+    );
 
     $order = new WC_Order($order_id);
 
     $this->log_order_info('received success callback', $order);
 
     $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
-    if (!$payment_id) {
+    if ( !$payment_id && isset($_SERVER['HTTP_X_SIGNATURE']) ) {
       // since it doesn't get from session, this is callback
       $content = file_get_contents('php://input');
 
@@ -117,8 +117,10 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
       $payment    = json_decode($content, true);
       $payment_id = array_key_exists('id', $payment) ? sanitize_key($payment['id']) : '';
-    } else {
+    } else if ( $payment_id ) {
       $payment = $this->chip_api()->get_payment($payment_id);
+    } else {
+      exit( __('Unexpected response', 'chip-for-woocommerce') );
     }
 
     if ($payment['status'] == 'paid') {
@@ -152,7 +154,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
         if ( $payment['is_test'] === true ) {
           $order->add_order_note(
-            sprintf( __( 'The payment made in test mode where doesn\'t involve real payment.', 'chip-for-woocommerce' ), $payment_id )
+            sprintf( __( 'The payment made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment_id )
           );
         }
       }
@@ -170,7 +172,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     }
 
     $GLOBALS['wpdb']->get_results(
-      "SELECT RELEASE_LOCK('chip_payment');"
+      "SELECT RELEASE_LOCK('chip_payment_$order_id');"
     );
 
     header("Location: " . $this->get_return_url($order));
