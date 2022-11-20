@@ -28,8 +28,11 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 
 == Changelog ==
 
+= 1.2.2 - 2022-11-x =
+* Tweak - Enhance locking to lock per order id
+
 = 1.2.1 - 2022-11-12 =
-= Add - Support for success_callback verification using public key
+* Add - Support for success_callback verification using public key
 
 = 1.2.0 - 2022-11-8 =
 * Add - Add filters wc_chip_supports to allow refund to be disabled
