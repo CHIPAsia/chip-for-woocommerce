@@ -2,8 +2,8 @@
 Contributors: chipasia, wanzulnet
 Tags: chip, cash, card, coin
 Requires at least: 4.7
-Tested up to: 6.1
-Stable tag: 1.2.1
+Tested up to: 6.2
+Stable tag: 1.2.2
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -28,29 +28,30 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 
 == Changelog ==
 
-= 1.2.2 - 2022-11-x =
+= 1.2.2 - 2022-11-25 =
 * Tweak - Enhance locking to lock per order id
+* Fix   - Issue with error when payment with visa and mastercard
 
 = 1.2.1 - 2022-11-12 =
 * Add - Support for success_callback verification using public key
 
 = 1.2.0 - 2022-11-8 =
-* Add - Add filters wc_chip_supports to allow refund to be disabled
-* Add - Timezone support for due strict
-* Tweak - Revamp how preferred payment option being presented
-* Tweak - Hide custom field for chip_transaction_id as it is not meant to be edited
+* Add    - Add filters wc_chip_supports to allow refund to be disabled
+* Add    - Timezone support for due strict
+* Tweak  - Revamp how preferred payment option being presented
+* Tweak  - Hide custom field for chip_transaction_id as it is not meant to be edited
 * Update - New logo
 
 = 1.1.4 - 2022-11-7 =
-* Add - Check payment id to avoid spoofing
-* Add - Add hooks to allow checkout page to be customized
-* Add - CHIP Icon on checkout page
-* Tweak - Prevent unsupported currencies to be paid
+* Add    - Check payment id to avoid spoofing
+* Add    - Add hooks to allow checkout page to be customized
+* Add    - CHIP Icon on checkout page
+* Tweak  - Prevent unsupported currencies to be paid
 * Update - Standardize terminology for secret key
 * Update - Change FPX B2C to FPX
 
 = 1.1.3 - 2022-10-12 =
-* New - Intial Repack Release.
+* New   - Intial Repack Release.
 * Tweak - Added due strict to enforce payment timeout based on Hold Stock (Minutes)
 * Tweak - Removed country selection on checkout page.
 

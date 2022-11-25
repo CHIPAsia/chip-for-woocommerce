@@ -135,16 +135,22 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
         );
 
         if ($this->hid == 'yes' && $pg_id_mapper[$payment_gateway_id] != $chip_payment_method) {
+
           $class_id_mapper = array(
-            'billplz'  => WC_Chip_Gateway::class,
-            'fpx'      => WC_Chip_Gateway::class,
-            'fpx_b2b1' => WC_Chip_Fpxb2b1::class,
-            'card'     => WC_Chip_Card::class,
+            'fpx'        => WC_Chip_Gateway::class,
+            'fpx_b2b1'   => WC_Chip_Fpxb2b1::class,
+            'mastercard' => WC_Chip_Card::class,
+            'visa'       => WC_Chip_Card::class,
           );
 
           $this->log_order_info('order payment method updated', $order);
 
-          $order->set_payment_method(new $class_id_mapper[$chip_payment_method]);
+          $payment_method_class = WC_Chip_Gateway::class;
+          if ( isset( $class_id_mapper[$chip_payment_method] ) ) {
+            $payment_method_class = $class_id_mapper[$chip_payment_method];
+          }
+
+          $order->set_payment_method( new $payment_method_class );
         }
 
         $order->payment_complete($payment_id);
