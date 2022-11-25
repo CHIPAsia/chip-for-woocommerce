@@ -28,6 +28,9 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 
 == Changelog ==
 
+= 1.2.3 - 2022-x-x =
+* Tweak - Add maestro as card group
+
 = 1.2.2 - 2022-11-25 =
 * Tweak - Enhance locking to lock per order id
 * Fix   - Issue with error when payment with visa and mastercard

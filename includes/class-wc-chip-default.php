@@ -141,6 +141,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
             'fpx_b2b1'   => WC_Chip_Fpxb2b1::class,
             'mastercard' => WC_Chip_Card::class,
             'visa'       => WC_Chip_Card::class,
+            'maestro'    => WC_Chip_Card::class
           );
 
           $this->log_order_info('order payment method updated', $order);
