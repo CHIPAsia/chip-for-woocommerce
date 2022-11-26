@@ -1,3 +1,5 @@
+<img src="./assets/logo.svg" alt="drawing" width="50"/>
+
 # CHIP for WooCommerce
 [![WP compatibility](https://plugintests.com/plugins/wporg/chip-for-woocommerce/wp-badge.svg)](https://plugintests.com/plugins/wporg/chip-for-woocommerce/latest)
 [![PHP compatibility](https://plugintests.com/plugins/wporg/chip-for-woocommerce/php-badge.svg)](https://plugintests.com/plugins/wporg/chip-for-woocommerce/latest)
