@@ -1,4 +1,6 @@
 # CHIP for WooCommerce
+[![WP compatibility](https://plugintests.com/plugins/wporg/chip-for-woocommerce/wp-badge.svg)](https://plugintests.com/plugins/wporg/chip-for-woocommerce/latest)
+[![PHP compatibility](https://plugintests.com/plugins/wporg/chip-for-woocommerce/php-badge.svg)](https://plugintests.com/plugins/wporg/chip-for-woocommerce/latest)
 
 This module adds CHIP payment method option to your WordPress-based WooCommerce shop.
 
