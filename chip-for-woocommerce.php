@@ -36,6 +36,8 @@ function wc_chip_payment_gateway_init()
     require_once dirname( __FILE__ ) . '/includes/class-wc-chip-card.php';
     class ChipWCLogger
     {
+        private $logger;
+        
         public function __construct()
         {
             $this->logger = new WC_Logger();
