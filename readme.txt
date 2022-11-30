@@ -102,7 +102,7 @@ You can visit our [API documentation](https://developer.chip-in.asia/) for your 
 
 = What CHIP API services used in this plugin? =
 
-This plugin rely on CHIP AP ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
+This plugin rely on CHIP API ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
 
   - **/payment_methods/**
     - This is for getting available payment method specific to your account
