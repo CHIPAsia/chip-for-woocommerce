@@ -445,7 +445,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     }
 
     $this->log_order_info( 'Refund Result: ' . wc_print_r( $result, true ), $order );
-    switch ( strtolower( $result['status'] ) ) {
+    switch ( strtolower( $result['status'] ?? 'failed' ) ) {
       case 'success':
         $refund_amount = round($result['payment']['amount'] / 100, 2) . $result['payment']['currency'];
         $order->add_order_note(
