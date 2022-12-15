@@ -50,7 +50,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
       array($this, 'process_admin_options')
     );
 
-    // legacy for: WC_CHIP_OLD_URL_SCHEME
+    // TODO: delete in upcoming release
     add_action(
       'woocommerce_api_wc_gateway_' . $this->id,
       array($this, 'handle_callback')
@@ -327,8 +327,8 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
       WC()->api_request_url(get_class(new WC_Chip_Gateway))
     );
 
-    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) ) {
-      $url = home_url() . '/?wc-api=wc_gateway_chip&id=' . $order_id;
+    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
+      $url = home_url( '/?wc-api=WC_Chip_Gateway&id=' . $order_id );
     }
 
     $params = [
