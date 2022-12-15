@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip, cash, card, coin
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -28,8 +28,10 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 
 == Changelog ==
 
-= 1.2.3 - 2022-x-x =
-* Tweak - Add maestro as card group
+= 1.2.3 - 2022-12-15 =
+* Added   - Add maestro as card group
+* Added   - Constant WC_CHIP_OLD_URL_SCHEME for switch to old URL scheme
+* Changed - Redirect URL using new URL scheme
 
 = 1.2.2 - 2022-11-25 =
 * Tweak - Enhance locking to lock per order id
