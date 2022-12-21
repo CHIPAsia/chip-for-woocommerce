@@ -6,7 +6,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
   public $title        = "";
   public $description  = "";
   public $debug        = false;
-  public $method_title = 'CHIP. Cash, Card and Coin Integrated Platform';
+  public $method_title = 'CHIP';
   
   public $method_description = "";
   
