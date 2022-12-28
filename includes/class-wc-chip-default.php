@@ -359,24 +359,25 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
       'client' => [
         'email'                   => $order->get_billing_email(),
         'phone'                   => $order->get_billing_phone(),
-        'full_name'               => $order->get_billing_first_name() . ' '
-            . $order->get_billing_last_name(),
-        'street_address'          => $order->get_billing_address_1() . ' '
-            . $order->get_billing_address_2(),
+        'full_name'               => substr( $order->get_billing_first_name() . ' '
+            . $order->get_billing_last_name(), 0 , 128 ) ,
+        'street_address'          => substr( $order->get_billing_address_1() . ' '
+            . $order->get_billing_address_2(), 0, 128 ) ,
         'country'                 => $order->get_billing_country(),
-        'city'                    => $order->get_billing_city(),
+        'city'                    => substr( $order->get_billing_city(), 0, 128 ) ,
         'zip_code'                => $order->get_shipping_postcode(),
-        'shipping_street_address' => $order->get_shipping_address_1()
-            . ' ' . $order->get_shipping_address_2(),
+        'shipping_street_address' => substr( $order->get_shipping_address_1()
+            . ' ' . $order->get_shipping_address_2(), 0, 128 ) ,
         'shipping_country'        => $order->get_shipping_country(),
-        'shipping_city'           => $order->get_shipping_city(),
+        'shipping_city'           => substr( $order->get_shipping_city(), 0, 128 ) ,
         'shipping_zip_code'       => $order->get_shipping_postcode(),
       ],
     ];
 
-    $payment = $chip->create_payment($params);
+    $payment = $chip->create_payment( $params );
 
     if (!array_key_exists('id', $payment)) {
+      $this->log_order_info('create payment failed. message: ' . print_r( $payment, true ), $order);
       return array(
         'result' => 'failure',
       );
