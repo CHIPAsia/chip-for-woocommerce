@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.2.3
+Stable tag: 1.2.4
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -28,6 +28,9 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 
 == Changelog ==
 
+= 1.2.4 - 2022-12-28 =
+* Added - Add error logging on create purchase error
+
 = 1.2.3 - 2022-12-15 =
 * Added   - Add maestro as card group
 * Added   - Constant WC_CHIP_OLD_URL_SCHEME for switch to old URL scheme
@@ -46,19 +49,6 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * Tweak  - Revamp how preferred payment option being presented
 * Tweak  - Hide custom field for chip_transaction_id as it is not meant to be edited
 * Update - New logo
-
-= 1.1.4 - 2022-11-7 =
-* Add    - Check payment id to avoid spoofing
-* Add    - Add hooks to allow checkout page to be customized
-* Add    - CHIP Icon on checkout page
-* Tweak  - Prevent unsupported currencies to be paid
-* Update - Standardize terminology for secret key
-* Update - Change FPX B2C to FPX
-
-= 1.1.3 - 2022-10-12 =
-* New   - Intial Repack Release.
-* Tweak - Added due strict to enforce payment timeout based on Hold Stock (Minutes)
-* Tweak - Removed country selection on checkout page.
 
 == Installation ==
 
