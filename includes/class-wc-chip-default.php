@@ -312,12 +312,8 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
   public function process_payment($order_id)
   {
     $order = new WC_Order($order_id);
-    $total = round($order->calculate_totals() * 100);
+    $total = round( $order->get_total() * 100 );
     $notes = $this->get_notes();
-
-    if ($order->get_total_discount() > 0) {
-      $total -= round($order->get_total_discount() * 100);
-    }
 
     $chip = $this->chip_api();
     $url  = add_query_arg(
