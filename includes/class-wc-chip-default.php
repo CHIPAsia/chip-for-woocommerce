@@ -173,7 +173,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
       $this->log_order_info('payment processed', $order);
     } else {
       if (!$order->is_paid()) {
-        if ( !empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
+        if ( !empty($payment['transaction_data']['attempts']) && !empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
           if ( isset($payment_extra['payload']) && isset($payment_extra['payload']['fpx_debitAuthCode']) ) {
 
             $debit_auth_code = $payment_extra['payload']['fpx_debitAuthCode'][0];
