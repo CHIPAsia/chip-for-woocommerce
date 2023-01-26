@@ -26,12 +26,12 @@ class WC_Chip_API
         return $this->call('POST', '/purchases/?time=' . time(), $params);
     }
 
-    public function payment_methods($currency, $language)
+    public function payment_methods($currency, $language, $amount)
     {
         $this->log_info("fetching payment methods");
         return $this->call(
             'GET',
-            "/payment_methods/?brand_id={$this->brand_id}&currency={$currency}&language={$language}"
+            "/payment_methods/?brand_id={$this->brand_id}&currency={$currency}&language={$language}&amount={$amount}"
         );
     }
 

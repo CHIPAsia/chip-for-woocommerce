@@ -164,7 +164,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
         if ( $payment['is_test'] === true ) {
           $order->add_order_note(
-            sprintf( __( 'The payment made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment_id )
+            sprintf( __( 'The payment (%s) made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment_id )
           );
         }
       }
@@ -173,9 +173,21 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
       $this->log_order_info('payment processed', $order);
     } else {
       if (!$order->is_paid()) {
+        if ( !empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
+          if ( isset($payment_extra['payload']) && isset($payment_extra['payload']['fpx_debitAuthCode']) ) {
+
+            $debit_auth_code = $payment_extra['payload']['fpx_debitAuthCode'][0];
+            $fpx_txn_id = $payment_extra['payload']['fpx_fpxTxnId'][0];
+            $fpx_seller_order_no = $payment_extra['payload']['fpx_sellerOrderNo'][0];
+
+            $order->add_order_note(
+              sprintf( __( 'FPX Debit Auth Code: %1$s. FPX Transaction ID: %2$s. FPX Seller Order Number: %3$s.','chip-for-woocommerce' ), $debit_auth_code, $fpx_txn_id, $fpx_seller_order_no )
+            );
+          }
+        }
+
         $order->update_status(
-          'wc-failed',
-          __('ERROR: Payment was received, but order verification failed.')
+          'wc-failed'
         );
         $this->log_order_info('payment not successful', $order);
       }
@@ -501,7 +513,8 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
     $payment_methods = $this->chip_api()->payment_methods(
       get_woocommerce_currency(),
-      $this->get_language()
+      $this->get_language(),
+      200
     );
 
     if (is_null($payment_methods)) {
