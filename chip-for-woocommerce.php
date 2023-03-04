@@ -65,7 +65,7 @@ function wc_chip_payment_gateway_init()
         if ( $chip_settings && $chip_settings['hid'] == 'yes' && $chip_payments ) {
           
           foreach($chip_payments as $cp) {
-            if ($cp == 'fpx') {
+            if (in_array($cp, ['fpx', 'razer'])) {
               continue;
             }
             $methods[] = $class_name[$cp];

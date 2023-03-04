@@ -26,6 +26,23 @@ class WC_Chip_API
         return $this->call('POST', '/purchases/?time=' . time(), $params);
     }
 
+    public function create_client($params)
+    {
+      return $this->call('POST', "/clients/", $params);
+    }
+
+    // this is secret feature
+    public function get_client_by_email($email)
+    {
+      $email_encoded = urlencode($email);
+      return $this->call('GET', "/clients/?q={$email_encoded}");
+    }
+
+    public function charge_payment($payment_id, $params)
+    {
+      return $this->call('POST', "/purchases/{$payment_id}/charge/", $params);
+    }
+
     public function payment_methods($currency, $language, $amount)
     {
         $this->log_info("fetching payment methods");

@@ -19,7 +19,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
     $this->title    = $this->get_option( 'label' );
     $this->icon     = plugins_url("../assets/logo.png", __FILE__);
-    $this->supports = apply_filters( 'wc_chip_supports', ['products', 'refunds'] );
+    $this->supports = ['products', 'refunds'];
     $this->hid      = $this->get_option( 'hid' );
     $this->label    = $this->get_option( 'label' );
     $this->debug    = $this->get_option( 'label' );
@@ -69,7 +69,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
   }
 
-  private function chip_api()
+  protected function chip_api()
   {
     if (!$this->cached_api) {
       $this->cached_api = new WC_Chip_API(
@@ -128,35 +128,6 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
 
     if ($payment['status'] == 'paid') {
       if (!$order->is_paid()) {
-        $chip_payment_method = $payment['transaction_data']['payment_method'];
-        $payment_gateway_id = $order->get_payment_method(); //chip/chip-fpxb2b1/chip-card
-
-        $pg_id_mapper = array(
-          'chip'         => 'fpx',
-          'chip-fpxb2b1' => 'fpx_b2b1',
-          'chip-card'    => 'card'
-        );
-
-        if ($this->hid == 'yes' && $pg_id_mapper[$payment_gateway_id] != $chip_payment_method) {
-
-          $class_id_mapper = array(
-            'fpx'        => WC_Chip_Gateway::class,
-            'fpx_b2b1'   => WC_Chip_Fpxb2b1::class,
-            'mastercard' => WC_Chip_Card::class,
-            'visa'       => WC_Chip_Card::class,
-            'maestro'    => WC_Chip_Card::class
-          );
-
-          $this->log_order_info('order payment method updated', $order);
-
-          $payment_method_class = WC_Chip_Gateway::class;
-          if ( isset( $class_id_mapper[$chip_payment_method] ) ) {
-            $payment_method_class = $class_id_mapper[$chip_payment_method];
-          }
-
-          $order->set_payment_method( new $payment_method_class );
-        }
-
         $order->payment_complete($payment_id);
         $order->add_order_note(
           sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment_id )
@@ -171,6 +142,10 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
       WC()->cart->empty_cart();
 
       $this->log_order_info('payment processed', $order);
+
+      if ($payment['is_recurring_token']) {
+        $this->store_recurring_token($payment);
+      }
     } else {
       if (!$order->is_paid()) {
         if ( !empty($payment['transaction_data']['attempts']) && !empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
@@ -273,20 +248,16 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     }
   }
 
-  public function get_payment_method_redirect() {
-    if ($this->hid == 'no') {
-      return '';
-    }
-
+  public function get_payment_method_whitelist() {
     switch ($this->id) {
       case 'chip':
-        return 'fpx';
-      case 'chip-fpxb2b1':
-        return 'fpx_b2b1';
-      case 'chip-card':
-        return 'card';
+        return ['fpx'];
+      case 'chip_fpxb2b1':
+        return ['fpx_b2b1'];
+      case 'chip_card':
+        return ['visa', 'mastercard'];
       default:
-        return '';
+        return ['fpx'];
     }
   }
 
@@ -355,6 +326,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
         "language"   => $this->get_language(),
         "notes"      => $notes,
         "due_strict" => apply_filters( 'wc_chip_purchase_due_strict', true ),
+        // add substr to product to make sure it doesn't go beyond limit
         "products"   => [
           [
             'name'     => 'Order #' . $order_id . ' '. home_url(),
@@ -368,7 +340,7 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
         'email'                   => $order->get_billing_email(),
         'phone'                   => $order->get_billing_phone(),
         'full_name'               => substr( $order->get_billing_first_name() . ' '
-            . $order->get_billing_last_name(), 0 , 128 ) ,
+            . $order->get_billing_last_name(), 0 , 128 ),
         'street_address'          => substr( $order->get_billing_address_1() . ' '
             . $order->get_billing_address_2(), 0, 128 ) ,
         'country'                 => $order->get_billing_country(),
@@ -381,6 +353,38 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
         'shipping_zip_code'       => $order->get_shipping_postcode(),
       ],
     ];
+
+    if ( is_user_logged_in() ) {
+      $client_with_params = $params['client'];
+      unset($params['client']);
+
+      $get_client = $chip->get_client_by_email(WC()->customer->get_email());
+
+      if (array_key_exists('__all__', $get_client)) {
+        return array(
+          'result' => 'failure',
+        );
+      }
+      
+      if (is_array($get_client['results']) AND !empty($get_client['results'])) {
+        $client = $get_client['results'][0];
+      } else {
+        $client = $chip->create_client($client_with_params);
+      }
+
+      $params['client_id'] = $client['id'];  
+    }
+
+    if ($this->hid == 'yes') {
+      $params['payment_method_whitelist'] = $this->get_payment_method_whitelist();
+    }
+
+    // TODO: check if merchant do have recurring payment method
+    if ($this->id == 'chip_card') {
+      if (isset($_POST['wc-chip_card-new-payment-method']) AND $_POST['wc-chip_card-new-payment-method'] == 'true') {
+        $params['force_recurring'] = true;
+      }
+    }
 
     $payment = $chip->create_payment( $params );
 
@@ -397,16 +401,23 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     );
     
     $this->log_order_info('got checkout url, redirecting', $order);
-    
-    $checkout_url = $payment['checkout_url'];      
-    
-    if ($this->hid == 'yes') {
-      $checkout_url .= '?preferred=' . $this->get_payment_method_redirect();
+
+    if ($this->id == 'chip_card') {
+      if ( isset( $_POST['wc-chip_card-payment-token'] ) && 'new' !== $_POST['wc-chip_card-payment-token'] ) {
+        $token_id = wc_clean( $_POST['wc-chip_card-payment-token'] );
+        $token    = WC_Payment_Tokens::get( $token_id );
+
+        if ( $token->get_user_id() !== get_current_user_id() ) {
+          return array('result' => 'failure');
+        }
+
+        $chip->charge_payment($payment['id'], array('recurring_token' => $token->get_token()));
+      }
     }
     
     return array(
         'result' => 'success',
-        'redirect' => esc_url($checkout_url),
+        'redirect' => esc_url($payment['checkout_url']),
     );
   }
 
@@ -554,5 +565,9 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
     }
 
     update_option('chip_woocommerce_payment_method', $payment_method_keys);
+  }
+
+  public function store_recurring_token($payment) {
+    return true;
   }
 }

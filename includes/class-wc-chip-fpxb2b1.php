@@ -1,7 +1,7 @@
 <?php
 
 class WC_Chip_Fpxb2b1 extends WC_Chip_Gateway {
-  public $id           = "chip-fpxb2b1";
+  public $id           = "chip_fpxb2b1";
   public $method_title = "CHIP. Accept Payment with Online Banking (Business)";
 
   public function __construct()
