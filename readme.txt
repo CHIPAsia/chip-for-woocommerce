@@ -3,12 +3,12 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.2.6
+Stable tag: 1.3.0
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-CHIP - Better Payment & Business Solutions. Securely accept payment with CHIP for WooCommerce.
+CHIP - Better Payment & Business Solutions. Securely accept one-time and subscription payment with CHIP for WooCommerce.
 
 == Description ==
 
@@ -16,7 +16,7 @@ This is an official CHIP plugin for WooCommerce.
 
 CHIP is a payment and business solutions platform that allow you to securely sell your products and get paid via multiple local and international payment methods.
 
-This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://developer.chip-in.asia/api#online_purchases_custom_payment_flow_direct_post).
+This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://developer.chip-in.asia).
 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
@@ -27,6 +27,24 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.3.0 - 2023-3-10 =
+* Added   - Add support for WooCommerce Subscription
+* Added   - Hooks token deletion with CHIP
+* Added   - CHIP payment can be cloned via PHP-constant (wp-config.php)
+* Added   - Support for whitelisting payment method
+* Added   - Purchase due strict is now configurable
+* Added   - Due strict timing can be configured independently
+* Added   - Registered users are now linked with CHIP clients
+* Added   - Option to update client information on checkout
+* Added   - Option to disable success_callback or success_redirect for troubleshooting
+* Added   - Option to force https:// to prevent redirection on success_callback
+* Added   - More action hooks and filters for better customization
+* Added   - Cartflow support
+* Added   - WPfunnels support
+* Changed - Timezone support is now configurable within plugin option
+* Removed - Enable Payment method selection is now removed
+* Fixed   - Warnings thrown when activating e-wallet payment option
 
 = 1.2.6 - 2023-1-26 =
 * Added - Add FPX extra information on failure
@@ -42,20 +60,6 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * Added   - Add maestro as card group
 * Added   - Constant WC_CHIP_OLD_URL_SCHEME for switch to old URL scheme
 * Changed - Redirect URL using new URL scheme
-
-= 1.2.2 - 2022-11-25 =
-* Tweak - Enhance locking to lock per order id
-* Fix   - Issue with error when payment with visa and mastercard
-
-= 1.2.1 - 2022-11-12 =
-* Add - Support for success_callback verification using public key
-
-= 1.2.0 - 2022-11-8 =
-* Add    - Add filters wc_chip_supports to allow refund to be disabled
-* Add    - Timezone support for due strict
-* Tweak  - Revamp how preferred payment option being presented
-* Tweak  - Hide custom field for chip_transaction_id as it is not meant to be edited
-* Update - New logo
 
 == Installation ==
 
@@ -81,9 +85,6 @@ WordPress codex contains [instructions on how to do this here](http://codex.word
 = Updating =
 
 Automatic updates should work like a charm; as always though, ensure you backup your site just in case.
-
-If on the off-chance you do encounter issues with the shop/category pages after an update you simply need to flush the permalinks by going to WordPress > Settings > Permalinks and hitting 'save'. That should return things to normal.
-
 
 == Frequently Asked Questions ==
 
@@ -111,6 +112,12 @@ This plugin rely on CHIP API ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
     - This is for getting payment status from CHIP
   - **/purchases/<id\>/refund**
     - This is for refunding payment
+
+= How to clone CHIP for WooCommerce? =
+
+Create new class and extend WC_Gateway_Chip or WC_Gateway_Chip_Subscription with own class.
+
+Then, hook it with filter woocommerce_payment_gateways and pass the method own class name to it.
 
 == Links ==
 
