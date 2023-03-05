@@ -436,7 +436,13 @@ class WC_Chip_Gateway extends WC_Payment_Gateway
   }
 
   public function get_due_timestamp(){
-    return time() + (absint( get_option( 'woocommerce_hold_stock_minutes', '60' ) ) * 60);
+    $hold_stock_minutes = get_option( 'woocommerce_hold_stock_minutes', '60' );
+
+    if ( empty( $hold_stock_minutes ) ) {
+      $hold_stock_minutes = 60;
+    }
+    
+    return time() + ( absint( $hold_stock_minutes ) * 60);
   }
 
   public function can_refund_order( $order ) {
