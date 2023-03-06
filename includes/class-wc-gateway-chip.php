@@ -135,7 +135,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
     add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
     add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $this->id, array( $this, 'change_failing_payment_method' ), 10, 2 );
-    add_action( 'wc_chip_check_order_status_' . $this->id, 'check_order_status', 10, 3);
 
     // TODO: Delete in future release
     if ( $this->id == 'wc_gateway_chip' ) {
@@ -208,7 +207,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       exit;
     }
 
-    if ( $this->store_recurring_token( $payment ) ) {
+    if ( self::store_recurring_token( $payment ) ) {
       wc_add_notice( __( 'Payment method successfully added.', 'chip-for-woocommerce' ) );
     } else {
       wc_add_notice( __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), 'error' );
@@ -223,7 +222,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->api()->log_info( 'received callback for order id: ' . $order_id );
 
-    $this->get_lock( $order_id );
+    self::get_lock( $order_id );
 
     $order = new WC_Order( $order_id );
 
@@ -249,7 +248,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( $payment['status'] == 'paid' ) {
       if ( !$order->is_paid() ) {
-        $this->payment_complete( $order, $payment );
+        self::payment_complete( $order, $payment );
       }
       WC()->cart->empty_cart();
 
@@ -275,7 +274,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    $this->release_lock( $order_id );
+    self::release_lock( $order_id );
 
     wp_safe_redirect( $this->get_return_url( $order ) );
     exit;
@@ -700,13 +699,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         return array( 'result' => 'failure' );
       }
 
-      $this->add_payment_token( $order->get_id(), $token );
+      self::add_payment_token( $order->get_id(), $token );
 
-      $payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
+      $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
+
+      $payment = $chip->get_payment( $payment['id'] );
     }
 
     if ( $payment['status'] != 'paid' ) {
-      $this->schedule_requery( $payment['id'], $order_id );
+      self::schedule_requery( $payment['id'], $order_id );
     }
     
     return array(
@@ -854,7 +855,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    $this->get_lock( $renewal_order_id );
+    self::get_lock( $renewal_order_id );
 
     $charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
@@ -862,7 +863,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment, true ) ) );
     } elseif ( $charge_payment['status'] == 'paid' ) {
-      $this->payment_complete( $renewal_order, $payment );
+      self::payment_complete( $renewal_order, $payment );
       $renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
     } elseif ( $charge_payment['status'] == 'pending_charge' ) {
       $renewal_order->update_status( 'on-hold' );
@@ -871,25 +872,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
     }
 
-    $this->release_lock( $renewal_order_id );
+    self::release_lock( $renewal_order_id );
   }
 
-  public function get_lock( $order_id ) {
+  public static function get_lock( $order_id ) {
     $GLOBALS['wpdb']->get_results( "SELECT GET_LOCK('chip_payment_$order_id', 15);" );
   }
 
-  public function release_lock( $order_id ) {
+  public static function release_lock( $order_id ) {
     $GLOBALS['wpdb']->get_results( "SELECT RELEASE_LOCK('chip_payment_$order_id');" );
   }
 
-  public function store_recurring_token( $payment = array(), $user_id = '' ) {
+  public static function store_recurring_token( $payment = array(), $user_id = '' ) {
     if ( empty ( $user_id ) ) {
       $user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
     }
 
     $token = new WC_Payment_Token_CC();
     $token->set_token( $payment['id'] );
-    $token->set_gateway_id( $this->id );
+    $token->set_gateway_id( strtolower( static::class ) );
     $token->set_card_type( $payment['transaction_data']['extra']['card_brand'] );
     $token->set_last4( substr( $payment['transaction_data']['extra']['masked_pan'], -4 ) );
     $token->set_expiry_month( $payment['transaction_data']['extra']['expiry_month'] );
@@ -992,7 +993,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $chip->delete_token( $token->get_token() );
   }
 
-  public function add_payment_token( $order_id, $token ) {
+  public static function add_payment_token( $order_id, $token ) {
     $data_store = WC_Data_Store::load( 'order' );
 
     $order = new WC_Order( $order_id );
@@ -1028,11 +1029,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $subscription->add_payment_token( $token );
   }
 
-  public function payment_complete( $order, $payment ) {
+  public static function payment_complete( $order, $payment ) {
     if ( $payment['is_recurring_token'] ) {
-      $token = $this->store_recurring_token( $payment, $order->get_user_id() );
+      $token = self::store_recurring_token( $payment, $order->get_user_id() );
 
-      $this->add_payment_token( $order->get_id(), $token );
+      self::add_payment_token( $order->get_id(), $token );
     }
 
     $order->payment_complete( $payment['id'] );
@@ -1043,31 +1044,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
   }
 
-  public function schedule_requery( $purchase_id, $order_id, $attempt = 1 ) {
-    wp_schedule_single_event( time() + $attempt * HOUR_IN_SECONDS , 'wc_chip_check_order_status_' . $this->id, array( $purchase_id, $order_id, $attempt ) );
-  }
-
-  public function check_order_status( $purchase_id, $order_id, $attempt ) {
-    $this->get_lock( $order_id );
-    $order = new WC_Order( $order_id );
-    
-    if ( $order->is_paid() ) {
-      $this->release_lock( $order_id );
-      return;
-    }
-
-    $chip = $this->api();
-
-    $payment = $chip->get_payment( $purchase_id );
-
-    if ( $payment['status'] == 'paid' ){
-      $this->payment_complete( $order, $payment );
-      $this->release_lock( $order_id );
-      return;
-    }
-
-    if ( $attempt <= 8 ) {
-      $this->schedule_requery( $purchase_id, $order_id, ++$attempt );
-    }
+  public static function schedule_requery( $purchase_id, $order_id, $attempt = 1 ) {
+    wp_schedule_single_event( time() + $attempt * HOUR_IN_SECONDS , 'wc_chip_check_order_status', array( $purchase_id, $order_id, static::class, $attempt ) );
   }
 }

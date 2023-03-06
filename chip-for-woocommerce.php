@@ -45,6 +45,7 @@ class Chip_Woocommerce {
     $this->define();
     $this->includes();
     $this->add_filters();
+    $this->add_actions();
   }
 
   public function define() {
@@ -68,6 +69,38 @@ class Chip_Woocommerce {
   public function add_filters() {
     add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateways' ) );
     add_filter( 'plugin_action_links_' . WC_CHIP_BASENAME, array( $this, 'setting_link' ) );
+  }
+
+  public function add_actions() {
+    add_action( 'wc_chip_check_order_status', array( $this, 'check_order_status' ), 10, 4);
+  }
+
+  public function check_order_status( $purchase_id, $order_id, $gateway_class, $attempt ) {
+
+    $gateway_class::get_lock( $order_id );
+    $gateway_id = strtolower( $gateway_class );
+    $order      = new WC_Order( $order_id );
+
+    if ( $order->is_paid() ) {
+      $gateway_class::release_lock( $order_id );
+      return;
+    }
+
+    $gateway = get_option( "woocommerce_{$gateway_id}_settings" );
+
+    $chip = new Chip_Woocommerce_API( $gateway['secret_key'], '', new Chip_Woocommerce_Logger(), $gateway['debug'] );
+
+    $payment = $chip->get_payment( $purchase_id );
+
+    if ( $payment['status'] == 'paid' ){
+      $gateway_class::payment_complete( $order, $payment );
+      $gateway_class::release_lock( $order_id );
+      return;
+    }
+
+    if ( $attempt < 8 ) {
+      $gateway_class::schedule_requery( $purchase_id, $order_id, ++$attempt );
+    }
   }
 
   public function add_gateways( $methods ) {
