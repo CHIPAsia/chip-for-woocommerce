@@ -207,11 +207,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       exit;
     }
 
-    if ( self::store_recurring_token( $payment ) ) {
+    self::get_lock( $payment_id );
+    $user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
+    $chip_token_ids = get_user_meta( $user_id, '_chip_client_token_ids' );
+
+    $store_recurring_token_success = true;
+
+    if ( !in_array( $payment_id, $chip_token_ids ) ) {
+      $chip_token_ids[] = $payment_id;
+      update_user_meta( $user_id, '_chip_client_token_ids', $chip_token_ids );
+      $store_recurring_token_success = self::store_recurring_token( $payment, $user_id );
+    }
+
+    if ( $store_recurring_token_success ) {
       wc_add_notice( __( 'Payment method successfully added.', 'chip-for-woocommerce' ) );
     } else {
       wc_add_notice( __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), 'error' );
     }
+
+    self::release_lock( $payment_id );
 
     wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
     exit;
@@ -988,6 +1002,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( $token->get_gateway_id() != $this->id ) {
       return;
     }
+
+    $user_id = $token->get_user_id();
+
+    $chip_token_ids = get_user_meta( $user_id, '_chip_client_token_ids' );
+
+    unset($chip_token_ids[$token->get_token()]);
+
+    update_user_meta( $user_id, '_chip_client_token_ids', $chip_token_ids );
 
     $chip = $this->api();
     $chip->delete_token( $token->get_token() );
