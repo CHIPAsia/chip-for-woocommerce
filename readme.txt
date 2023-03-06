@@ -30,8 +30,9 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 
 = 1.3.0 - 2023-3-10 =
 * Added   - Add support for WooCommerce Subscription
-* Added   - Hooks token deletion with CHIP
-* Added   - CHIP payment can be cloned via PHP-constant (wp-config.php)
+* Added   - Hook token deletion with CHIP
+* Added   - WC_Gateway_Chip can be extended for cloning
+* Added   - Now CHIP payment have 4 payment method by default
 * Added   - Support for whitelisting payment method
 * Added   - Purchase due strict is now configurable
 * Added   - Due strict timing can be configured independently
@@ -39,12 +40,11 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * Added   - Option to update client information on checkout
 * Added   - Option to disable success_callback or success_redirect for troubleshooting
 * Added   - Option to force https:// to prevent redirection on success_callback
-* Added   - More action hooks and filters for better customization
+* Added   - Option to disable tokenization
+* Added   - Option to disable payment method cloning via PHP constant
 * Added   - Cartflow support
-* Added   - WPfunnels support
-* Changed - Timezone support is now configurable within plugin option
+* Changed - Timezone is now configurable within plugin option
 * Removed - Enable Payment method selection is now removed
-* Fixed   - Warnings thrown when activating e-wallet payment option
 
 = 1.2.6 - 2023-1-26 =
 * Added - Add FPX extra information on failure

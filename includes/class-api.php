@@ -151,9 +151,10 @@ class Chip_Woocommerce_API
 
     $wp_request = wp_remote_request( $url, array(
       'method'    => $method,
-      'sslverify' => apply_filters( 'wc_chip_sslverify', true ),
+      'sslverify' => !defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
       'headers'   => $headers,
       'body'      => $params,
+      'timeout'   => 10, // required for charge card
     ));
 
     $response = wp_remote_retrieve_body( $wp_request );

@@ -59,7 +59,10 @@ class Chip_Woocommerce {
     include $includes_dir . 'class-api.php';
     include $includes_dir . 'class-logger.php';
     include $includes_dir . 'class-wc-gateway-chip.php';
-    // include $includes_dir . 'class-wc-gateway-chip-subscription.php';
+
+    if ( !defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
+      include $includes_dir . 'clone-wc-gateway-chip.php';
+    }
   }
 
   public function add_filters() {
@@ -70,7 +73,7 @@ class Chip_Woocommerce {
   public function add_gateways( $methods ) {
 
     $methods[] = WC_Gateway_Chip::class;
-    
+
     return $methods;
   }
 
@@ -78,8 +81,11 @@ class Chip_Woocommerce {
     $url_params = array( 
       'page'    => 'wc-settings', 
       'tab'     => 'checkout',
-      'section' => 'chip'
     );
+
+    if ( defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
+      $url_params['section'] = 'wc_gateway_chip';
+    }
 
     $url = add_query_arg( $url_params, admin_url( 'admin.php' ) );
 
