@@ -134,6 +134,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'auto_charge' ), 10, 2);
     add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
     add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
+    add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $this->id, array( $this, 'change_failing_payment_method' ), 10, 2 );
 
     // TODO: Delete in future release
     if ( $this->id == 'wc_gateway_chip' ) {
@@ -247,6 +248,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( $payment['status'] == 'paid' ) {
       if ( !$order->is_paid() ) {
+        if ( $payment['is_recurring_token'] ) {
+          $token = $this->store_recurring_token( $payment, $order->get_user_id() );
+
+          $this->add_payment_token( $order->get_id(), $token );
+        }
+
         $order->payment_complete( $payment_id );
         $order->add_order_note(
           sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment_id )
@@ -261,12 +268,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       WC()->cart->empty_cart();
 
       $this->log_order_info( 'payment processed', $order );
-
-      if ( $payment['is_recurring_token'] ) {
-        $token = $this->store_recurring_token( $payment, $order->get_user_id() );
-
-        $this->add_payment_token( $order->get_id(), $token );
-      }
     } else {
       if ( !$order->is_paid() ) {
         if ( !empty( $payment['transaction_data']['attempts'] ) AND !empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
@@ -806,9 +807,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     return true;
   }
 
-  public function auto_charge($total_amount, $renewal_order) {
+  public function auto_charge( $total_amount, $renewal_order ) {
     $renewal_order_id = $renewal_order->get_id();
     if ( empty( $tokens = WC_Payment_Tokens::get_order_tokens( $renewal_order_id ) ) ) {
+      $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( __( 'No card token available to charge.', 'chip-for-woocommerce' ) );
       return;
     }
@@ -832,7 +834,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'currency'   => $renewal_order->get_currency(),
         'language'   => $this->get_language(),
         'due_strict' => $this->due_strict == 'yes',
-        'total_override' => round( $renewal_order->get_total() * 100 ),
+        'total_override' => round( $total_amount * 100 ),
         'products'   => [],
       ],
     ];
@@ -849,7 +851,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $chip    = $this->api();
     $payment = $chip->create_payment( $params );
 
-    // TODO: if it is second attempt, try to use the next card token if available or reset
     $token = new WC_Payment_Token_CC;
     foreach ( $tokens as $key => $t ) {
       if ( $t->get_gateway_id() == $this->id ) {
@@ -862,14 +863,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
-    if ( $charge_payment['status'] == 'paid' ) {
+    if ( array_key_exists( '__all__', $charge_payment ) ){
+      $renewal_order->update_status( 'failed' );
+      $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment, true ) ) );
+    } elseif ( $charge_payment['status'] == 'paid' ) {
       $renewal_order->payment_complete( $payment['id'] );
       $renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
     } elseif ( $charge_payment['status'] == 'pending_charge' ) {
       $renewal_order->update_status( 'on-hold' );
     } else {
-      // store to order meta for the retry attempt counts if needed
-      // check woocommerce subscription hooks if it does have failure count attempt
+      $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
     }
 
@@ -990,20 +993,38 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function add_payment_token( $order_id, $token ) {
+    $data_store = WC_Data_Store::load( 'order' );
+
+    $order = new WC_Order( $order_id );
+    $data_store->update_payment_token_ids( $order, array() );
+    $order->add_payment_token( $token );
+
     if ( class_exists( 'WC_Subscriptions' ) ) {
       $subscriptions = wcs_get_subscriptions_for_order( $order_id );
 
       foreach ( $subscriptions as $subscription ) {
-        $token_ids = $subscription->get_payment_tokens();
+        $data_store->update_payment_token_ids( $subscription, array() );
 
-        if ( !in_array( $token->get_id(), $token_ids ) ) {
-          $subscription->add_payment_token( $token );
-        }
+        $subscription->add_payment_token( $token );
       }
+    }
+  }
 
-      return true;
+  public function change_failing_payment_method( $subscription, $renewal_order ) {
+    $token_ids = $renewal_order->get_payment_tokens();
+
+    if ( empty( $token_ids ) ) {
+      return;
     }
 
-    return false;
+    $token = WC_Payment_Tokens::get( current( $token_ids ) );
+
+    if ( empty( $token ) ) {
+      return;
+    }
+
+    $data_store = WC_Data_Store::load( 'order' );
+    $data_store->update_payment_token_ids( $subscription, array() );
+    $subscription->add_payment_token( $token );
   }
 }
