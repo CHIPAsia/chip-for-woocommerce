@@ -42,7 +42,6 @@ This plugin will enable your WooCommerce site to be integrated with CHIP as per 
 * Added   - Option to force https:// to prevent redirection on success_callback
 * Added   - Option to disable tokenization
 * Added   - Option to disable payment method cloning via PHP constant
-* Added   - Button to reqeuery payment status
 * Added   - Automatic requery payment status
 * Changed - Timezone is now configurable within plugin option
 * Removed - Enable Payment method selection is now removed
