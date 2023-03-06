@@ -597,7 +597,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       ],
       'brand_id' => $this->brand_id,
       'client' => [
-        'email'                   => wp_get_current_user()->user_email,
+        'email'                   => $order->get_billing_email(),
         'phone'                   => substr( $order->get_billing_phone(), 0, 32 ),
         'full_name'               => substr( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(), 0 , 128 ),
         'street_address'          => substr( $order->get_billing_address_1() . ' ' . $order->get_billing_address_2(), 0, 128 ) ,
@@ -623,6 +623,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $chip = $this->api();
 
     if ( is_user_logged_in() ) {
+      $params['client']['email'] = wp_get_current_user()->user_email;
       $client_with_params = $params['client'];
       $old_client_records = true;
       unset( $params['client'] );
