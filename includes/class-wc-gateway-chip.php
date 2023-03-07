@@ -649,6 +649,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     
     $this->log_order_info('got checkout url, redirecting', $order);
 
+    $payment_requery_status = 'due';
+
     if ( isset( $_POST["wc-{$this->id}-payment-token"] ) AND 'new' !== $_POST["wc-{$this->id}-payment-token"] ) {
       $token_id = wc_clean( $_POST["wc-{$this->id}-payment-token"] );
       $token    = WC_Payment_Tokens::get( $token_id );
@@ -661,10 +663,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
       $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
-      $payment = $chip->get_payment( $payment['id'] );
+      $get_payment = $chip->get_payment( $payment['id'] );
+      $payment_requery_status = $get_payment['status'];
     }
 
-    if ( $payment['status'] != 'paid' ) {
+    if ( $payment_requery_status['status'] != 'paid' ) {
       static::schedule_requery( $payment['id'], $order_id );
     }
     
