@@ -34,11 +34,11 @@ class Chip_Woocommerce {
   private static $_instance;
 
   public static function get_instance() {
-    if ( self::$_instance == null ) {
-      self::$_instance = new self();
+    if ( static::$_instance == null ) {
+      static::$_instance = new static();
     }
 
-    return self::$_instance;
+    return static::$_instance;
   }
 
   public function __construct() {
@@ -138,7 +138,7 @@ class Chip_Woocommerce {
       return;
     }
   
-    self::get_instance();
+    static::get_instance();
   }
 }
 
