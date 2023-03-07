@@ -207,7 +207,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       exit;
     }
 
-    self::get_lock( $payment_id );
+    static::get_lock( $payment_id );
     $user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
     $chip_token_ids = get_user_meta( $user_id, '_chip_client_token_ids' );
 
@@ -216,7 +216,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( !in_array( $payment_id, $chip_token_ids ) ) {
       $chip_token_ids[] = $payment_id;
       update_user_meta( $user_id, '_chip_client_token_ids', $chip_token_ids );
-      $store_recurring_token_success = self::store_recurring_token( $payment, $user_id );
+      $store_recurring_token_success = static::store_recurring_token( $payment, $user_id );
     }
 
     if ( $store_recurring_token_success ) {
@@ -225,7 +225,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       wc_add_notice( __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), 'error' );
     }
 
-    self::release_lock( $payment_id );
+    static::release_lock( $payment_id );
 
     wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
     exit;
@@ -236,7 +236,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->api()->log_info( 'received callback for order id: ' . $order_id );
 
-    self::get_lock( $order_id );
+    static::get_lock( $order_id );
 
     $order = new WC_Order( $order_id );
 
@@ -262,7 +262,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( $payment['status'] == 'paid' ) {
       if ( !$order->is_paid() ) {
-        self::payment_complete( $order, $payment );
+        static::payment_complete( $order, $payment );
       }
       WC()->cart->empty_cart();
 
@@ -288,7 +288,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    self::release_lock( $order_id );
+    static::release_lock( $order_id );
 
     wp_safe_redirect( $this->get_return_url( $order ) );
     exit;
@@ -713,7 +713,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         return array( 'result' => 'failure' );
       }
 
-      self::add_payment_token( $order->get_id(), $token );
+      static::add_payment_token( $order->get_id(), $token );
 
       $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
@@ -721,7 +721,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     if ( $payment['status'] != 'paid' ) {
-      self::schedule_requery( $payment['id'], $order_id );
+      static::schedule_requery( $payment['id'], $order_id );
     }
     
     return array(
@@ -869,7 +869,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    self::get_lock( $renewal_order_id );
+    static::get_lock( $renewal_order_id );
 
     $charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
@@ -877,7 +877,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment, true ) ) );
     } elseif ( $charge_payment['status'] == 'paid' ) {
-      self::payment_complete( $renewal_order, $payment );
+      static::payment_complete( $renewal_order, $payment );
       $renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
     } elseif ( $charge_payment['status'] == 'pending_charge' ) {
       $renewal_order->update_status( 'on-hold' );
@@ -886,7 +886,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
     }
 
-    self::release_lock( $renewal_order_id );
+    static::release_lock( $renewal_order_id );
   }
 
   public static function get_lock( $order_id ) {
@@ -1053,9 +1053,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public static function payment_complete( $order, $payment ) {
     if ( $payment['is_recurring_token'] ) {
-      $token = self::store_recurring_token( $payment, $order->get_user_id() );
+      $token = static::store_recurring_token( $payment, $order->get_user_id() );
 
-      self::add_payment_token( $order->get_id(), $token );
+      static::add_payment_token( $order->get_id(), $token );
     }
 
     $order->payment_complete( $payment['id'] );
