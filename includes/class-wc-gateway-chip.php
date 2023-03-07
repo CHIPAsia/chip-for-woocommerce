@@ -17,6 +17,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $disable_red;
   protected $disable_cal;
   protected $public_key;
+  protected $arecuring_p;
+  protected $a_payment_m;
   protected $debug;
   
   protected $cached_api;
@@ -47,6 +49,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->disable_cal = $this->get_option( 'disable_callback' );
     $this->debug       = $this->get_option( 'debug' );
     $this->public_key  = $this->get_option( 'public_key' );
+    $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
+    $this->a_payment_m = $this->get_option( 'available_payment_method' );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -294,30 +298,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function init_form_fields() {
-    $should_call_chip = true;
-    $available_payment_method = array();
-    $available_recurring_payment_method = array();
-
-    // TODO: possibly to use transient to cache the request
-
-    foreach ( array( 'page' => 'wc-settings', 'tab' => 'checkout', 'section' => $this->id ) as $key => $value ) {
-      if ( !isset( $_GET[$key] ) ) {
-        $should_call_chip = false;
-        break;
-      }
-
-
-      if ( $_GET[$key] != $value ) {
-        $should_call_chip = false;
-        break;
-      }
-    }
-
-    if ( $should_call_chip ) {
-      $available_payment_method = $this->get_available_payment_method();
-      $available_recurring_payment_method = $this->get_available_recurring_payment_method();
-    }
-
     $this->form_fields['enabled'] = array(
       'title'   => __( 'Enable/Disable', 'chip-for-woocommerce' ),
       'label'   => sprintf( '%1$s %2$s', __( 'Enable', 'chip-for-woocommerce' ), $this->method_title ),
@@ -445,7 +425,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'type'        => 'checkbox',
       'description' =>__( 'Tick to force tokenization if possible.', 'chip-for-woocommerce' ),
       'default'     => 'no',
-      'disabled'     => empty( $available_recurring_payment_method )
+      'disabled'     => empty( $this->arecuring_p )
     );
 
     $this->form_fields['payment_method_whitelist'] = array(
@@ -453,8 +433,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'type'        => 'multiselect',
       'class'       => 'wc-enhanced-select',
       'description' => __( 'Choose payment method to enforce payment method whitelisting if possible.', 'chip-for-woocommerce' ),
-      'options'     => $available_payment_method,
-      'disabled'    => empty( $available_payment_method )
+      'options'     => $this->a_payment_m,
+      'disabled'    => empty( $this->a_payment_m )
     );
 
     $this->form_fields['public_key'] = array(
@@ -501,41 +481,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
     
     return $formatted_time_zones;
-  }
-
-  private function get_available_recurring_payment_method() {
-    $available_payment_method = array();
-
-    $chip = $this->api();
-    $result = $chip->payment_recurring_methods( get_woocommerce_currency(), $this->get_language(), 200 );
-
-    if ( array_key_exists( 'available_payment_methods', $result ) AND !empty( $result['available_payment_methods'] ) ) {
-      foreach( $result['available_payment_methods'] as $apm ) {
-        $available_payment_method[$apm] = ucfirst( $apm );
-      }
-    }
-
-    return $available_payment_method;
-  }
-
-  private function get_available_payment_method() {
-
-    if ( !$this->cached_payment_method ) {
-      $available_payment_method = array();
-
-      $chip = $this->api();
-      $result = $chip->payment_methods( get_woocommerce_currency(), $this->get_language(), 200 );
-
-      if ( array_key_exists( 'available_payment_methods', $result ) AND !empty( $result['available_payment_methods'] ) ) {
-        foreach( $result['available_payment_methods'] as $apm ) {
-          $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm) );
-        }
-      }
-
-      $this->cached_payment_method = $available_payment_method;
-    }
-
-    return $this->cached_payment_method;
   }
 
   public function payment_fields() {
@@ -798,20 +743,39 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( is_array( $public_key ) ) {
       $this->add_error( sprintf( __( 'Configuration error: %1$s', 'chip-for-woocommerce' ), print_r( $public_key, true ) ) );
       $this->update_option( 'public_key', '' );
+      $this->update_option( 'available_payment_method', array() );
+      $this->update_option( 'available_recurring_payment_method', array() );
       return false;
     }
 
     $public_key = str_replace( '\n', "\n", $public_key );
 
-    $result = $chip->payment_methods( get_woocommerce_currency(), $this->get_language(), 200 );
+    $get_available_payment_method = $chip->payment_methods( get_woocommerce_currency(), $this->get_language(), 200 );
 
-    if ( array_key_exists( 'available_payment_methods', $result ) AND empty( $result['available_payment_methods'] ) ) {
+    if ( !array_key_exists( 'available_payment_methods', $get_available_payment_method ) OR empty( $get_available_payment_method['available_payment_methods'] ) ) {
       $this->add_error( sprintf( __( 'Configuration error: No payment method available for the brand id: %1$s', 'chip-for-woocommerce' ), $brand_id ) );
       $this->update_option( 'public_key', '' );
+      $this->update_option( 'available_payment_method', array() );
+      $this->update_option( 'available_recurring_payment_method', array() );
       return false;
     }
 
+    $available_payment_method = array();
+    $available_recurring_payment_method = array();
+
+    $get_available_recurring_payment_method = $chip->payment_recurring_methods( get_woocommerce_currency(), $this->get_language(), 200 );
+
+    foreach( $get_available_payment_method['available_payment_methods'] as $apm ) {
+      $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
+    }
+
+    foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
+      $available_recurring_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
+    }
+
     $this->update_option( 'public_key', $public_key );
+    $this->update_option( 'available_payment_method', $available_payment_method );
+    $this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
 
     return true;
   }
