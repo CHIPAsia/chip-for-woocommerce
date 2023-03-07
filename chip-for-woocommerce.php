@@ -76,10 +76,15 @@ class Chip_Woocommerce {
   }
 
   public function check_order_status( $purchase_id, $order_id, $gateway_class, $attempt ) {
-
     $gateway_class::get_lock( $order_id );
     $gateway_id = strtolower( $gateway_class );
-    $order      = new WC_Order( $order_id );
+
+    try {
+      $order = new WC_Order( $order_id );
+    } catch (Exception $e) {
+      $gateway_class::release_lock( $order_id );
+      return;
+    }
 
     if ( $order->is_paid() ) {
       $gateway_class::release_lock( $order_id );

@@ -22,8 +22,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $cached_api;
   protected $cached_payment_method;
 
-  public function __construct()
-  {
+  public function __construct() {
     $this->init_id();
     $this->init_icon();
     $this->init_title();
