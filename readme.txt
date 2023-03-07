@@ -14,9 +14,11 @@ CHIP - Better Payment & Business Solutions. Securely accept one-time and subscri
 
 This is an official CHIP plugin for WooCommerce.
 
-CHIP is a payment and business solutions platform that allow you to securely sell your products and get paid via multiple local and international payment methods.
+CHIP is a payment and business solutions platform that allow you to securely sell your products and get paid via multiple payment methods.
 
 This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://developer.chip-in.asia).
+
+The plugins do includes support for WooCommerce Subscription products.
 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
@@ -108,16 +110,34 @@ This plugin rely on CHIP API ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
     - This is for getting available payment method specific to your account
   - **/purchases/**
     - This is for accepting payment
-  - **/purchases/<id\>**
+  - **/purchases/<id\>/**
     - This is for getting payment status from CHIP
-  - **/purchases/<id\>/refund**
+  - **/purchases/<id\>/refund/**
     - This is for refunding payment
+  - **/purchases/<id\>/charge/**
+    - This is for charging payment with token
+  - **/purchases/<id\>/delete_recurring_token/**
+    - This is for deleting card token
+  - **/clients/**
+    - This is for creating clients in CHIP
+  - **/clients/?q=<email\>**
+    - This is for getting client in CHIP with email
+  - **/clients/<id\>/**
+    - This to get client and patch client information
 
 = How to clone CHIP for WooCommerce? =
 
-Create new class and extend WC_Gateway_Chip or WC_Gateway_Chip_Subscription with own class.
+Create new class and extend **WC_Gateway_Chip** or **WC_Gateway_Chip_Subscription** with own class.
 
-Then, hook it with filter woocommerce_payment_gateways and pass the method own class name to it.
+Then, hook it with filter **woocommerce_payment_gateways** and pass the method own class name to it.
+
+You may refer to **includes/clone-wc-gateway-chip.php** file for example.
+
+= How to remove the additional payment method? =
+
+Create a PHP constant in your wp-config.php file with the following code:
+
+`define( 'DISABLE_CLONE_WC_GATEWAY_CHIP' , true );`
 
 == Links ==
 
