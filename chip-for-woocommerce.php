@@ -57,9 +57,10 @@ class Chip_Woocommerce {
 
   public function includes() {
     $includes_dir = plugin_dir_path( WC_CHIP_FILE ) . 'includes/';
-    include $includes_dir . 'class-api.php';
-    include $includes_dir . 'class-logger.php';
+    include $includes_dir . 'class-wc-api.php';
+    include $includes_dir . 'class-wc-logger.php';
     include $includes_dir . 'class-wc-gateway-chip.php';
+    include $includes_dir . 'class-wc-migration.php';
 
     if ( !defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
       include $includes_dir . 'clone-wc-gateway-chip.php';
@@ -142,7 +143,7 @@ class Chip_Woocommerce {
     if ( !class_exists( 'WooCommerce' ) OR !class_exists( 'WC_Payment_Gateway' ) ) {
       return;
     }
-  
+
     static::get_instance();
   }
 }
