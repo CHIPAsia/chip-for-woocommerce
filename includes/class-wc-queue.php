@@ -16,8 +16,8 @@ class Chip_Woocommerce_Queue {
   }
 
   public function add_actions() {
-    add_action( 'wc_chip_check_order_status', array( $this, 'check_order_status' ), 10, 4);
-    add_action( 'wc_chip_delete_payment_token', array( $this, 'delete_payment_token' ), 10, 2);
+    add_action( 'wc_chip_check_order_status', array( $this, 'check_order_status' ), 10, 4 );
+    add_action( 'wc_chip_delete_payment_token', array( $this, 'delete_payment_token' ), 10, 2 );
   }
 
   public function check_order_status( $purchase_id, $order_id, $attempt, $gateway_id ) {
@@ -39,8 +39,6 @@ class Chip_Woocommerce_Queue {
 
     $wc_gateway_chip->delete_payment_token( $purchase_id );
   }
-
-  
 }
 
 Chip_Woocommerce_Queue::get_instance();

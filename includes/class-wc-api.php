@@ -12,14 +12,14 @@ class Chip_Woocommerce_API
 
   public function __construct( $secret_key, $brand_id, $logger, $debug ) {
     $this->secret_key = $secret_key;
-    $this->brand_id = $brand_id;
-    $this->logger = $logger;
-    $this->debug = $debug;
+    $this->brand_id   = $brand_id;
+    $this->logger     = $logger;
+    $this->debug      = $debug;
   }
 
   public function set_key( $secret_key, $brand_id ) {
     $this->secret_key = $secret_key;
-    $this->brand_id = $brand_id;
+    $this->brand_id   = $brand_id;
   }
 
   public function create_payment( $params ) {
@@ -60,7 +60,7 @@ class Chip_Woocommerce_API
   }
 
   public function payment_methods( $currency, $language, $amount ) {
-    $this->log_info( "fetching payment methods" );
+    $this->log_info( 'fetching payment methods' );
 
     return $this->call(
       'GET',
@@ -69,7 +69,7 @@ class Chip_Woocommerce_API
   }
 
   public function payment_recurring_methods( $currency, $language, $amount ) {
-    $this->log_info( "fetching payment methods" );
+    $this->log_info( 'fetching payment methods' );
 
     return $this->call(
       'GET',
@@ -81,7 +81,7 @@ class Chip_Woocommerce_API
     $this->log_info( sprintf( "get payment: %s", $payment_id ) );
 
     // time() is to force fresh instead cache
-    $result = $this->call( 'GET', "/purchases/{$payment_id}/?time" . time() );
+    $result = $this->call( 'GET', "/purchases/{$payment_id}/?time=" . time() );
     $this->log_info( sprintf( 'success check result: %s', var_export( $result, true ) ) );
     
     return $result;
@@ -154,7 +154,7 @@ class Chip_Woocommerce_API
       'sslverify' => !defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
       'headers'   => $headers,
       'body'      => $params,
-      'timeout'   => 10, // required for charge card
+      'timeout'   => 10, // charge card require longer timeout
     ));
 
     $response = wp_remote_retrieve_body( $wp_request );

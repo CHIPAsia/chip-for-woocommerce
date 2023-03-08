@@ -88,13 +88,13 @@ class Chip_Woocommerce {
   }
   public static function get_gateway_class( $gateway_id ) {
     $wc_payment_gateway = WC_Payment_Gateways::instance();
+
     $pgs = $wc_payment_gateway->payment_gateways();
 
     return $pgs[$gateway_id];
   }
 
   public function add_gateways( $methods ) {
-
     $methods[] = WC_Gateway_Chip::class;
 
     return $methods;
