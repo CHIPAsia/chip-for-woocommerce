@@ -175,14 +175,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function handle_callback_token() {
-    $status = sanitize_key( $_GET['action'] );
-
-    if ( $status == 'failed' ) {
-      wc_add_notice( __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), 'error' );
-      wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
-      exit;
-    }
-
     $payment_id = WC()->session->get( 'chip_preauthorize' );
 
     if ( !$payment_id && isset($_SERVER['HTTP_X_SIGNATURE']) ) {
