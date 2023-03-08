@@ -47,6 +47,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added   - Automatic requery payment status
 * Changed - Timezone is now configurable within plugin option
 * Removed - Enable Payment method selection is now removed
+* Fixed   - Customer still shown a failed payment page when there is failed attempt
 
 = 1.2.6 - 2023-1-26 =
 * Added - Add FPX extra information on failure
