@@ -54,6 +54,8 @@ class Chip_Woocommerce_Migration {
       'public_key' => $gateway['public-key'],
     );
 
+    $new_options['disable_recurring_support'] = 'yes';
+
     update_option( 'woocommerce_wc_gateway_chip_settings', $new_options );
 
     delete_option( 'chip_woocommerce_payment_method' );

@@ -115,20 +115,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   protected function init_one_time_gateway() {
-    if ( $this->disable_rec == 'yes') {
-      $this->supports = [ 'products', 'refunds' ];
-    } elseif ( is_array( $this->payment_met ) AND !empty( $this->payment_met ) ) {
-      $one_time_gateway = true;
+    $one_time_gateway = true;
+
+    if ( is_array( $this->payment_met ) AND !empty( $this->payment_met ) ) {
       foreach( [ 'visa', 'mastercard' ] as $card_network ) {
         if ( in_array( $card_network, $this->payment_met ) ) {
           $one_time_gateway = false;
           break;
         }
       }
+    }
 
-      if ( $one_time_gateway ) {
-        $this->supports = [ 'products', 'refunds' ];
-      }
+    if ( $one_time_gateway OR $this->disable_rec == 'yes' ) {
+      $this->supports = [ 'products', 'refunds' ];
     }
   }
 
