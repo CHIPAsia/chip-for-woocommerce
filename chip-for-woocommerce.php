@@ -74,39 +74,34 @@ class Chip_Woocommerce {
 
   public function add_actions() {
     add_action( 'wc_chip_check_order_status', array( $this, 'check_order_status' ), 10, 4);
+    add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
   }
 
-  public function check_order_status( $purchase_id, $order_id, $gateway_class, $attempt ) {
-    $gateway_class::get_lock( $order_id );
-    $gateway_id = strtolower( $gateway_class );
+  public function check_order_status( $purchase_id, $order_id, $attempt, $gateway_id ) {
+    $wc_gateway_chip = static::get_gateway_class( $gateway_id );
 
-    try {
-      $order = new WC_Order( $order_id );
-    } catch (Exception $e) {
-      $gateway_class::release_lock( $order_id );
+    if ( !is_a( $wc_gateway_chip, 'WC_Gateway_Chip' ) ) {
       return;
     }
 
-    if ( $order->is_paid() ) {
-      $gateway_class::release_lock( $order_id );
+    $wc_gateway_chip->check_order_status( $purchase_id, $order_id, $attempt );
+  }
+
+  public function payment_token_deleted( $token_id, $token ) {
+    $wc_gateway_chip = static::get_gateway_class( $token->get_gateway_id() );
+
+    if ( !is_a( $wc_gateway_chip, 'WC_Gateway_Chip' ) ) {
       return;
     }
 
-    $gateway = get_option( "woocommerce_{$gateway_id}_settings" );
+    $wc_gateway_chip->payment_token_deleted( $token_id, $token );
+  }
 
-    $chip = new Chip_Woocommerce_API( $gateway['secret_key'], '', new Chip_Woocommerce_Logger(), $gateway['debug'] );
+  public static function get_gateway_class( $gateway_id ) {
+    $wc_payment_gateway = WC_Payment_Gateways::instance();
+    $pgs = $wc_payment_gateway->payment_gateways();
 
-    $payment = $chip->get_payment( $purchase_id );
-
-    if ( $payment['status'] == 'paid' ){
-      $gateway_class::payment_complete( $order, $payment );
-      $gateway_class::release_lock( $order_id );
-      return;
-    }
-
-    if ( $attempt < 8 ) {
-      $gateway_class::schedule_requery( $purchase_id, $order_id, ++$attempt );
-    }
+    return $pgs[$gateway_id];
   }
 
   public function add_gateways( $methods ) {
