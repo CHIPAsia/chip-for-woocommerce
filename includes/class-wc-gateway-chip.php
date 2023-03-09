@@ -562,7 +562,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id', true );
 
       if ( empty( $params['client_id'] ) ) {
-        $get_client = $chip->get_client_by_email( $order->get_user()->get_email() );
+        $get_client = $chip->get_client_by_email( $client_with_params['email'] );
 
         if ( array_key_exists( '__all__', $get_client ) ) {
           return array(
@@ -917,7 +917,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $params['client_id'] = get_user_meta( get_current_user_id(), '_' . $this->id . '_client_id', true );
 
     if ( empty( $params['client_id'] ) ) {
-      $get_client = $chip->get_client_by_email( $customer->get_email() );
+      $get_client = $chip->get_client_by_email( $params['client']['email'] );
 
       if ( array_key_exists( '__all__', $get_client ) ) {
         return array(
