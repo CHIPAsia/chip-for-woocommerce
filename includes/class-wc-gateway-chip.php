@@ -115,7 +115,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   protected function init_one_time_gateway() {
-    $one_time_gateway = true;
+    $one_time_gateway = false;
 
     if ( is_array( $this->payment_met ) AND !empty( $this->payment_met ) ) {
       foreach( [ 'visa', 'mastercard' ] as $card_network ) {
@@ -123,6 +123,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           $one_time_gateway = false;
           break;
         }
+        $one_time_gateway = true;
       }
     }
 
