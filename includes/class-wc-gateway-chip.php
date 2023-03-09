@@ -51,6 +51,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->public_key  = $this->get_option( 'public_key' );
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
     $this->a_payment_m = $this->get_option( 'available_payment_method' );
+    $this->description = $this->get_option( 'description' );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -300,6 +301,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'default'     => $this->method_title,
     );
 
+    $this->form_fields['description'] = array(
+      'title'       => __( 'Description', 'chip-for-woocommerce' ),
+      'type'        => 'text',
+      'description' => __( 'This controls the description which the user sees during checkout.', 'chip-for-woocommerce' ),
+      'default'     => __( 'Pay with Online Banking / E-Wallet / Credit Card / Debit Card. You will choose your payment option on the next page', 'chip-for-woocommerce' ),
+    );
+
     $this->form_fields['credentials'] = array(
       'title'       => __( 'Credentials', 'chip-for-woocommerce' ),
       'type'        => 'title',
@@ -461,6 +469,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( has_action( 'wc_' . $this->id . '_payment_fields' ) ) {
       do_action( 'wc_' . $this->id . '_payment_fields', $this );
     } elseif ( $this->supports( 'tokenization' ) && is_checkout() ) {
+      if ( !empty( $description = $this->get_description() ) ) {
+        echo wpautop( wptexturize( $description ) );
+      }
       $this->tokenization_script();
       $this->saved_payment_methods();
       $this->save_payment_method_checkbox();
@@ -1073,5 +1084,4 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->schedule_requery( $purchase_id, $order_id, ++$attempt );
     }
   }
-
 }
