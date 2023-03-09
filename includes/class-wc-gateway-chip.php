@@ -855,14 +855,20 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $chip_token_ids = array();
     }
 
+    $chip_tokenized_purchase_id = $payment['id'];
+
+    if ( !$payment['is_recurring_token'] ) {
+      $chip_tokenized_purchase_id = $payment['recurring_token'];
+    }
+
     foreach( $chip_token_ids as $purchase_id => $token_id ) {
-      if ( $purchase_id == $payment['id'] AND ( $wc_payment_token = WC_Payment_Tokens::get( $token_id ) ) ) {
+      if ( $purchase_id == $chip_tokenized_purchase_id AND ( $wc_payment_token = WC_Payment_Tokens::get( $token_id ) ) ) {
         return $wc_payment_token;
       }
     }
 
     $token = new WC_Payment_Token_CC();
-    $token->set_token( $payment['id'] );
+    $token->set_token( $chip_tokenized_purchase_id );
     $token->set_gateway_id( $this->id );
     $token->set_card_type( $payment['transaction_data']['extra']['card_brand'] );
     $token->set_last4( substr( $payment['transaction_data']['extra']['masked_pan'], -4 ) );
@@ -870,7 +876,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $token->set_expiry_year( '20' . $payment['transaction_data']['extra']['expiry_year'] );
     $token->set_user_id( $user_id );
     if ( $token->save() ) {
-      $chip_token_ids[$payment['id']] = $token->get_id();
+      $chip_token_ids[$chip_tokenized_purchase_id] = $token->get_id();
       update_user_meta( $user_id, '_' . $this->id . '_client_token_ids', $chip_token_ids );
       return $token;
     }
@@ -996,7 +1002,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function payment_complete( $order, $payment ) {
-    if ( $payment['is_recurring_token'] ) {
+    if ( $payment['is_recurring_token'] OR !empty( $payment['recurring_token'] ) ) {
       $token = $this->store_recurring_token( $payment, $order->get_user_id() );
 
       $this->add_payment_token( $order->get_id(), $token );
