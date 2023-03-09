@@ -757,7 +757,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $get_available_recurring_payment_method = $chip->payment_recurring_methods( get_woocommerce_currency(), $this->get_language(), 200 );
 
     foreach( $get_available_payment_method['available_payment_methods'] as $apm ) {
-      $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
+      // $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
+      $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
     }
 
     foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
@@ -789,6 +790,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'send_receipt'     => $this->purchase_sr == 'yes',
       'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
       'reference'        => $renewal_order_id,
+      //TODO: change to woocommerce_subscriptions
       'platform'         => 'woocommerce',
       'due'              => $this->get_due_timestamp(),
       'brand_id'         => $this->brand_id,
