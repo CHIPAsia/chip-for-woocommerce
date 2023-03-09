@@ -300,13 +300,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'default'     => $this->method_title,
     );
 
-    $this->form_fields['description'] = array(
-      'title'       => __( 'Description', 'chip-for-woocommerce' ),
-      'type'        => 'text',
-      'description' => __( 'This controls the description which the user sees during checkout.', 'chip-for-woocommerce' ),
-      'default'     => __( 'Pay with Online Banking / E-Wallet / Credit Card / Debit Card. You will choose your payment option on the next page', 'chip-for-woocommerce' ),
-    );
-
     $this->form_fields['credentials'] = array(
       'title'       => __( 'Credentials', 'chip-for-woocommerce' ),
       'type'        => 'title',
