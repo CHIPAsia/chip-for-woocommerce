@@ -644,7 +644,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $order->update_meta_data( '_' . $this->id . '_purchase_id', $payment['id'] );
     $order->save();
 
-    if ( $payment_requery_status['status'] != 'paid' ) {
+    if ( $payment_requery_status != 'paid' ) {
       $this->schedule_requery( $payment['id'], $order_id );
     }
     
