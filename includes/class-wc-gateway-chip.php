@@ -73,7 +73,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   protected function init_icon() {
     $logo = $this->get_option( 'display_logo', 'logo' );
-    $this->icon = apply_filters( 'wc_' . $this->id . '_load_icon_' . $this->id , plugins_url("assets/{$logo}.png", WC_CHIP_FILE ) );
+    $this->icon = apply_filters( 'wc_' . $this->id . '_load_icon' , plugins_url("assets/{$logo}.png", WC_CHIP_FILE ) );
   }
 
   protected function init_title() {
@@ -98,7 +98,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   protected function init_currency_check() {
     $woocommerce_currency = get_woocommerce_currency();
-    $supported_currencies = apply_filters( 'wc_' . $this->id . '_supported_currencies_' . $this->id, array( 'MYR' ), $this );
+    $supported_currencies = apply_filters( 'wc_' . $this->id . '_supported_currencies', array( 'MYR' ), $this );
     
     if ( !in_array( $woocommerce_currency, $supported_currencies, true ) ){
       $this->enabled = 'no';
