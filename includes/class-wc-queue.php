@@ -21,9 +21,9 @@ class Chip_Woocommerce_Queue {
   }
 
   public function check_order_status( $purchase_id, $order_id, $attempt, $gateway_id ) {
-    $wc_gateway_chip = Chip_Woocommerce::get_gateway_class( $gateway_id );
+    $wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
-    if ( !is_a( $wc_gateway_chip, 'WC_Gateway_Chip' ) ) {
+    if ( !$wc_gateway_chip ) {
       return;
     }
 
@@ -31,9 +31,9 @@ class Chip_Woocommerce_Queue {
   }
 
   public function delete_payment_token( $purchase_id, $gateway_id ) {
-    $wc_gateway_chip = Chip_Woocommerce::get_gateway_class( $gateway_id );
+    $wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
-    if ( !is_a( $wc_gateway_chip, 'WC_Gateway_Chip' ) ) {
+    if ( !$wc_gateway_chip ) {
       return;
     }
 

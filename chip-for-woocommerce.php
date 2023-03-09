@@ -62,6 +62,7 @@ class Chip_Woocommerce {
     include $includes_dir . 'class-wc-gateway-chip.php';
     include $includes_dir . 'class-wc-migration.php';
     include $includes_dir . 'class-wc-queue.php';
+    include $includes_dir . 'class-wc-bulk-action.php';
 
     if ( !defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
       include $includes_dir . 'clone-wc-gateway-chip.php';
@@ -78,20 +79,24 @@ class Chip_Woocommerce {
   }
 
   public function payment_token_deleted( $token_id, $token ) {
-    $wc_gateway_chip = static::get_gateway_class( $token->get_gateway_id() );
+    $wc_gateway_chip = static::get_chip_gateway_class( $token->get_gateway_id() );
 
-    if ( !is_a( $wc_gateway_chip, 'WC_Gateway_Chip' ) ) {
+    if ( !$wc_gateway_chip ) {
       return;
     }
 
     $wc_gateway_chip->payment_token_deleted( $token_id, $token );
   }
-  public static function get_gateway_class( $gateway_id ) {
+  public static function get_chip_gateway_class( $gateway_id ) {
     $wc_payment_gateway = WC_Payment_Gateways::instance();
 
     $pgs = $wc_payment_gateway->payment_gateways();
 
-    return $pgs[$gateway_id];
+    if ( isset( $pgs[$gateway_id] ) AND is_a( $pgs[$gateway_id], 'WC_Gateway_Chip' ) ) {
+      return $pgs[$gateway_id];
+    }
+
+    return false;
   }
 
   public function add_gateways( $methods ) {

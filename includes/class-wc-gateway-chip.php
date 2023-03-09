@@ -648,6 +648,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $payment_requery_status = $get_payment['status'];
     }
 
+    $order->update_meta_data( '_' . $this->id . '_purchase_id', $payment['id'] );
+    $order->save();
+
     if ( $payment_requery_status['status'] != 'paid' ) {
       $this->schedule_requery( $payment['id'], $order_id );
     }
@@ -1070,6 +1073,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->release_lock( $order_id );
       return;
     }
+
+    $order->add_order_note( sprintf( __( 'Order status checked and the status is %1$s', 'chip-for-woocommerce' ), $payment['status'] ) );
 
     if ( $attempt < 8 ) {
       $this->schedule_requery( $purchase_id, $order_id, ++$attempt );
