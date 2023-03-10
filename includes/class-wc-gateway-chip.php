@@ -336,12 +336,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'title'       => __( 'Display Logo', 'chip-for-woocommerce' ),
       'type'        => 'select',
       'class'       => 'wc-enhanced-select',
-      'description' => sprintf(__('This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">Card</a>.', 'bfw' ), WC_CHIP_URL.'assets/logo.png', WC_CHIP_URL.'assets/fpx.png', WC_CHIP_URL.'assets/fpx_b2b1.png', WC_CHIP_URL.'assets/card.png'),
+      'description' => sprintf(__('This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'bfw' ), WC_CHIP_URL.'assets/logo.png', WC_CHIP_URL.'assets/fpx.png', WC_CHIP_URL.'assets/fpx_b2b1.png', WC_CHIP_URL.'assets/ewallet.png', WC_CHIP_URL.'assets/card.png' ),
       'default'     => 'logo',
       'options'     => array(
         'logo'     => 'Logo',
         'fpx'      => 'FPX B2C',
         'fpx_b2b1' => 'FPX B2B1',
+        'ewallet'  => 'E-Wallet',
         'card'     => 'Card',
       ),
     );
@@ -407,7 +408,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'type'        => 'checkbox',
       'description' =>__( 'Tick to force tokenization if possible.', 'chip-for-woocommerce' ),
       'default'     => 'no',
-      'disabled'     => empty( $this->arecuring_p )
+      'disabled'    => empty( $this->arecuring_p )
     );
 
     $this->form_fields['payment_method_whitelist'] = array(
