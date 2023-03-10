@@ -639,18 +639,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( isset( $_POST["wc-{$this->id}-payment-token"] ) AND 'new' !== $_POST["wc-{$this->id}-payment-token"] ) {
       $token_id = wc_clean( $_POST["wc-{$this->id}-payment-token"] );
-      $token    = WC_Payment_Tokens::get( $token_id );
 
-      if ( $token->get_user_id() !== get_current_user_id() ) {
-        return array( 'result' => 'failure' );
+      if ( $token = WC_Payment_Tokens::get( $token_id ) ) {
+        if ( $token->get_user_id() !== get_current_user_id() ) {
+          return array( 'result' => 'failure' );
+        }
+
+        $this->add_payment_token( $order->get_id(), $token );
+
+        $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
+
+        $get_payment = $chip->get_payment( $payment['id'] );
+        $payment_requery_status = $get_payment['status'];
       }
-
-      $this->add_payment_token( $order->get_id(), $token );
-
-      $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
-
-      $get_payment = $chip->get_payment( $payment['id'] );
-      $payment_requery_status = $get_payment['status'];
     }
 
     $order->update_meta_data( '_' . $this->id . '_purchase_id', $payment['id'] );
@@ -885,6 +886,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $token->set_expiry_month( $payment['transaction_data']['extra']['expiry_month'] );
     $token->set_expiry_year( '20' . $payment['transaction_data']['extra']['expiry_year'] );
     $token->set_user_id( $user_id );
+
+    /**
+     * Store optional card data for later use-case
+     */
+    $token->add_meta_data( 'cardholder_name', $payment['transaction_data']['extra']['cardholder_name'] );
+    $token->add_meta_data( 'card_issuer_country', $payment['transaction_data']['extra']['card_issuer_country'] );
+    $token->add_meta_data( 'masked_pan', $payment['transaction_data']['extra']['masked_pan'] );
+    $token->add_meta_data( 'card_type', $payment['transation_data']['extra']['card_type'] );
     if ( $token->save() ) {
       $chip_token_ids[$chip_tokenized_purchase_id] = $token->get_id();
       update_user_meta( $user_id, '_' . $this->id . '_client_token_ids', $chip_token_ids );
