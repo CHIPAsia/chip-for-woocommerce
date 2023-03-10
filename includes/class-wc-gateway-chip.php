@@ -154,7 +154,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
   }
 
-  protected function api() {
+  public function api() {
     if ( !$this->cached_api ) {
       $this->cached_api = new Chip_Woocommerce_API(
         $this->secret_key,

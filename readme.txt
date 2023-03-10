@@ -98,7 +98,7 @@ Brand ID and Secret Key available through our merchant dashboard.
 
 = Do I need to set public key for webhook? =
 
-No.
+Optional. You may set the public key for webhook to synchronize the card token availability.
 
 = Where can I find documentation? =
 

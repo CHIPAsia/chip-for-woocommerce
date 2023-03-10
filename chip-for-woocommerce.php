@@ -63,6 +63,7 @@ class Chip_Woocommerce {
     include $includes_dir . 'class-wc-migration.php';
     include $includes_dir . 'class-wc-queue.php';
     include $includes_dir . 'class-wc-bulk-action.php';
+    include $includes_dir . 'class-wc-receipt-link.php';
 
     if ( !defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
       include $includes_dir . 'clone-wc-gateway-chip.php';
