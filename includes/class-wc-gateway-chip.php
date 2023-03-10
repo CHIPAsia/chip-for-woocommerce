@@ -19,6 +19,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $public_key;
   protected $arecuring_p;
   protected $a_payment_m;
+  protected $webhook_pub;
   protected $debug;
   
   protected $cached_api;
@@ -52,6 +53,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
     $this->a_payment_m = $this->get_option( 'available_payment_method' );
     $this->description = $this->get_option( 'description' );
+    $this->webhook_pub = $this->get_option( 'webhook_public_key' );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -138,6 +140,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'auto_charge' ), 10, 2);
     add_action( 'woocommerce_api_' . $this->id, array( $this, 'handle_callback' ) );
     add_action( 'woocommerce_subscription_failing_payment_method_updated_' . $this->id, array( $this, 'change_failing_payment_method' ), 10, 2 );
+    add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 
     // TODO: Delete in future release
     if ( $this->id == 'wc_gateway_chip' ) {
@@ -171,6 +174,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   public function handle_callback() {
     if ( isset( $_GET['tokenization'] ) AND $_GET['tokenization'] == 'yes' ) {
       $this->handle_callback_token();
+    } elseif( isset( $_GET['callback_flag'] ) AND $_GET['callback_flag'] == 'yes' ) {
+      $this->handle_callback_event();
     } else {
       $this->handle_callback_order();
     }
@@ -204,7 +209,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->get_lock( $payment_id );
 
-    if ( $this->store_recurring_token( $payment ) ) {
+    if ( $this->store_recurring_token( $payment, $payment['reference'] ) ) {
       wc_add_notice( __( 'Payment method successfully added.', 'chip-for-woocommerce' ) );
     } else {
       wc_add_notice( __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), 'error' );
@@ -213,6 +218,46 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->release_lock( $payment_id );
 
     wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
+    exit;
+  }
+
+  public function handle_callback_event() {
+    if ( !isset($_SERVER['HTTP_X_SIGNATURE']) ) {
+      exit;
+    }
+
+    $content = file_get_contents( 'php://input' );
+
+    if ( openssl_verify( $content,  base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->webhook_pub, 'sha256WithRSAEncryption' ) != 1 ) {
+      exit;
+    }
+
+    $payment = json_decode( $content, true );
+
+    if ( !in_array( $payment['event_type'], array( 'purchase.recurring_token_deleted' ) ) ) {
+      exit;
+    }
+
+    $user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
+
+    if ( !( $chip_client_id = get_user_meta( $user_id, '_' . $this->id . '_client_id', true ) ) ) {
+      exit;
+    }
+
+    if ( $chip_client_id != $payment['client_id'] ) {
+      exit;
+    }
+
+    $chip_token_ids = get_user_meta( $user_id, '_' . $this->id . '_client_token_ids', true );
+
+    if ( !isset( $chip_token_ids[$payment['id']] ) ) {
+      exit;
+    }
+
+    $token_id = $chip_token_ids[$payment['id']];
+
+    WC_Payment_Tokens::delete( $token_id );
+
     exit;
   }
 
@@ -425,6 +470,20 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'type'        => 'textarea',
       'description' => __( 'Public key for validating callback will be auto-filled upon successful configuration.', 'chip-for-woocommerce' ),
       'disabled'    => true,
+    );
+
+    $this->form_fields['webhooks'] = array(
+      'title'       => __( 'Webhooks', 'chip-for-woocommerce' ),
+      'type'        => 'title',
+      'description' => sprintf( __( 'Option to set public key. The supported event is <code>%1$s</code>', 'chip-for-woocommerce' ), 'Purchase Recurring Token Deleted' ),
+    );
+
+    $callback_url = preg_replace( "/^http:/i", "https:", add_query_arg( [ 'callback_flag' => 'yes' ], WC()->api_request_url( $this->id ) ) );
+
+    $this->form_fields['webhook_public_key'] = array(
+      'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
+      'type'        => 'textarea',
+      'description' => sprintf( __( 'This option to set public key that are generated through CHIP Dashboard >> Webhooks page. The callback url is: <code>%s</code>', 'chip-for-woocommerce' ), $callback_url ),
     );
 
     $this->form_fields['troubleshooting'] = array(
@@ -734,7 +793,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $public_key = $chip->public_key();
 
     if ( is_array( $public_key ) ) {
-      $this->add_error( sprintf( __( 'Configuration error: %1$s', 'chip-for-woocommerce' ), print_r( $public_key, true ) ) );
+      $this->add_error( sprintf( __( 'Configuration error: %1$s', 'chip-for-woocommerce' ), current( $public_key['__all__'] )['message'] ) );
       $this->update_option( 'public_key', '' );
       $this->update_option( 'available_payment_method', array() );
       $this->update_option( 'available_recurring_payment_method', array() );
@@ -746,7 +805,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $get_available_payment_method = $chip->payment_methods( get_woocommerce_currency(), $this->get_language(), 200 );
 
     if ( !array_key_exists( 'available_payment_methods', $get_available_payment_method ) OR empty( $get_available_payment_method['available_payment_methods'] ) ) {
-      $this->add_error( sprintf( __( 'Configuration error: No payment method available for the brand id: %1$s', 'chip-for-woocommerce' ), $brand_id ) );
+      $this->add_error( sprintf( __( 'Configuration error: No payment method available for the Brand ID: %1$s', 'chip-for-woocommerce' ), $brand_id ) );
       $this->update_option( 'public_key', '' );
       $this->update_option( 'available_payment_method', array() );
       $this->update_option( 'available_recurring_payment_method', array() );
@@ -771,6 +830,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->update_option( 'available_payment_method', $available_payment_method );
     $this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
 
+    $webhook_public_key = $post["woocommerce_{$this->id}_webhook_public_key"];
+
+    if ( !empty( $webhook_public_key ) ) {
+      $webhook_public_key = str_replace( '\n', "\n", $webhook_public_key );
+
+      if ( !openssl_pkey_get_public( $webhook_public_key ) ) {
+        $this->add_error( __( 'Configuration error: Webhook Public Key is invalid format', 'chip-for-woocommerce' ) );
+        $this->update_option( 'webhook_public_key', '' );
+      }
+    }
+
     return true;
   }
 
@@ -792,8 +862,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'send_receipt'     => $this->purchase_sr == 'yes',
       'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
       'reference'        => $renewal_order_id,
-      //TODO: change to woocommerce_subscriptions
-      'platform'         => 'woocommerce',
+      'platform'         => 'woocommerce_subscriptions',
       'due'              => $this->get_due_timestamp(),
       'brand_id'         => $this->brand_id,
       'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id', true ),
@@ -855,11 +924,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $GLOBALS['wpdb']->get_results( "SELECT RELEASE_LOCK('chip_payment_$order_id');" );
   }
 
-  public function store_recurring_token( $payment, $user_id = '') {
-    if ( empty( $user_id ) ) {
-      $user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
-    }
-
+  public function store_recurring_token( $payment, $user_id ) {
     $chip_token_ids = get_user_meta( $user_id, '_' . $this->id . '_client_token_ids', true );
 
     if ( is_string( $chip_token_ids ) ) {
@@ -893,7 +958,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $token->add_meta_data( 'cardholder_name', $payment['transaction_data']['extra']['cardholder_name'] );
     $token->add_meta_data( 'card_issuer_country', $payment['transaction_data']['extra']['card_issuer_country'] );
     $token->add_meta_data( 'masked_pan', $payment['transaction_data']['extra']['masked_pan'] );
-    $token->add_meta_data( 'card_type', $payment['transation_data']['extra']['card_type'] );
+    $token->add_meta_data( 'card_type', $payment['transaction_data']['extra']['card_type'] );
     if ( $token->save() ) {
       $chip_token_ids[$chip_tokenized_purchase_id] = $token->get_id();
       update_user_meta( $user_id, '_' . $this->id . '_client_token_ids', $chip_token_ids );
@@ -917,18 +982,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'success_callback' => $url . '&action=success',
       'success_redirect' => $url . '&action=success',
       'failure_redirect' => $url . '&action=failed',
-      'force_recurring' => true,
-      'brand_id' => $this->brand_id,
-      'skip_capture' => true,
+      'force_recurring'  => true,
+      'reference'        => get_current_user_id(),
+      'brand_id'         => $this->brand_id,
+      'skip_capture'     => true,
       'client' => [
-        'email' => wp_get_current_user()->user_email,
+        'email'     => wp_get_current_user()->user_email,
         'full_name' => substr( $customer->get_first_name() . ' ' . $customer->get_last_name(), 0 , 128 )
       ],
       'purchase' => [
         'currency' => 'MYR',
         'products' => [
           [
-            'name' => 'Add payment method',
+            'name'  => 'Add payment method',
             'price' => 0
           ]
         ]
@@ -1094,6 +1160,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( $attempt < 8 ) {
       $this->schedule_requery( $purchase_id, $order_id, ++$attempt );
+    }
+  }
+
+  public function admin_notices() {
+    foreach ( $this->errors as $error ) {
+    ?>
+      <div class="notice notice-error">
+      <p><?php echo esc_html_e( $error ); ?></p>
+      </div>
+    <?php
     }
   }
 }
