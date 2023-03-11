@@ -1095,6 +1095,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $order->payment_complete( $payment['id'] );
     $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+    $order->save();
     $order->add_order_note( sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
 
     if ( $payment['is_test'] == true ) {
