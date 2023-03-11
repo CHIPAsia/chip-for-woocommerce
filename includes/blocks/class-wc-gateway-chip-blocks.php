@@ -16,8 +16,8 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
   }
 
   public function get_payment_method_script_handles() {
-    $script_path       = 'assets/js/frontend/'. $this->name.'.js';
-    $script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/'.$this->name.'.asset.php';
+    $script_path       = 'assets/js/frontend/blocks.js';
+    $script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks.asset.php';
     $script_asset      = file_exists( $script_asset_path )
       ? require( $script_asset_path )
       : array(
@@ -33,6 +33,8 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
       $script_asset[ 'version' ],
       true
     );
+
+    wp_localize_script( 'wc-' . $this->name . '-blocks', 'GATEWAY', ['id' => $this->name ] );
 
     return [ 'wc-' . $this->name . '-blocks' ];
   }

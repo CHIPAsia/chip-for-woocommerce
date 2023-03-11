@@ -28,10 +28,7 @@ const requestToHandle = (request) => {
 module.exports = {
 	...defaultConfig,
 	entry: {
-		'frontend/wc_gateway_chip': '/resources/js/frontend/wc_gateway_chip.js',
-    'frontend/wc_gateway_chip_2': '/resources/js/frontend/wc_gateway_chip_2.js',
-    'frontend/wc_gateway_chip_3': '/resources/js/frontend/wc_gateway_chip_3.js',
-    'frontend/wc_gateway_chip_4': '/resources/js/frontend/wc_gateway_chip_4.js',
+		'frontend/blocks': '/resources/js/frontend/blocks.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'assets/js' ),

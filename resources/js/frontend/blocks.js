@@ -3,10 +3,10 @@ import { __ } from '@wordpress/i18n';
 import { decodeEntities } from '@wordpress/html-entities';
 import { getSetting } from '@woocommerce/settings';
 
-const settings = getSetting( 'wc_gateway_chip_2_data', {} );
+const settings = getSetting( GATEWAY.id + '_data', {} );
 
 const defaultLabel = __(
-	'CHIP 2',
+	'CHIP',
 	'chip-for-woocommerce'
 );
 
