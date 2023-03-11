@@ -25,6 +25,10 @@
  * #4 https://github.com/woocommerce/woocommerce/wiki/Payment-Token-API#adding-payment-token-api-support-to-your-gateway
  * #5 https://stackoverflow.com/questions/22843504/how-can-i-get-customer-details-from-an-order-in-woocommerce
  * #6 https://stackoverflow.com/questions/16813220/how-can-i-override-inline-styles-with-external-css
+ * #7 https://developer.woocommerce.com/2022/07/07/exposing-payment-options-in-the-checkout-block/
+ * #8 https://github.com/woocommerce/woocommerce-blocks/blob/trunk/docs/third-party-developers/extensibility/checkout-payment-methods/payment-method-integration.md
+ * #9 https://github.com/woocommerce/woocommerce-gateway-dummy/issues/12#issuecomment-1464898655
+ * #10 https://developer.woocommerce.com/2022/05/20/hiding-shipping-and-payment-options-in-the-cart-and-checkout-blocks/
  */
 
  if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly.
@@ -62,11 +66,14 @@ class Chip_Woocommerce {
     include $includes_dir . 'class-wc-gateway-chip.php';
     include $includes_dir . 'class-wc-migration.php';
     include $includes_dir . 'class-wc-queue.php';
-    include $includes_dir . 'class-wc-bulk-action.php';
-    include $includes_dir . 'class-wc-receipt-link.php';
 
     if ( !defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
       include $includes_dir . 'clone-wc-gateway-chip.php';
+    }
+
+    if ( is_admin() ) {
+      include $includes_dir . 'class-wc-bulk-action.php';
+      include $includes_dir . 'class-wc-receipt-link.php';
     }
   }
 
@@ -77,6 +84,7 @@ class Chip_Woocommerce {
 
   public function add_actions() {
     add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
+    add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
   }
 
   public function payment_token_deleted( $token_id, $token ) {
@@ -131,6 +139,22 @@ class Chip_Woocommerce {
     }
 
     static::get_instance();
+  }
+
+  public function block_support() {
+    if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-blocks.php';
+      include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/clone-wc-gateway-chip-blocks.php';
+			add_action(
+				'woocommerce_blocks_payment_method_type_registration',
+				function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
+					$payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support );
+				}
+			);
+		}
   }
 }
 

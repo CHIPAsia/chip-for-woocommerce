@@ -590,12 +590,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'platform'         => 'woocommerce',
       'due'              => $this->get_due_timestamp(),
       'purchase' => [
-        'timezone'   => $this->purchase_tz,
-        'currency'   => $order->get_currency(),
-        'language'   => $this->get_language(),
-        'due_strict' => $this->due_strict == 'yes',
         'total_override' => round( $order->get_total() * 100 ),
-        'products'   => [],
+        'due_strict'     => $this->due_strict == 'yes',
+        'timezone'       => $this->purchase_tz,
+        'currency'       => $order->get_currency(),
+        'language'       => $this->get_language(),
+        'products'       => [],
       ],
       'brand_id' => $this->brand_id,
       'client' => [
@@ -662,7 +662,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $params['payment_method_whitelist'] = $this->payment_met;
     }
 
-    if ( isset( $_POST["wc-{$this->id}-new-payment-method"] ) AND $_POST["wc-{$this->id}-new-payment-method"] == 'true' ) {
+    if ( isset( $_POST["wc-{$this->id}-new-payment-method"] ) AND in_array( $_POST["wc-{$this->id}-new-payment-method"], [ 'true', 1 ] ) ) {
       $params['payment_method_whitelist'] = ['visa', 'mastercard'];
       $params['force_recurring'] = true;
     }
@@ -678,7 +678,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( $this->disable_red == 'yes' ) {
       unset( $params['success_redirect'] );
     }
-    
+
+    if ( !empty( $order->get_customer_note() ) ) {
+      $params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
+    }
+
     $params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 
     $payment = $chip->create_payment( $params );
@@ -818,8 +822,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $get_available_recurring_payment_method = $chip->payment_recurring_methods( get_woocommerce_currency(), $this->get_language(), 200 );
 
     foreach( $get_available_payment_method['available_payment_methods'] as $apm ) {
-      // $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
-      $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
+      $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
     }
 
     foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
