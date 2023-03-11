@@ -74,6 +74,8 @@ class Chip_Woocommerce_Migration {
           $new_options_2['title']        = $gateway_chip_card['label'];
           $new_options_2['description']  = $gateway_chip_card['method_desc'];
 
+          $new_options_2['payment_method_whitelist'] = array('visa', 'mastercard');
+
           update_option( 'woocommerce_wc_gateway_chip_2_settings', $new_options_2 );
         }
       }
@@ -87,6 +89,8 @@ class Chip_Woocommerce_Migration {
           $new_options_3['enabled']      = $gateway_chip_b2b1['enabled'];
           $new_options_3['title']        = $gateway_chip_b2b1['label'];
           $new_options_3['description']  = $gateway_chip_b2b1['method_desc'];
+
+          $new_options_3['payment_method_whitelist'] = array('fpx_b2b1');
 
           update_option( 'woocommerce_wc_gateway_chip_3_settings', $new_options_3 );
         }
