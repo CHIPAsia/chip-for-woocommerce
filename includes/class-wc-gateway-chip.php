@@ -713,7 +713,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    $order->update_meta_data( '_' . $this->id . '_purchase_id', $payment['id'] );
+    $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
     $order->save();
 
     if ( $payment_requery_status != 'paid' ) {
@@ -904,7 +904,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment, true ) ) );
     } elseif ( $charge_payment['status'] == 'paid' ) {
-      $this->payment_complete( $renewal_order, $payment );
+      $this->payment_complete( $renewal_order, $charge_payment );
       $renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
     } elseif ( $charge_payment['status'] == 'pending_charge' ) {
       $renewal_order->update_status( 'on-hold' );
@@ -1094,6 +1094,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $order->payment_complete( $payment['id'] );
+    $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
     $order->add_order_note( sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
 
     if ( $payment['is_test'] == true ) {
@@ -1102,7 +1103,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function schedule_requery( $purchase_id, $order_id, $attempt = 1 ) {
-    WC()->queue()->schedule_single( time() + $attempt * HOUR_IN_SECONDS , 'wc_chip_check_order_status', array( $purchase_id, $order_id, $attempt, $this->id ), static::class );
+    WC()->queue()->schedule_single( time() + $attempt * HOUR_IN_SECONDS , 'wc_chip_check_order_status', array( $purchase_id, $order_id, $attempt, $this->id ), "{$this->id}_single_requery" );
   }
 
   public function payment_token_deleted( $token_id, $token ) {
@@ -1124,7 +1125,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    WC()->queue()->schedule_single( time(), 'wc_chip_delete_payment_token', array( $token->get_token(), $this->id ), static::class );
+    WC()->queue()->schedule_single( time(), 'wc_chip_delete_payment_token', array( $token->get_token(), $this->id ), "{$this->id}_delete_token" );
   }
 
   public function delete_payment_token( $purchase_id ) {

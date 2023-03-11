@@ -44,10 +44,10 @@ class Chip_Woocommerce_Bulk_Action {
           $gateway_id = $order->get_payment_method();
           $wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
           
-          if ( $wc_gateway_chip AND ( $purchase_id = $order->get_meta( '_' . $gateway_id . '_purchase_id', true ) ) ) {
+          if ( $wc_gateway_chip AND ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
             $order->add_order_note( __( 'Order status scheduled to requery by admin', 'chip-for-woocommerce' ) );
             
-            WC()->queue()->schedule_single( time(), 'wc_chip_check_order_status', array( $purchase_id, $id, 8, $gateway_id ), static::class . '_' . $gateway_id );
+            WC()->queue()->schedule_single( time(), 'wc_chip_check_order_status', array( $purchase['id'], $id, 8, $gateway_id ), "{$gateway_id}_bulk_requery" );
             do_action( 'wc_chip_bulk_order_requery', $id );
             $changed++;  
           }

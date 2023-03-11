@@ -46,6 +46,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added   - Option to disable payment method cloning via PHP constant
 * Added   - Automatic requery payment status
 * Added   - Bulk requery payment status
+* Added   - Button link to invoice, receipt and feed
 * Changed - Timezone is now configurable within plugin option
 * Removed - Enable Payment method selection is now removed
 * Fixed   - Customer still shown a failed payment page when there is failed attempt

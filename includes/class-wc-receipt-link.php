@@ -25,9 +25,9 @@ class Chip_Woocommerce_Receipt_Link {
     $gateway_id = $order->get_payment_method();
     $wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
-    if ( $wc_gateway_chip AND ( $purchase_id = $order->get_meta( '_' . $gateway_id . '_purchase_id', true ) ) ) {
+    if ( $wc_gateway_chip AND ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
     ?>
-      <a href="https://gate.chip-in.asia/p/<?php echo $purchase_id; ?>/invoice/" target="_blank">
+      <a href="https://gate.chip-in.asia/p/<?php echo esc_url( $purchase['id'] ); ?>/invoice/" target="_blank">
         <button type="button" class="button"><?php esc_html_e( 'CHIP Invoice', 'chip-for-woocommerce' ); ?></button>
       </a>
     <?php
@@ -42,9 +42,12 @@ class Chip_Woocommerce_Receipt_Link {
     $gateway_id = $order->get_payment_method();
     $wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
-    if ( $wc_gateway_chip AND ( $purchase_id = $order->get_meta( '_' . $gateway_id . '_purchase_id', true ) ) ) {
+    if ( $wc_gateway_chip AND ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
+      if ( !in_array( $purchase['status'], array( 'paid', 'cleared', 'settled', 'chargeback', 'pending_refund', 'refunded' ) ) ) {
+        return;
+      }
       ?>
-        <a href="https://gate.chip-in.asia/p/<?php echo $purchase_id; ?>/receipt/" target="_blank">
+        <a href="https://gate.chip-in.asia/p/<?php echo esc_url( $purchase['id'] ); ?>/receipt/" target="_blank">
           <button type="button" class="button"><?php esc_html_e( 'CHIP Receipt', 'chip-for-woocommerce' ); ?></button>
         </a>
       <?php
@@ -55,12 +58,9 @@ class Chip_Woocommerce_Receipt_Link {
     $gateway_id = $order->get_payment_method();
     $wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
-    if ( $wc_gateway_chip AND ( $purchase_id = $order->get_meta( '_' . $gateway_id . '_purchase_id', true ) ) ) {
-
-      $chip = $wc_gateway_chip->api();
-      $payment = $chip->get_payment( $purchase_id );
+    if ( $wc_gateway_chip AND ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
     ?>
-      <a href="https://gate.chip-in.asia/t/<?php echo $payment['company_id']; ?>/feed/purchase/<?php echo $purchase_id; ?>/" target="_blank">
+      <a href="https://gate.chip-in.asia/t/<?php echo esc_url( $purchase['company_id'] ); ?>/feed/purchase/<?php echo esc_url( $purchase['id'] ); ?>/" target="_blank">
         <button type="button" class="button"><?php esc_html_e( 'CHIP Feed', 'chip-for-woocommerce' ); ?></button>
       </a>
     <?php
