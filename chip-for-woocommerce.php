@@ -8,7 +8,7 @@
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
  *
- * WC requires at least: 3.3
+ * WC requires at least: 5.1
  * WC tested up to: 7.4
  *
  * Copyright: © 2023 CHIP
