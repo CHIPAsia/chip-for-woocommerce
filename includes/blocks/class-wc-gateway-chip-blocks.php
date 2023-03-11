@@ -27,16 +27,16 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
     $script_url        = WC_CHIP_URL . $script_path;
 
     wp_register_script(
-      'wc-' . $this->name . '-blocks',
+      "wc-{$this->name}-blocks",
       $script_url,
       $script_asset[ 'dependencies' ],
       $script_asset[ 'version' ],
       true
     );
 
-    wp_localize_script( 'wc-' . $this->name . '-blocks', 'GATEWAY', ['id' => $this->name ] );
+    wp_localize_script( "wc-{$this->name}-blocks", 'GATEWAY', ['id' => $this->name ] );
 
-    return [ 'wc-' . $this->name . '-blocks' ];
+    return [ "wc-{$this->name}-blocks" ];
   }
 
   public function get_payment_method_data() {
