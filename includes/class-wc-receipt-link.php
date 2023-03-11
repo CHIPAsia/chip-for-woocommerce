@@ -27,7 +27,7 @@ class Chip_Woocommerce_Receipt_Link {
 
     if ( $wc_gateway_chip AND ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
     ?>
-      <a href="https://gate.chip-in.asia/p/<?php echo esc_url( $purchase['id'] ); ?>/invoice/" target="_blank">
+      <a href="https://gate.chip-in.asia/p/<?php echo esc_attr( $purchase['id'] ); ?>/invoice/" target="_blank">
         <button type="button" class="button"><?php esc_html_e( 'CHIP Invoice', 'chip-for-woocommerce' ); ?></button>
       </a>
     <?php
@@ -47,7 +47,7 @@ class Chip_Woocommerce_Receipt_Link {
         return;
       }
       ?>
-        <a href="https://gate.chip-in.asia/p/<?php echo esc_url( $purchase['id'] ); ?>/receipt/" target="_blank">
+        <a href="https://gate.chip-in.asia/p/<?php echo esc_attr( $purchase['id'] ); ?>/receipt/" target="_blank">
           <button type="button" class="button"><?php esc_html_e( 'CHIP Receipt', 'chip-for-woocommerce' ); ?></button>
         </a>
       <?php
@@ -60,7 +60,7 @@ class Chip_Woocommerce_Receipt_Link {
 
     if ( $wc_gateway_chip AND ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
     ?>
-      <a href="https://gate.chip-in.asia/t/<?php echo esc_url( $purchase['company_id'] ); ?>/feed/purchase/<?php echo esc_url( $purchase['id'] ); ?>/" target="_blank">
+      <a href="https://gate.chip-in.asia/t/<?php echo esc_attr( $purchase['company_id'] ); ?>/feed/purchase/<?php echo esc_attr( $purchase['id'] ); ?>/" target="_blank">
         <button type="button" class="button"><?php esc_html_e( 'CHIP Feed', 'chip-for-woocommerce' ); ?></button>
       </a>
     <?php
