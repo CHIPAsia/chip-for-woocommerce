@@ -49,6 +49,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added   - Button link to invoice, receipt and feed
 * Added   - Pass customer order notes to CHIP API
 * Added   - Experimental support for WooCommerce Blocks
+* Added   - Bypass CHIP payment page feature for FPX
 * Changed - Timezone is now configurable within plugin option
 * Removed - Enable Payment method selection is now removed
 * Fixed   - Customer still shown a failed payment page when there is failed attempt
