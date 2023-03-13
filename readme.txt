@@ -53,6 +53,10 @@ The plugins do includes support for WooCommerce Subscription products.
 * Removed - Enable Payment method selection is now removed
 * Fixed   - Customer still shown a failed payment page when there is failed attempt
 
+= 1.2.7 - 2023-3-5 =
+* Fixed - Issue with due timestamp when woocommerce hold stock option is empty
+* Fixed - Warning with e-wallet
+
 = 1.2.6 - 2023-1-26 =
 * Added - Add FPX extra information on failure
 * Fixed - Enable payment method selection requires total amount
