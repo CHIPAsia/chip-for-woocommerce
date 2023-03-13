@@ -20,6 +20,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $arecuring_p;
   protected $a_payment_m;
   protected $webhook_pub;
+  protected $bypass_chip;
   protected $debug;
   
   protected $cached_api;
@@ -54,6 +55,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->a_payment_m = $this->get_option( 'available_payment_method' );
     $this->description = $this->get_option( 'description' );
     $this->webhook_pub = $this->get_option( 'webhook_public_key' );
+    $this->bypass_chip = $this->get_option( 'bypass_chip' );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -441,6 +443,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       )
     );
 
+    $this->form_fields['bypass_chip'] = array(
+      'title'       => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
+      'type'        => 'checkbox',
+      'description' =>__( 'Tick to CHIP payment page if possible.', 'chip-for-woocommerce' ),
+      'default'     => 'yes',
+    );
+
     $this->form_fields['disable_recurring_support'] = array(
       'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
@@ -537,6 +546,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->save_payment_method_checkbox();
     } else {
       parent::payment_fields();
+
+      if ( count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx' AND $this->bypass_chip == 'yes' ) {
+        woocommerce_form_field('chip_fpx_bank', array(
+          'type'     => 'select',
+          'required' => true,
+          'label'    => __('Internet Banking', 'chip-for-woocommerce'),
+          'options'  => $this->list_fpx_banks(),
+        ));
+      } elseif ( count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx_b2b1' AND $this->bypass_chip == 'yes' ) {
+        woocommerce_form_field('chip_fpx_b2b1_bank', array(
+          'type'     => 'select',
+          'required' => true,
+          'label'    => __('Corporate Internet Banking', 'chip-for-woocommerce'),
+          'options'  => $this->list_fpx_b2b1_banks()
+        ));
+      }
     }
   }
 
@@ -568,6 +593,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $ln = 'en';
     }
     return $ln;
+  }
+
+  public function validate_fields() {
   }
 
   public function process_payment( $order_id ) {
@@ -723,10 +751,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( $payment_requery_status != 'paid' ) {
       $this->schedule_requery( $payment['id'], $order_id );
     }
-    
+
     return array(
       'result' => 'success',
-      'redirect' => esc_url( $payment['checkout_url'] ),
+      'redirect' => esc_url_raw( $this->bypass_chip( $payment['checkout_url'], $payment ) ),
     );
   }
 
@@ -1176,5 +1204,69 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       </div>
     <?php
     }
+  }
+
+  public function list_fpx_banks() {
+    return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', array(
+      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      'ABB0233'  => __( 'Affin Bank', 'chip-for-woocommerce' ),
+      'ABMB0212' => __( 'Alliance Bank (Personal)', 'chip-for-woocommerce' ),
+      'AGRO01'   => __( 'AGRONet', 'chip-for-woocommerce' ),
+      'AMBB0209' => __( 'AmBank', 'chip-for-woocommerce' ),
+      'BIMB0340' => __( 'Bank Islam', 'chip-for-woocommerce' ),
+      'BMMB0341' => __( 'Bank Muamalat', 'chip-for-woocommerce' ),
+      'BKRM0602' => __( 'Bank Rakyat', 'chip-for-woocommerce' ),
+      'BOCM01'   => __( 'Bank Of China', 'chip-for-woocommerce' ),
+      'BSN0601'  => __( 'BSN', 'chip-for-woocommerce' ),
+      'BCBB0235' => __( 'CIMB Bank', 'chip-for-woocommerce' ),
+      'HLB0224'  => __( 'Hong Leong Bank', 'chip-for-woocommerce' ),
+      'HSBC0223' => __( 'HSBC Bank', 'chip-for-woocommerce' ),
+      'KFH0346'  => __( 'KFH', 'chip-for-woocommerce' ),
+      'MBB0228'  => __( 'Maybank2E', 'chip-for-woocommerce' ),
+      'MB2U0227' => __( 'Maybank2u', 'chip-for-woocommerce' ),
+      'OCBC0229' => __( 'OCBC Bank', 'chip-for-woocommerce' ),
+      'PBB0233'  => __( 'Public Bank', 'chip-for-woocommerce' ),
+      'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
+      'SCB0216'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
+      'UOB0226'  => __( 'UOB Bank', 'chip-for-woocommerce' ),
+    ));
+  }
+
+  public function list_fpx_b2b1_banks() {
+    return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', array(
+      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      'ABB0235'  => __( 'AFFINMAX', 'chip-for-woocommerce' ),
+      'ABMB0213' => __( 'Alliance Bank (Business)', 'chip-for-woocommerce' ),
+      'AGRO02'   => __( 'AGRONetBIZ', 'chip-for-woocommerce' ),
+      'AMBB0208' => __( 'AmBank', 'chip-for-woocommerce' ),
+      'BIMB0340' => __( 'Bank Islam', 'chip-for-woocommerce' ),
+      'BMMB0342' => __( 'Bank Muamalat', 'chip-for-woocommerce' ),
+      'BNP003'   => __( 'BNP Paribas', 'chip-for-woocommerce' ),
+      'BCBB0235' => __( 'CIMB Bank', 'chip-for-woocommerce' ),
+      'CIT0218'  => __( 'Citibank Corporate Banking', 'chip-for-woocommerce' ),
+      'DBB0199'  => __( 'Deutsche Bank', 'chip-for-woocommerce' ),
+      'HLB0224'  => __( 'Hong Leong Bank', 'chip-for-woocommerce' ),
+      'HSBC0223' => __( 'HSBC Bank', 'chip-for-woocommerce' ),
+      'BKRM0602' => __( 'Bank Rakyat', 'chip-for-woocommerce' ),
+      'KFH0346'  => __( 'KFH', 'chip-for-woocommerce' ),
+      'MBB0228'  => __( 'Maybank2E', 'chip-for-woocommerce' ),
+      'OCBC0229' => __( 'OCBC Bank', 'chip-for-woocommerce' ),
+      'PBB0233'  => __( 'Public Bank', 'chip-for-woocommerce' ),
+      'PBB0234'  => __( 'Public Bank PB enterprise', 'chip-for-woocommerce' ),
+      'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
+      'SCB0215'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
+      'UOB0228'  => __( 'UOB Regional', 'chip-for-woocommerce' ),
+    ) );
+  }
+
+  public function bypass_chip( $url, $payment ) {
+    if ( $this->bypass_chip == 'yes' AND !$payment['is_test']) {
+      if ( isset( $_POST['chip_fpx_bank'] ) AND !empty( $_POST['chip_fpx_bank'] ) ) {
+        $url .= '?preferred=fpx&fpx_bank_code=' . esc_attr( $_POST['chip_fpx_bank'] );
+      } elseif ( isset( $_POST['chip_fpx_b2b1_bank']) AND !empty( $_POST['chip_fpx_b2b1_bank'] )) {
+        $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . esc_attr( $_POST['chip_fpx_bank'] );
+      }
+    }
+    return $url;
   }
 }
