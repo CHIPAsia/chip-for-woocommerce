@@ -4,93 +4,158 @@
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: CHIP - Better Payment & Business Solutions
- * Version: 1.2.7
+ * Version: 1.3.0
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
-
- * WC requires at least: 3.3.4
- * WC tested up to: 7.3.0
  *
- * Copyright: © 2022 CHIP
+ * WC requires at least: 5.1
+ * WC tested up to: 7.4
+ *
+ * Copyright: © 2023 CHIP
  * License: GNU General Public License v3.0
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
 
-// based on
-// http://docs.woothemes.com/document/woocommerce-payment-gateway-plugin-base/
-// docs http://docs.woothemes.com/document/payment-gateway-api/
+/**
+ * Resources:
+ * 
+ * #1 https://woocommerce.com/document/woocommerce-payment-gateway-plugin-base/
+ * #2 https://woocommerce.com/document/payment-gateway-api/
+ * #3 https://woocommerce.com/document/subscriptions/develop/payment-gateway-integration/
+ * #4 https://github.com/woocommerce/woocommerce/wiki/Payment-Token-API#adding-payment-token-api-support-to-your-gateway
+ * #5 https://stackoverflow.com/questions/22843504/how-can-i-get-customer-details-from-an-order-in-woocommerce
+ * #6 https://stackoverflow.com/questions/16813220/how-can-i-override-inline-styles-with-external-css
+ * #7 https://developer.woocommerce.com/2022/07/07/exposing-payment-options-in-the-checkout-block/
+ * #8 https://github.com/woocommerce/woocommerce-blocks/blob/trunk/docs/third-party-developers/extensibility/checkout-payment-methods/payment-method-integration.md
+ * #9 https://github.com/woocommerce/woocommerce-gateway-dummy/issues/12#issuecomment-1464898655
+ * #10 https://developer.woocommerce.com/2022/05/20/hiding-shipping-and-payment-options-in-the-cart-and-checkout-blocks/
+ */
 
-define('WC_CHIP_MODULE_VERSION', 'v1.2.7');
+ if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly.
 
-require_once dirname(__FILE__) . '/api.php';
+class Chip_Woocommerce {
 
-add_action('plugins_loaded', 'wc_chip_payment_gateway_init', 100);
-function wc_chip_payment_gateway_init()
-{
-    if (!class_exists('WC_Payment_Gateway')) {
-        return;
+  private static $_instance;
+
+  public static function get_instance() {
+    if ( static::$_instance == null ) {
+      static::$_instance = new static();
     }
 
-    require_once dirname( __FILE__ ) . '/includes/class-wc-chip-default.php';
-    require_once dirname( __FILE__ ) . '/includes/class-wc-chip-fpxb2b1.php';
-    require_once dirname( __FILE__ ) . '/includes/class-wc-chip-card.php';
-    class ChipWCLogger
-    {
-        private $logger;
-        
-        public function __construct()
-        {
-            $this->logger = new WC_Logger();
-        }
+    return static::$_instance;
+  }
 
-        public function log($message)
-        {
-            $this->logger->add('chip', $message);
-        }
+  public function __construct() {
+    $this->define();
+    $this->includes();
+    $this->add_filters();
+    $this->add_actions();
+  }
+
+  public function define() {
+    define( 'WC_CHIP_MODULE_VERSION', 'v1.3.0' );
+    define( 'WC_CHIP_FILE', __FILE__ );
+    define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
+    define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
+  }
+
+  public function includes() {
+    $includes_dir = plugin_dir_path( WC_CHIP_FILE ) . 'includes/';
+    include $includes_dir . 'class-wc-api.php';
+    include $includes_dir . 'class-wc-logger.php';
+    include $includes_dir . 'class-wc-gateway-chip.php';
+    include $includes_dir . 'class-wc-migration.php';
+    include $includes_dir . 'class-wc-queue.php';
+
+    if ( !defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
+      include $includes_dir . 'clone-wc-gateway-chip.php';
     }
 
-    // Add the Gateway to WooCommerce
-    function wc_chip_add_gateway($methods)
-    {
-        $methods[] = 'WC_Chip_Gateway';
+    if ( is_admin() ) {
+      include $includes_dir . 'class-wc-bulk-action.php';
+      include $includes_dir . 'class-wc-receipt-link.php';
+    }
+  }
 
-        $chip_settings = get_option( 'woocommerce_chip_settings', null );
-        $chip_payments = get_option( 'chip_woocommerce_payment_method', null );
+  public function add_filters() {
+    add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateways' ) );
+    add_filter( 'plugin_action_links_' . WC_CHIP_BASENAME, array( $this, 'setting_link' ) );
+  }
 
-        $class_name = array(
-          'fpx_b2b1' => WC_Chip_Fpxb2b1::class,
-          'card'     => WC_Chip_Card::class,
-        );
+  public function add_actions() {
+    add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
+    add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
+  }
 
-        if ( $chip_settings && $chip_settings['hid'] == 'yes' && $chip_payments ) {
-          
-          foreach($chip_payments as $cp) {
-            if ($cp == 'fpx') {
-              continue;
-            }
-            if ($cp == 'razer') {
-              continue;
-            }
-            $methods[] = $class_name[$cp];
-          }
-        }
-        return $methods;
+  public function payment_token_deleted( $token_id, $token ) {
+    $wc_gateway_chip = static::get_chip_gateway_class( $token->get_gateway_id() );
+
+    if ( !$wc_gateway_chip ) {
+      return;
     }
 
-    add_filter('woocommerce_payment_gateways', 'wc_chip_add_gateway');
+    $wc_gateway_chip->payment_token_deleted( $token_id, $token );
+  }
+  public static function get_chip_gateway_class( $gateway_id ) {
+    $wc_payment_gateway = WC_Payment_Gateways::instance();
 
-    function wc_chip_setting_link($links)
-    {
-        $new_links = array(
-            'settings' => sprintf(
-              '<a href="%1$s">%2$s</a>', admin_url('admin.php?page=wc-settings&tab=checkout&section=chip'), esc_html__('Settings', 'chip-for-woocommerce')
-            )
-        );
-        return array_merge($new_links, $links);
+    $pgs = $wc_payment_gateway->payment_gateways();
+
+    if ( isset( $pgs[$gateway_id] ) AND is_a( $pgs[$gateway_id], 'WC_Gateway_Chip' ) ) {
+      return $pgs[$gateway_id];
     }
 
-    add_filter(
-        'plugin_action_links_' . plugin_basename(__FILE__),
-        'wc_chip_setting_link'
+    return false;
+  }
+
+  public function add_gateways( $methods ) {
+    $methods[] = WC_Gateway_Chip::class;
+
+    return $methods;
+  }
+
+  public function setting_link( $links ) {
+    $url_params = array( 
+      'page'    => 'wc-settings', 
+      'tab'     => 'checkout',
     );
+
+    if ( defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ){
+      $url_params['section'] = 'wc_gateway_chip';
+    }
+
+    $url = add_query_arg( $url_params, admin_url( 'admin.php' ) );
+
+    $new_links = array(
+      'settings' => sprintf( '<a href="%1$s">%2$s</a>', $url, esc_html__( 'Settings', 'chip-for-woocommerce' ) )
+    );
+
+    return array_merge( $new_links, $links );
+  }
+
+  public static function load() {
+    if ( !class_exists( 'WooCommerce' ) OR !class_exists( 'WC_Payment_Gateway' ) ) {
+      return;
+    }
+
+    static::get_instance();
+  }
+
+  public function block_support() {
+    if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-blocks.php';
+      include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/clone-wc-gateway-chip-blocks.php';
+			add_action(
+				'woocommerce_blocks_payment_method_type_registration',
+				function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
+					$payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support );
+				}
+			);
+		}
+  }
 }
+
+add_action( 'plugins_loaded', array( 'Chip_Woocommerce', 'load' ) );

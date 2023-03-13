@@ -1,5 +1,19 @@
 *** Changelog ***
 
+= 1.2.2 - 2022-11-25 =
+* Tweak - Enhance locking to lock per order id
+* Fix   - Issue with error when payment with visa and mastercard
+
+= 1.2.1 - 2022-11-12 =
+* Add - Support for success_callback verification using public key
+
+= 1.2.0 - 2022-11-8 =
+* Add    - Add filters wc_chip_supports to allow refund to be disabled
+* Add    - Timezone support for due strict
+* Tweak  - Revamp how preferred payment option being presented
+* Tweak  - Hide custom field for chip_transaction_id as it is not meant to be edited
+* Update - New logo
+
 = 1.1.4 - 2022-11-7 =
 * Add    - Check payment id to avoid spoofing
 * Add    - Add hooks to allow checkout page to be customized
