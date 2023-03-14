@@ -242,7 +242,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
 
-    if ( !( $chip_client_id = get_user_meta( $user_id, '_' . $this->id . '_client_id', true ) ) ) {
+    if ( !( $chip_client_id = get_user_meta( $user_id, '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ) , true ) ) ) {
       exit;
     }
 
@@ -547,14 +547,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     } else {
       parent::payment_fields();
 
-      if ( count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx' AND $this->bypass_chip == 'yes' ) {
+      if ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx' AND $this->bypass_chip == 'yes' ) {
         woocommerce_form_field('chip_fpx_bank', array(
           'type'     => 'select',
           'required' => true,
           'label'    => __('Internet Banking', 'chip-for-woocommerce'),
           'options'  => $this->list_fpx_banks(),
         ));
-      } elseif ( count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx_b2b1' AND $this->bypass_chip == 'yes' ) {
+      } elseif ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx_b2b1' AND $this->bypass_chip == 'yes' ) {
         woocommerce_form_field('chip_fpx_b2b1_bank', array(
           'type'     => 'select',
           'required' => true,
@@ -600,7 +600,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function process_payment( $order_id ) {
     $order = new WC_Order( $order_id );
-    
+
     $callback_url  = add_query_arg( [ 'id' => $order_id ], WC()->api_request_url( $this->id ) );
     if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
       $callback_url = home_url( '/?wc-api=' . get_class( $this ). '&id=' . $order_id );
@@ -658,7 +658,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $old_client_records = true;
       unset( $params['client'] );
 
-      $params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id', true );
+      $params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
 
       if ( empty( $params['client_id'] ) ) {
         $get_client = $chip->get_client_by_email( $client_with_params['email'] );
@@ -676,7 +676,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           $client = $chip->create_client( $client_with_params );
         }
 
-        update_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id', $client['id'] );
+        update_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
 
         $params['client_id'] = $client['id'];
       }
@@ -716,14 +716,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $payment = $chip->create_payment( $params );
 
     if ( !array_key_exists( 'id', $payment ) ) {
+      wc_add_notice( var_export( $payment, true ) , 'error' );
       $this->log_order_info('create payment failed. message: ' . print_r( $payment, true ), $order );
       return array(
         'result' => 'failure',
       );
     }
-    
+
     WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
-    
+
     $this->log_order_info('got checkout url, redirecting', $order);
 
     $payment_requery_status = 'due';
@@ -896,7 +897,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'platform'         => 'woocommerce_subscriptions',
       'due'              => $this->get_due_timestamp(),
       'brand_id'         => $this->brand_id,
-      'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id', true ),
+      'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
       'purchase' => [
         'timezone'   => $this->purchase_tz,
         'currency'   => $renewal_order->get_currency(),
@@ -1034,7 +1035,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $chip = $this->api();
 
-    $params['client_id'] = get_user_meta( get_current_user_id(), '_' . $this->id . '_client_id', true );
+    $params['client_id'] = get_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
 
     if ( empty( $params['client_id'] ) ) {
       $get_client = $chip->get_client_by_email( $params['client']['email'] );
@@ -1052,7 +1053,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         $client = $chip->create_client( $params['client'] );
       }
 
-      update_user_meta( get_current_user_id(), '_' . $this->id . '_client_id', $client['id'] );
+      update_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
 
       $params['client_id'] = $client['id'];
     }
@@ -1262,9 +1263,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   public function bypass_chip( $url, $payment ) {
     if ( $this->bypass_chip == 'yes' AND !$payment['is_test']) {
       if ( isset( $_POST['chip_fpx_bank'] ) AND !empty( $_POST['chip_fpx_bank'] ) ) {
-        $url .= '?preferred=fpx&fpx_bank_code=' . esc_attr( $_POST['chip_fpx_bank'] );
+        $url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_bank'] );
       } elseif ( isset( $_POST['chip_fpx_b2b1_bank']) AND !empty( $_POST['chip_fpx_b2b1_bank'] )) {
-        $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . esc_attr( $_POST['chip_fpx_bank'] );
+        $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
       }
     }
     return $url;

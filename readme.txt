@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -30,7 +30,11 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.0 - 2023-3-10 =
+= 1.3.1 - 2023-03-14 =
+* Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page
+* Fixed - Unable to redirect to CHIP Payment page when switching from test to production key
+
+= 1.3.0 - 2023-03-13 =
 * Added   - Add support for WooCommerce Subscription
 * Added   - Hook token deletion with CHIP
 * Added   - WC_Gateway_Chip can be extended for cloning
@@ -54,15 +58,15 @@ The plugins do includes support for WooCommerce Subscription products.
 * Removed - Enable Payment method selection is now removed
 * Fixed   - Customer still shown a failed payment page when there is failed attempt
 
-= 1.2.7 - 2023-3-5 =
+= 1.2.7 - 2023-03-05 =
 * Fixed - Issue with due timestamp when woocommerce hold stock option is empty
 * Fixed - Warning with e-wallet
 
-= 1.2.6 - 2023-1-26 =
+= 1.2.6 - 2023-01-26 =
 * Added - Add FPX extra information on failure
 * Fixed - Enable payment method selection requires total amount
 
-= 1.2.5 - 2023-1-1 =
+= 1.2.5 - 2023-01-01 =
 * Fixed - Amount deducted twice when using coupon
 
 = 1.2.4 - 2022-12-28 =
