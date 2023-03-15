@@ -30,6 +30,10 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
+= 1.3.2 - 2023-00-00 =
+* Changed - Requery will stop attempt if status is expired
+* Changed - Ensure lock are released for requery
+
 = 1.3.1 - 2023-03-14 =
 * Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page
 * Fixed - Unable to redirect to CHIP Payment page when switching from test to production key

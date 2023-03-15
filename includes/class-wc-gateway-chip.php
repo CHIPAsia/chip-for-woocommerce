@@ -1192,6 +1192,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $order->add_order_note( sprintf( __( 'Order status checked and the status is %1$s', 'chip-for-woocommerce' ), $payment['status'] ) );
 
+    $this->release_lock( $order_id );
+
+    if ( $payment['status'] == 'expired' ) {
+      return;
+    }
+
     if ( $attempt < 8 ) {
       $this->schedule_requery( $purchase_id, $order_id, ++$attempt );
     }
