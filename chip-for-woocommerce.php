@@ -159,3 +159,17 @@ class Chip_Woocommerce {
 }
 
 add_action( 'plugins_loaded', array( 'Chip_Woocommerce', 'load' ) );
+
+/**
+ * Declare plugin compatibility with WooCommerce HPOS.
+ *
+ * @since 1.3.2
+ */
+add_action(
+	'before_woocommerce_init',
+	function() {
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+		}
+	}
+);
