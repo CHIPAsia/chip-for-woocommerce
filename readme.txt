@@ -34,6 +34,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Changed - Requery will stop attempt if status is expired
 * Changed - Ensure lock are released for requery
 * Added   - Declaration for WooCommerce HPOS compatibility
+* Added   - Bypass CHIP Payment Page for E-Wallet
 
 = 1.3.1 - 2023-03-14 =
 * Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page

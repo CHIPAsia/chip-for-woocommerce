@@ -386,7 +386,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'description' => sprintf(__('This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'bfw' ), WC_CHIP_URL.'assets/logo.png', WC_CHIP_URL.'assets/fpx.png', WC_CHIP_URL.'assets/fpx_b2b1.png', WC_CHIP_URL.'assets/ewallet.png', WC_CHIP_URL.'assets/card.png' ),
       'default'     => 'logo',
       'options'     => array(
-        'logo'     => 'Logo',
+        'logo'     => 'CHIP Logo',
         'fpx'      => 'FPX B2C',
         'fpx_b2b1' => 'FPX B2B1',
         'ewallet'  => 'E-Wallet',
@@ -560,6 +560,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           'required' => true,
           'label'    => __('Corporate Internet Banking', 'chip-for-woocommerce'),
           'options'  => $this->list_fpx_b2b1_banks()
+        ));
+      } elseif ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'razer' AND $this->bypass_chip == 'yes' ) {
+        woocommerce_form_field('chip_razer_ewallet', array(
+          'type'     => 'select',
+          'required' => true,
+          'label'    => __('E-Wallet', 'chip-for-woocommerce'),
+          'options'  => $this->list_razer_ewallets()
         ));
       }
     }
@@ -1266,12 +1273,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     ) );
   }
 
+  public function list_razer_ewallets() {
+    return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', array(
+      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      // 'BOOST'        => __( 'Boost', 'chip-for-woocommerce' ),
+      'GrabPay'         => __( 'GrabPay', 'chip-for-woocommerce'),
+      'TNG-EWALLET'     => __( 'Touch \'n Go eWallet', 'chip-for-woocommerce'),
+      'ShopeePay'       => __( 'ShopeePay', 'chip-for-woocommerce'),
+      'MB2U_QRPay-Push' => __( 'Maybank QRPay', 'chip-for-woocommerce'),
+    ) );
+  }
+
   public function bypass_chip( $url, $payment ) {
     if ( $this->bypass_chip == 'yes' AND !$payment['is_test']) {
       if ( isset( $_POST['chip_fpx_bank'] ) AND !empty( $_POST['chip_fpx_bank'] ) ) {
         $url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_bank'] );
       } elseif ( isset( $_POST['chip_fpx_b2b1_bank']) AND !empty( $_POST['chip_fpx_b2b1_bank'] )) {
         $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
+      } elseif ( isset( $_POST['chip_razer_ewallet']) AND !empty( $_POST['chip_razer_ewallet'] )) {
+        $url .= '?preferred=razer&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
       }
     }
     return $url;
