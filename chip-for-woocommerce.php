@@ -96,6 +96,7 @@ class Chip_Woocommerce {
 
     $wc_gateway_chip->payment_token_deleted( $token_id, $token );
   }
+
   public static function get_chip_gateway_class( $gateway_id ) {
     $wc_payment_gateway = WC_Payment_Gateways::instance();
 
@@ -143,18 +144,18 @@ class Chip_Woocommerce {
 
   public function block_support() {
     if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-blocks.php';
+      include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-blocks.php';
       include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/clone-wc-gateway-chip-blocks.php';
-			add_action(
-				'woocommerce_blocks_payment_method_type_registration',
-				function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
-					$payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support );
+      add_action(
+        'woocommerce_blocks_payment_method_type_registration',
+        function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
+          $payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support );
-				}
-			);
-		}
+        }
+      );
+    }
   }
 }
 
@@ -166,10 +167,10 @@ add_action( 'plugins_loaded', array( 'Chip_Woocommerce', 'load' ) );
  * @since 1.3.2
  */
 add_action(
-	'before_woocommerce_init',
-	function() {
-		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
-		}
-	}
+  'before_woocommerce_init',
+  function() {
+    if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+      \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+    }
+  }
 );
