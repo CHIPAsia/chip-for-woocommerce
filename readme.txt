@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -30,11 +30,14 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.2 - 2023-00-00 =
+= 1.3.2 - 2023-03-29 =
 * Changed - Requery will stop attempt if status is expired
 * Changed - Ensure lock are released for requery
 * Added   - Declaration for WooCommerce HPOS compatibility
 * Added   - Bypass CHIP Payment Page for E-Wallet
+* Added   - Option to not using CHIP clients API for logged in user
+* Fixed   - Warning when non logged in user choose to save card
+* Fixed   - Warning when secret key changed and unable to requery the purchases
 
 = 1.3.1 - 2023-03-14 =
 * Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page
@@ -67,21 +70,6 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.2.7 - 2023-03-05 =
 * Fixed - Issue with due timestamp when woocommerce hold stock option is empty
 * Fixed - Warning with e-wallet
-
-= 1.2.6 - 2023-01-26 =
-* Added - Add FPX extra information on failure
-* Fixed - Enable payment method selection requires total amount
-
-= 1.2.5 - 2023-01-01 =
-* Fixed - Amount deducted twice when using coupon
-
-= 1.2.4 - 2022-12-28 =
-* Added - Add error logging on create purchase error
-
-= 1.2.3 - 2022-12-15 =
-* Added   - Add maestro as card group
-* Added   - Constant WC_CHIP_OLD_URL_SCHEME for switch to old URL scheme
-* Changed - Redirect URL using new URL scheme
 
 == Installation ==
 

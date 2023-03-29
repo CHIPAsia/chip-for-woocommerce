@@ -13,6 +13,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $system_url_;
   protected $force_token;
   protected $disable_rec;
+  protected $disable_cli;
   protected $payment_met;
   protected $disable_red;
   protected $disable_cal;
@@ -46,6 +47,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->system_url_ = $this->get_option( 'system_url_scheme', 'https' );
     $this->force_token = $this->get_option( 'force_tokenization' );
     $this->disable_rec = $this->get_option( 'disable_recurring_support' );
+    $this->disable_cli = $this->get_option( 'disable_clients_api' );
     $this->payment_met = $this->get_option( 'payment_method_whitelist' );
     $this->disable_red = $this->get_option( 'disable_redirect' );
     $this->disable_cal = $this->get_option( 'disable_callback' );
@@ -457,6 +459,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'default'     => 'no',
     );
 
+    $this->form_fields['disable_clients_api'] = array(
+      'title'       => __( 'Disable CHIP clients API', 'chip-for-woocommerce' ),
+      'type'        => 'checkbox',
+      'description' =>__( 'Tick to disable CHIP clients API integration.', 'chip-for-woocommerce' ),
+      'default'     => 'no',
+    );
+
     $this->form_fields['force_tokenization'] = array(
       'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
@@ -659,7 +668,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $chip = $this->api();
 
-    if ( is_user_logged_in() ) {
+    if ( is_user_logged_in() AND $this->disable_cli != 'yes' ) {
       $params['client']['email'] = wp_get_current_user()->user_email;
       $client_with_params = $params['client'];
       $old_client_records = true;
@@ -880,6 +889,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
+    if ( !isset( $post["woocommerce_{$this->id}_disable_recurring_support"] ) AND isset( $post["woocommerce_{$this->id}_disable_clients_api"] ) ) {
+      $this->add_error( __( 'Configuration error: Disable clients API requires disable recurring support to be activated', 'chip-for-woocommerce' ) );
+      $this->update_option( 'disable_clients_api', 'no' );
+    }
+
     return true;
   }
 
@@ -964,6 +978,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function store_recurring_token( $payment, $user_id ) {
+    if ( $user_id == 0 ) {
+      return false;
+    }
+
     $chip_token_ids = get_user_meta( $user_id, '_' . $this->id . '_client_token_ids', true );
 
     if ( is_string( $chip_token_ids ) ) {
@@ -1127,9 +1145,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function payment_complete( $order, $payment ) {
     if ( $payment['is_recurring_token'] OR !empty( $payment['recurring_token'] ) ) {
-      $token = $this->store_recurring_token( $payment, $order->get_user_id() );
-
-      $this->add_payment_token( $order->get_id(), $token );
+      if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
+        $this->add_payment_token( $order->get_id(), $token );
+      }
     }
 
     $order->payment_complete( $payment['id'] );
@@ -1190,6 +1208,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $chip = $this->api();
 
     $payment = $chip->get_payment( $purchase_id );
+
+    if ( array_key_exists( '__all__', $payment ) ) {
+      $order->add_order_note( __( 'Order status check failed and no further reattempt will be made.', 'chip-for-woocommerce' ) );
+      $this->release_lock( $order_id );
+      return;
+    }
 
     if ( $payment['status'] == 'paid' ){
       $this->payment_complete( $order, $payment );
