@@ -978,7 +978,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function store_recurring_token( $payment, $user_id ) {
-    if ( $user_id == 0 ) {
+    if ( !get_user_by( 'id', $user_id ) ) {
       return false;
     }
 
