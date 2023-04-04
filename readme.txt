@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -29,6 +29,9 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.3.3 = 2023-04-07 =
+* Fixed - Issue with Add/Change Payment method
 
 = 1.3.2 - 2023-03-29 =
 * Changed - Requery will stop attempt if status is expired

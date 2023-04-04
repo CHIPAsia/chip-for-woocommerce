@@ -72,6 +72,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $this->add_actions();
+    $this->add_filters();
   }
 
   protected function init_id() {
@@ -113,7 +114,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   protected function init_supports() {
-    $supports = array( 'refunds', 'tokenization', 'subscriptions', 'subscription_cancellation',  'subscription_suspension',  'subscription_reactivation', 'subscription_amount_changes', 'subscription_date_changes', 'subscription_payment_method_change', 'subscription_payment_method_change_customer', 'subscription_payment_method_change_admin', 'multiple_subscriptions' );
+    $supports = array( 'refunds', 'tokenization', 'subscriptions', 'subscription_cancellation',  'subscription_suspension',  'subscription_reactivation', 'subscription_amount_changes', 'subscription_date_changes', 'subscription_payment_method_change', 'subscription_payment_method_delayed_change', 'subscription_payment_method_change_customer', 'subscription_payment_method_change_admin', 'multiple_subscriptions' );
     $this->supports = array_merge( $this->supports, $supports );
   }
 
@@ -150,6 +151,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( $this->id == 'wc_gateway_chip' ) {
       add_action( 'woocommerce_api_wc_chip_gateway', array( $this, 'handle_callback' ) );
     }
+
+    add_action( 'woocommerce_subscription_change_payment_method_via_pay_shortcode', array( $this, 'handle_change_payment_method_shortcode' ), 10, 1 );
+  }
+
+  public function add_filters() {
+    add_filter( 'woocommerce_subscriptions_update_payment_via_pay_shortcode', array( $this, 'maybe_dont_update_payment_method' ), 10, 3 );
   }
 
   public function get_icon() {
@@ -180,6 +187,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->handle_callback_token();
     } elseif( isset( $_GET['callback_flag'] ) AND $_GET['callback_flag'] == 'yes' ) {
       $this->handle_callback_event();
+    } elseif( isset( $_GET['process_payment_method_change'] ) AND $_GET['process_payment_method_change'] == 'yes' ) {
+      $this->handle_payment_method_change();
     } else {
       $this->handle_callback_order();
     }
@@ -552,7 +561,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
       $this->tokenization_script();
       $this->saved_payment_methods();
-      $this->save_payment_method_checkbox();
+      if ( !isset( $_GET['change_payment_method'] ) ) {
+        $this->save_payment_method_checkbox();
+      }
     } else {
       parent::payment_fields();
 
@@ -616,6 +627,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function process_payment( $order_id ) {
     $order = new WC_Order( $order_id );
+
+    // Start of logic for subscription_payment_method_change_customer supports
+    if ( isset( $_GET['change_payment_method'] ) AND $_GET['change_payment_method'] == $order_id ) {
+      return $this->process_payment_method_change( $order_id );
+    }
+    // End of logic for subscription_payment_method_change_customer supports
 
     $callback_url  = add_query_arg( [ 'id' => $order_id ], WC()->api_request_url( $this->id ) );
     if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
@@ -1027,7 +1044,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   public function add_payment_method() {
     $customer = new WC_Customer( get_current_user_id() );
 
-    $url  = add_query_arg(
+    $url = add_query_arg(
       array(
         'tokenization' => 'yes',
       ),
@@ -1036,9 +1053,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => ['mastercard', 'visa'],
-      'success_callback' => $url . '&action=success',
-      'success_redirect' => $url . '&action=success',
-      'failure_redirect' => $url . '&action=failed',
+      'success_callback' => $url,
+      'success_redirect' => $url,
+      'failure_redirect' => $url,
       'force_recurring'  => true,
       'reference'        => get_current_user_id(),
       'brand_id'         => $this->brand_id,
@@ -1319,5 +1336,221 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
     return $url;
+  }
+
+  public function process_payment_method_change( $order_id ) {
+    if ( isset( $_POST["wc-{$this->id}-payment-token"] ) AND 'new' !== $_POST["wc-{$this->id}-payment-token"] ) {
+      return array(
+        'result'   => 'success',
+        'redirect' => wc_get_page_permalink( 'myaccount' ),
+      );
+    }
+
+    $customer = new WC_Customer( get_current_user_id() );
+
+    $url = add_query_arg( [ 'id' => $order_id, 'process_payment_method_change' => 'yes' ], WC()->api_request_url( $this->id ) );
+    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
+      $url = home_url( '/?wc-api=' . get_class( $this ). '&id=' . $order_id );
+    }
+
+    $params = array(
+      'payment_method_whitelist' => ['mastercard', 'visa'],
+      'success_callback' => $url,
+      'success_redirect' => $url,
+      'failure_redirect' => $url,
+      'force_recurring'  => true,
+      'reference'        => $order_id,
+      'brand_id'         => $this->brand_id,
+      'skip_capture'     => true,
+      'client' => [
+        'email'     => wp_get_current_user()->user_email,
+        'full_name' => substr( $customer->get_first_name() . ' ' . $customer->get_last_name(), 0 , 128 )
+      ],
+      'purchase' => [
+        'currency' => 'MYR',
+        'products' => [
+          [
+            'name'  => 'Add payment method',
+            'price' => 0
+          ]
+        ]
+      ],
+    );
+
+    $chip = $this->api();
+
+    $params['client_id'] = get_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
+
+    if ( empty( $params['client_id'] ) ) {
+      $get_client = $chip->get_client_by_email( $params['client']['email'] );
+
+      if ( array_key_exists( '__all__', $get_client ) ) {
+        throw new Exception( __( 'Failed to get client', 'chip-for-woocommerce' ) );
+      }
+
+      if ( is_array($get_client['results']) AND !empty( $get_client['results'] ) ) {
+        $client = $get_client['results'][0];
+
+      } else {
+        $client = $chip->create_client( $params['client'] );
+      }
+
+      update_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
+
+      $params['client_id'] = $client['id'];
+    }
+
+    unset( $params['client'] );
+
+    if ( $this->system_url_ == 'https' ) {
+      $params['success_callback'] = preg_replace( "/^http:/i", "https:", $params['success_callback'] );
+    }
+
+    if ( $this->disable_cal == 'yes' ) {
+      unset( $params['success_callback'] );
+    }
+
+    if ( $this->disable_red == 'yes' ) {
+      unset( $params['success_redirect'] );
+    }
+
+    $payment = $chip->create_payment( $params );
+
+    WC()->session->set( 'chip_payment_method_change_' . $order_id, $payment['id'] );
+
+    return array(
+      'result'   => 'success',
+      'redirect' => $payment['checkout_url'],
+    );
+  }
+
+  public function maybe_dont_update_payment_method( $update, $new_payment_method, $subscription ) {
+    if ( $this->id != $new_payment_method ) {
+      return $update;
+    }
+
+    if ( isset( $_POST["wc-{$this->id}-payment-token"] ) AND 'new' !== $_POST["wc-{$this->id}-payment-token"] ) {
+      /**
+       * this means the customer choose to use existing card token where it should:
+       *   - Immediately call update_payment method
+       *   - Do not flag with _delayed_update_payment_method_all if any
+       *   - Immediately call to update_payment method for all subscriptions
+       */
+
+    } else {
+      /**
+       * this means the customer choose to create new card token where it should:
+       *   - Do not immediately call ::update_payment_method
+       *   - Do flag _delayed_update_payment_method_all if any
+       * */
+
+      $update = false;
+    }
+
+    return $update;
+  }
+
+  public function handle_payment_method_change() {
+    $subscription_id = intval( $_GET['id'] );
+    $payment_id = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
+
+    if ( !wcs_is_subscription( $subscription_id ) ) {
+      exit( __( 'Order is not subscription', 'chip-for-woocommerce' ) );
+    }
+
+    $subscription = new WC_Subscription( $subscription_id );
+
+    if ( !$payment_id && isset($_SERVER['HTTP_X_SIGNATURE']) ) {
+      $content = file_get_contents( 'php://input' );
+
+      if ( openssl_verify( $content,  base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1) {
+        $message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
+        $this->log_order_info( $message, $subscription );
+        exit( $message );
+      }
+
+      $payment    = json_decode( $content, true );
+      $payment_id = array_key_exists( 'id', $payment ) ? sanitize_key( $payment['id'] ) : '';
+    } else if ( $payment_id ) {
+      $payment = $this->api()->get_payment( $payment_id );
+    } else {
+      exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
+    }
+
+    if ( $payment['status'] != 'preauthorized' ) {
+      wc_clear_notices();
+      wc_add_notice( sprintf( '%1$s %2$s' , __( 'Unable to change payment method.', 'chip-for-woocommerce' ), print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
+      wp_safe_redirect( $subscription->get_view_order_url() );
+      exit;
+    }
+
+    $this->get_lock( $payment_id );
+
+    if ( $token = $this->store_recurring_token( $payment, $subscription->get_user_id() ) ) {
+      $this->add_payment_token( $subscription_id, $token );
+
+      WC_Subscriptions_Change_Payment_Gateway::update_payment_method( $subscription, $this->id );
+
+      if ( WC_Subscriptions_Change_Payment_Gateway::will_subscription_update_all_payment_methods( $subscription ) ) {
+        WC_Subscriptions_Change_Payment_Gateway::update_all_payment_methods_from_subscription( $subscription, $this->id );
+
+        $subscription_ids = WCS_Customer_Store::instance()->get_users_subscription_ids( $subscription->get_customer_id() );
+        foreach ( $subscription_ids as $subscription_id ) {
+          // Skip the subscription providing the new payment meta.
+          if ( $subscription->get_id() == $subscription_id ) {
+            continue;
+          }
+
+          $user_subscription = wcs_get_subscription( $subscription_id );
+          // Skip if subscription's current payment method is not supported
+          if ( ! $user_subscription->payment_method_supports( 'subscription_cancellation' ) ) {
+            continue;
+          }
+
+          // Skip if there are no remaining payments or the subscription is not current.
+          if ( $user_subscription->get_time( 'next_payment' ) <= 0 || ! $user_subscription->has_status( array( 'active', 'on-hold' ) ) ) {
+            continue;
+          }
+
+          $this->add_payment_token( $user_subscription->get_id(), $token );
+        }
+      }
+    }
+
+    $this->release_lock( $payment_id );
+
+    wp_safe_redirect( $subscription->get_view_order_url() );
+    exit;
+  }
+
+  public function handle_change_payment_method_shortcode( $subscription ) {
+    if ( isset( $_POST["wc-{$this->id}-payment-token"] ) AND 'new' !== $_POST["wc-{$this->id}-payment-token"] ) {
+      $token_id = wc_clean( $_POST["wc-{$this->id}-payment-token"] );
+
+      $this->add_payment_token( $subscription->get_id(), WC_Payment_Tokens::get( $token_id ) );
+
+      if ( isset( $_POST['update_all_subscriptions_payment_method'] ) AND $_POST['update_all_subscriptions_payment_method'] ) {
+        $subscription_ids = WCS_Customer_Store::instance()->get_users_subscription_ids( $subscription->get_customer_id() );
+        foreach ( $subscription_ids as $subscription_id ) {
+          // Skip the subscription providing the new payment meta.
+          if ( $subscription->get_id() == $subscription_id ) {
+            continue;
+          }
+
+          $user_subscription = wcs_get_subscription( $subscription_id );
+          // Skip if subscription's current payment method is not supported
+          if ( ! $user_subscription->payment_method_supports( 'subscription_cancellation' ) ) {
+            continue;
+          }
+
+          // Skip if there are no remaining payments or the subscription is not current.
+          if ( $user_subscription->get_time( 'next_payment' ) <= 0 || ! $user_subscription->has_status( array( 'active', 'on-hold' ) ) ) {
+            continue;
+          }
+
+          $this->add_payment_token( $user_subscription->get_id(), WC_Payment_Tokens::get( $token_id ) );
+        }
+      }
+    }
   }
 }
