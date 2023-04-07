@@ -1134,6 +1134,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( class_exists( 'WC_Subscriptions' ) ) {
       $subscriptions = wcs_get_subscriptions_for_order( $order_id );
 
+      if ( empty( $subscriptions ) ) {
+        return;
+      }
+
       foreach ( $subscriptions as $subscription ) {
         $data_store->update_payment_token_ids( $subscription, array() );
 
