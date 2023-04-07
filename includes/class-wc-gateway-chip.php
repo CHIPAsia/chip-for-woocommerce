@@ -1053,7 +1053,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => ['mastercard', 'visa'],
-      'success_callback' => $url,
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1101,14 +1100,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     unset( $params['client'] );
-
-    if ( $this->system_url_ == 'https' ) {
-      $params['success_callback'] = preg_replace( "/^http:/i", "https:", $params['success_callback'] );
-    }
-
-    if ( $this->disable_cal == 'yes' ) {
-      unset( $params['success_callback'] );
-    }
 
     if ( $this->disable_red == 'yes' ) {
       unset( $params['success_redirect'] );
@@ -1359,7 +1350,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => ['mastercard', 'visa'],
-      'success_callback' => $url,
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1405,14 +1395,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     unset( $params['client'] );
-
-    if ( $this->system_url_ == 'https' ) {
-      $params['success_callback'] = preg_replace( "/^http:/i", "https:", $params['success_callback'] );
-    }
-
-    if ( $this->disable_cal == 'yes' ) {
-      unset( $params['success_callback'] );
-    }
 
     if ( $this->disable_red == 'yes' ) {
       unset( $params['success_redirect'] );
