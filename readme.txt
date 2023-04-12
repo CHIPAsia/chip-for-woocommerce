@@ -30,6 +30,9 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
+= 1.3.4 = 2023-XX-XX =
+* Added - Add purchase id to order note
+
 = 1.3.3 = 2023-04-07 =
 * Fixed - Issue with Add/Change Payment method
 
