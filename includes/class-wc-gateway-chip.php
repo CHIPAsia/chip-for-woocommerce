@@ -561,8 +561,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
       $this->tokenization_script();
       $this->saved_payment_methods();
-      if ( !isset( $_GET['change_payment_method'] ) ) {
-        $this->save_payment_method_checkbox();
+
+      if ( ! is_add_payment_method_page() && ! isset( $_GET['change_payment_method'] ) ) {
+        if ( $this->force_token != 'yes' ) {
+          $this->save_payment_method_checkbox();
+        }
       }
     } else {
       parent::payment_fields();
@@ -786,6 +789,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
     $order->save();
 
+    do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
+
     if ( $payment_requery_status != 'paid' ) {
       $this->schedule_requery( $payment['id'], $order_id );
     }
@@ -961,6 +966,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $chip    = $this->api();
     $payment = $chip->create_payment( $params );
+
+    $renewal_order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+    $renewal_order->save();
+
+    do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $renewal_order_id );
 
     $token = new WC_Payment_Token_CC;
     foreach ( $tokens as $key => $t ) {

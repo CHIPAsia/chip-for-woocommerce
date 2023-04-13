@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -30,8 +30,11 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.4 = 2023-XX-XX =
-* Added - Add purchase id to order note
+= 1.3.4 = 2023-04-13 =
+* Added   - Add purchase id to order note
+* Added   - Add action hooks for payment creation
+* Changed - Hide save payment method checkbox when force tokenization enabled
+
 
 = 1.3.3 = 2023-04-07 =
 * Fixed - Issue with Add/Change Payment method

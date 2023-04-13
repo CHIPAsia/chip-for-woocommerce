@@ -4,7 +4,7 @@
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: CHIP - Better Payment & Business Solutions
- * Version: 1.3.3
+ * Version: 1.3.4
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
  *
