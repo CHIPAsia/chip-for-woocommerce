@@ -34,7 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added   - Add purchase id to order note
 * Added   - Add action hooks for payment creation
 * Changed - Hide save payment method checkbox when force tokenization enabled
-
+* Changed - Hide add new payment method if no token
+* Fixed   - Issue with FPX payment when there is unsupported apostrophe
 
 = 1.3.3 = 2023-04-07 =
 * Fixed - Issue with Add/Change Payment method

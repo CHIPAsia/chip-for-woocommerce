@@ -157,6 +157,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function add_filters() {
     add_filter( 'woocommerce_subscriptions_update_payment_via_pay_shortcode', array( $this, 'maybe_dont_update_payment_method' ), 10, 3 );
+    add_filter( 'woocommerce_payment_gateway_get_new_payment_method_option_html', array( $this, 'maybe_hide_add_new_payment_method' ), 10, 2 );
   }
 
   public function get_icon() {
@@ -665,7 +666,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'client' => [
         'email'                   => $order->get_billing_email(),
         'phone'                   => substr( $order->get_billing_phone(), 0, 32 ),
-        'full_name'               => substr( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(), 0 , 128 ),
+        'full_name'               => $this->filter_customer_full_name( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
         'street_address'          => substr( $order->get_billing_address_1() . ' ' . $order->get_billing_address_2(), 0, 128 ) ,
         'country'                 => substr( $order->get_billing_country(), 0, 2 ),
         'city'                    => substr( $order->get_billing_city(), 0, 128 ) ,
@@ -1075,7 +1076,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'skip_capture'     => true,
       'client' => [
         'email'     => wp_get_current_user()->user_email,
-        'full_name' => substr( $customer->get_first_name() . ' ' . $customer->get_last_name(), 0 , 128 )
+        'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() )
       ],
       'purchase' => [
         'currency' => 'MYR',
@@ -1372,7 +1373,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'skip_capture'     => true,
       'client' => [
         'email'     => wp_get_current_user()->user_email,
-        'full_name' => substr( $customer->get_first_name() . ' ' . $customer->get_last_name(), 0 , 128 )
+        'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() )
       ],
       'purchase' => [
         'currency' => 'MYR',
@@ -1552,5 +1553,21 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         }
       }
     }
+  }
+
+  public function maybe_hide_add_new_payment_method( $html, $gateway ) {
+    if ( count( $gateway->get_tokens() ) == 0 ) {
+      return '';
+    }
+
+    return $html;
+  }
+
+  public function filter_customer_full_name( $name ) {
+    $name = str_replace( '’', '\'', $name );
+
+    $name = preg_replace('/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']/', '', $name);
+
+    return substr( $name, 0, 128 );
   }
 }
