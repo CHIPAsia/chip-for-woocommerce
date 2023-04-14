@@ -53,7 +53,7 @@ class Chip_Woocommerce {
   }
 
   public function define() {
-    define( 'WC_CHIP_MODULE_VERSION', 'v1.3.3' );
+    define( 'WC_CHIP_MODULE_VERSION', 'v1.3.4' );
     define( 'WC_CHIP_FILE', __FILE__ );
     define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
     define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
