@@ -1566,7 +1566,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   public function filter_customer_full_name( $name ) {
     $name = str_replace( '’', '\'', $name );
 
-    $name = preg_replace('/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']/', '', $name);
+    $name = preg_replace('/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']\ /', '', $name);
 
     return substr( $name, 0, 128 );
   }
