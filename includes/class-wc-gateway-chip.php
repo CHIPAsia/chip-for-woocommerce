@@ -26,6 +26,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   
   protected $cached_api;
   protected $cached_payment_method;
+  const PREFERRED_TYPE = 'Online Banking';
 
   public function __construct() {
     $this->init_id();
@@ -85,23 +86,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   protected function init_title() {
-    $this->title = __( 'Online Banking / E-Wallet / Credit Card / Debit Card (CHIP)', 'chip-for-woocommerce' );
+    $this->title = __( 'FPX', 'chip-for-woocommerce' );
   }
 
   protected function init_method_title() {
-    if ( $this->id == 'wc_gateway_chip' ) {
-      $this->method_title = __('CHIP', 'chip-for-woocommerce');
-    } else {
-      $this->method_title = sprintf( __( 'CHIP - (%1$s)', 'chip-for-woocommerce'), get_class( $this ) );
-    }
+    $this->method_title = sprintf( __( 'CHIP %1$s', 'chip-for-woocommerce'), static::PREFERRED_TYPE );
   }
 
   protected function init_method_description() {
-    if ( $this->id == 'wc_gateway_chip' ) {
-      $this->method_description = __( 'CHIP - Better Payment & Business Solutions', 'chip-for-woocommerce' );
-    } else {
-      $this->method_description = sprintf( __( 'CHIP - Better Payment & Business Solutions (%1$s)', 'chip-for-woocommerce' ), get_class( $this ) );
-    }
+    $this->method_description = sprintf( __( 'CHIP %1$s', 'chip-for-woocommerce' ), $this->title );
   }
 
   protected function init_currency_check() {
@@ -350,7 +343,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'title'       => __( 'Title', 'chip-for-woocommerce' ),
       'type'        => 'text',
       'description' => __( 'This controls the title which the user sees during checkout.', 'chip-for-woocommerce' ),
-      'default'     => __( 'Online Banking / E-Wallet / Credit Card / Debit Card (CHIP)', 'chip-for-woocommerce' ),
+      'default'     => sprintf( __( '%s', 'chip-for-woocommerce' ), $this->title ),
     );
 
     $this->form_fields['method_title'] = array(
