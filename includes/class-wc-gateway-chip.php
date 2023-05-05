@@ -978,13 +978,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
-    if ( array_key_exists( '__all__', $charge_payment ) ){
+    if ( is_array($charge_payment) AND array_key_exists( '__all__', $charge_payment ) ){
       $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment, true ) ) );
-    } elseif ( $charge_payment['status'] == 'paid' ) {
+    } elseif ( is_array($charge_payment) AND $charge_payment['status'] == 'paid' ) {
       $this->payment_complete( $renewal_order, $charge_payment );
       $renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
-    } elseif ( $charge_payment['status'] == 'pending_charge' ) {
+    } elseif ( is_array($charge_payment) AND $charge_payment['status'] == 'pending_charge' ) {
       $renewal_order->update_status( 'on-hold' );
     } else {
       $renewal_order->update_status( 'failed' );

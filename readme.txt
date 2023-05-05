@@ -32,6 +32,7 @@ The plugins do includes support for WooCommerce Subscription products.
 
 = 1.3.5 = 2023-04-XX =
 * Changed - Put meaningful description to reduce confusion
+* Fixed   - Prevent Fatal Error on WooCommerce Scheduler in the event of invalid secret key
 
 = 1.3.4 = 2023-04-13 =
 * Added   - Add purchase id to order note
