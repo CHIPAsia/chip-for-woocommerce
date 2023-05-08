@@ -30,8 +30,10 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.5 = 2023-04-XX =
+= 1.3.5 = 2023-05-08 =
 * Changed - Put meaningful description to reduce confusion
+* Changed - Automatic force tokenization for card when subscription product exists
+* Removed - Removed save to account checkbox due to confusion
 * Fixed   - Prevent Fatal Error on WooCommerce Scheduler in the event of invalid secret key
 
 = 1.3.4 = 2023-04-13 =

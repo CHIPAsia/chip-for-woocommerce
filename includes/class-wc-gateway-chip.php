@@ -558,7 +558,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
       if ( ! is_add_payment_method_page() && ! isset( $_GET['change_payment_method'] ) ) {
         if ( $this->force_token != 'yes' ) {
-          $this->save_payment_method_checkbox();
+          // $this->save_payment_method_checkbox();
         }
       }
     } else {
@@ -721,6 +721,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     if ( isset( $_POST["wc-{$this->id}-new-payment-method"] ) AND in_array( $_POST["wc-{$this->id}-new-payment-method"], [ 'true', 1 ] ) ) {
+      $params['payment_method_whitelist'] = ['visa', 'mastercard'];
+      $params['force_recurring'] = true;
+    }
+
+    if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
       $params['payment_method_whitelist'] = ['visa', 'mastercard'];
       $params['force_recurring'] = true;
     }
