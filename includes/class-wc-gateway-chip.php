@@ -725,9 +725,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $params['force_recurring'] = true;
     }
 
-    if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
-      $params['payment_method_whitelist'] = ['visa', 'mastercard'];
-      $params['force_recurring'] = true;
+    if ( function_exists( 'wcs_order_contains_subscription' ) ) {
+      if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
+        $params['payment_method_whitelist'] = ['visa', 'mastercard'];
+        $params['force_recurring'] = true;
+      }
     }
 
     if ( $this->system_url_ == 'https' ) {
