@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -29,6 +29,10 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.3.6 = 2023-XX-XX =
+* Changed - Put meaningful description in option page to reduce confusion
+* Added   - More hooks for better data manipulation
 
 = 1.3.5 = 2023-05-08 =
 * Changed - Put meaningful description to reduce confusion
@@ -58,34 +62,6 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.3.1 - 2023-03-14 =
 * Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page
 * Fixed - Unable to redirect to CHIP Payment page when switching from test to production key
-
-= 1.3.0 - 2023-03-13 =
-* Added   - Add support for WooCommerce Subscription
-* Added   - Hook token deletion with CHIP
-* Added   - WC_Gateway_Chip can be extended for cloning
-* Added   - Now CHIP payment have 4 payment method by default
-* Added   - Support for whitelisting payment method
-* Added   - Purchase due strict is now configurable
-* Added   - Due strict timing can be configured independently
-* Added   - Registered users are now linked with CHIP clients
-* Added   - Option to update client information on checkout
-* Added   - Option to disable success_callback or success_redirect for troubleshooting
-* Added   - Option to force https:// to prevent redirection on success_callback
-* Added   - Option to disable tokenization
-* Added   - Option to disable payment method cloning via PHP constant
-* Added   - Automatic requery payment status
-* Added   - Bulk requery payment status
-* Added   - Button link to invoice, receipt and feed
-* Added   - Pass customer order notes to CHIP API
-* Added   - Experimental support for WooCommerce Blocks
-* Added   - Bypass CHIP payment page feature for FPX
-* Changed - Timezone is now configurable within plugin option
-* Removed - Enable Payment method selection is now removed
-* Fixed   - Customer still shown a failed payment page when there is failed attempt
-
-= 1.2.7 - 2023-03-05 =
-* Fixed - Issue with due timestamp when woocommerce hold stock option is empty
-* Fixed - Warning with e-wallet
 
 == Installation ==
 

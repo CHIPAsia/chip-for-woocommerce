@@ -451,14 +451,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->form_fields['bypass_chip'] = array(
       'title'       => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to CHIP payment page if possible.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to bypass CHIP payment page. Only works for <code>FPX</code>, <code>FPX B2B1</code> and <code>E-Wallet</code>', 'chip-for-woocommerce' ),
       'default'     => 'yes',
     );
 
     $this->form_fields['disable_recurring_support'] = array(
       'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to disable card recurring support.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code> and <code>Mastercard</code>.', 'chip-for-woocommerce' ),
       'default'     => 'no',
     );
 
@@ -472,7 +472,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->form_fields['force_tokenization'] = array(
       'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to force tokenization if possible.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to force tokenization if possible. This only applies when <code>Visa</code> and <code>Mastercard</code> payment method are available.', 'chip-for-woocommerce' ),
       'default'     => 'no',
       'disabled'    => empty( $this->arecuring_p )
     );
@@ -878,7 +878,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $public_key = str_replace( '\n', "\n", $public_key );
 
-    $get_available_payment_method = $chip->payment_methods( get_woocommerce_currency(), $this->get_language(), 200 );
+    $woocommerce_currency = apply_filters( 'wc_' . $this->id . '_purchase_currency', get_woocommerce_currency(), $this );
+
+    $get_available_payment_method = $chip->payment_methods( $woocommerce_currency, $this->get_language(), 200 );
 
     if ( !array_key_exists( 'available_payment_methods', $get_available_payment_method ) OR empty( $get_available_payment_method['available_payment_methods'] ) ) {
       $this->add_error( sprintf( __( 'Configuration error: No payment method available for the Brand ID: %1$s', 'chip-for-woocommerce' ), $brand_id ) );
@@ -891,7 +893,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $available_payment_method = array();
     $available_recurring_payment_method = array();
 
-    $get_available_recurring_payment_method = $chip->payment_recurring_methods( get_woocommerce_currency(), $this->get_language(), 200 );
+    $get_available_recurring_payment_method = $chip->payment_recurring_methods( $woocommerce_currency, $this->get_language(), 200 );
 
     foreach( $get_available_payment_method['available_payment_methods'] as $apm ) {
       $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
@@ -964,6 +966,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'price'    => round( $item->get_total() * 100 ),
       );
     }
+
+    $params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 
     $chip    = $this->api();
     $payment = $chip->create_payment( $params );
