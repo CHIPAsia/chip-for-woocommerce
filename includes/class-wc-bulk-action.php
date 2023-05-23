@@ -49,7 +49,7 @@ class Chip_Woocommerce_Bulk_Action {
             
             WC()->queue()->schedule_single( time(), 'wc_chip_check_order_status', array( $purchase['id'], $id, 8, $gateway_id ), "{$gateway_id}_bulk_requery" );
             do_action( 'wc_chip_bulk_order_requery', $id );
-            $changed++;  
+            $changed++;
           }
         }
       }

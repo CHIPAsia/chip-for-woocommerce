@@ -30,9 +30,10 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.6 = 2023-XX-XX =
+= 1.3.6 = 2023-05-23 =
 * Changed - Put meaningful description in option page to reduce confusion
 * Added   - More hooks for better data manipulation
+* Fixed   - Issue when product price is less than zero
 
 = 1.3.5 = 2023-05-08 =
 * Changed - Put meaningful description to reduce confusion

@@ -40,9 +40,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->secret_key  = $this->get_option( 'secret_key' );
     $this->brand_id    = $this->get_option( 'brand_id' );
-    $this->due_strict  = $this->get_option( 'due_strict', true );
+    $this->due_strict  = $this->get_option( 'due_strict', 'yes' );
     $this->due_str_t   = $this->get_option( 'due_strict_timing', 60 );
-    $this->purchase_sr = $this->get_option( 'purchase_send_receipt', true );
+    $this->purchase_sr = $this->get_option( 'purchase_send_receipt', 'yes' );
     $this->purchase_tz = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
     $this->update_clie = $this->get_option( 'update_client_information' );
     $this->system_url_ = $this->get_option( 'system_url_scheme', 'https' );
@@ -674,9 +674,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $items = $order->get_items();
 
     foreach ( $items as $item ) {
+      $price = round( $item->get_total() * 100 );
+
+      if ( $price < 0 ) {
+        $price = 0;
+      }
+
       $params['purchase']['products'][] = array(
         'name'     => substr( $item->get_name(), 0, 256 ),
-        'price'    => round( $item->get_total() * 100 ),
+        'price'    => $price,
       );
     }
 
