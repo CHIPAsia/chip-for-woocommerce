@@ -969,9 +969,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $items = $renewal_order->get_items();
 
     foreach ( $items as $item ) {
+      $price = round( $item->get_total() * 100 );
+      $qty   = $item->get_quantity();
+
+      if ( $price < 0 ) {
+        $price = 0;
+      }
+
       $params['purchase']['products'][] = array(
         'name'     => substr( $item->get_name(), 0, 256 ),
-        'price'    => round( $item->get_total() * 100 ),
+        'price'    => round( $price / $qty ),
+        'quantity' => $qty
       );
     }
 
