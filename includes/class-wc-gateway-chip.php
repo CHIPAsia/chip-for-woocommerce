@@ -663,11 +663,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'street_address'          => substr( $order->get_billing_address_1() . ' ' . $order->get_billing_address_2(), 0, 128 ) ,
         'country'                 => substr( $order->get_billing_country(), 0, 2 ),
         'city'                    => substr( $order->get_billing_city(), 0, 128 ) ,
-        'zip_code'                => substr( $order->get_shipping_postcode(), 0, 32 ),
+        'zip_code'                => substr( $order->get_billing_postcode(), 0, 32 ),
+        'state'                   => substr( $order->get_billing_state(), 0, 128 ),
         'shipping_street_address' => substr( $order->get_shipping_address_1() . ' ' . $order->get_shipping_address_2(), 0, 128 ) ,
         'shipping_country'        => substr( $order->get_shipping_country(), 0, 2 ),
         'shipping_city'           => substr( $order->get_shipping_city(), 0, 128 ),
         'shipping_zip_code'       => substr( $order->get_shipping_postcode(), 0, 32 ),
+        'shipping_state'          => substr( $order->get_shipping_state(), 0, 128 ),
       ],
     ];
 
@@ -754,6 +756,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( !empty( $order->get_customer_note() ) ) {
       $params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
+    }
+
+    foreach ( $params['client'] as $key => $value ) {
+      if ( empty( $value ) ) {
+        unset( $params['client'][$key] );
+      }
     }
 
     $params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );

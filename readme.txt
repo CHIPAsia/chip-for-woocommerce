@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.7
+Stable tag: 1.3.8
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -29,6 +29,10 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.3.8 = 2023-05-27 =
+* Added - State information for address in billing and shipping
+* Fixed - Zip code billing should taken from billing
 
 = 1.3.7 = 2023-05-24 =
 * Added - Quantity in CHIP Purchase invoice.
