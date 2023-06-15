@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.2
-Stable tag: 1.3.8
+Stable tag: 1.3.9
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -29,6 +29,9 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.3.9 = 2023-XX-XX =
+* Changed - Set redirect parameter to direct_post_url for Visa/Mastercard payment method
 
 = 1.3.8 = 2023-05-27 =
 * Added - State information for address in billing and shipping

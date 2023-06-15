@@ -812,9 +812,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->schedule_requery( $payment['id'], $order_id );
     }
 
+    $redirect_url = $payment['checkout_url'];
+
+    if ( is_array( $payment['payment_method_whitelist'] ) AND !empty( $payment['payment_method_whitelist'] ) ) {
+      foreach( $payment['payment_method_whitelist'] as $pm ) {
+        if ( !in_array( $pm, ['visa', 'mastercard'] ) ) {
+          $redirect_url = $payment['checkout_url'];
+          break;
+        }
+
+        $redirect_url = $payment['direct_post_url'];
+      }
+    }
+
     return array(
       'result' => 'success',
-      'redirect' => esc_url_raw( $this->bypass_chip( $payment['checkout_url'], $payment ) ),
+      'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
     );
   }
 
@@ -1447,9 +1460,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     WC()->session->set( 'chip_payment_method_change_' . $order_id, $payment['id'] );
 
+    $redirect_url = $payment['checkout_url'];
+
+    if ( is_array( $payment['payment_method_whitelist'] ) AND !empty( $payment['payment_method_whitelist'] ) ) {
+      foreach( $payment['payment_method_whitelist'] as $pm ) {
+        if ( !in_array( $pm, ['visa', 'mastercard'] ) ) {
+          $redirect_url = $payment['checkout_url'];
+          break;
+        }
+
+        $redirect_url = $payment['direct_post_url'];
+      }
+    }
+
     return array(
       'result'   => 'success',
-      'redirect' => $payment['checkout_url'],
+      'redirect' => $redirect_url,
     );
   }
 
