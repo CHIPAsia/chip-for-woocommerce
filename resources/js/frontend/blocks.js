@@ -194,6 +194,7 @@ const Fpxb2b1BankList = () => {
   );
 }
 
+// fragment --> <> --> untuk wrap bila return mesti 1 component sahaja.
 const content_display = <><Content />
 { settings.js_display == 'fpx' ? <FpxBankList /> : null }
 { settings.js_display == 'fpx_b2b1' ? <Fpxb2b1BankList /> : null}
