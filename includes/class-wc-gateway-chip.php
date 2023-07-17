@@ -706,9 +706,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $old_client_records = true;
       unset( $params['client'] );
 
-      $params['client_id'] = get_user_meta( $user_id, '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
+      $params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
 
       if ( empty( $params['client_id'] ) ) {
+        $chip->set_key( $this->secret_key, $brand_id );
         $get_client = $chip->get_client_by_email( $client_with_params['email'] );
 
         if ( array_key_exists( '__all__', $get_client ) ) {
@@ -784,7 +785,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
-    WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
+    // WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
 
     $this->log_order_info('got checkout url, redirecting', $order);
 
