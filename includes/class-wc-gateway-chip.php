@@ -279,8 +279,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->log_order_info( 'received success callback', $order );
 
-    $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
-    if ( !$payment_id AND isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
+    // $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
+
+    $payment = $order->get_meta( '_' . $this->id . '_purchase', true );
+    $payment_id = $payment['id'];
+
+    // if ( !$payment_id AND isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
+    if ( isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
       $content = file_get_contents( 'php://input' );
 
       if ( openssl_verify( $content,  base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1 ) {
@@ -692,13 +697,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $chip = $this->api();
 
-    if ( is_user_logged_in() AND $this->disable_cli != 'yes' ) {
-      $params['client']['email'] = wp_get_current_user()->user_email;
+    $user_id = $order->get_user_id();
+
+    if ( $user_id > 0 AND $this->disable_cli != 'yes' ) {
+      $user = get_user_by( 'id', $user_id );
+      $params['client']['email'] = $user->user_email;
       $client_with_params = $params['client'];
       $old_client_records = true;
       unset( $params['client'] );
 
-      $params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
+      $params['client_id'] = get_user_meta( $user_id, '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
 
       if ( empty( $params['client_id'] ) ) {
         $get_client = $chip->get_client_by_email( $client_with_params['email'] );
