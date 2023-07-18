@@ -699,8 +699,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $user_id = $order->get_user_id();
 
-    if ( $user_id > 0 AND $this->disable_cli != 'yes' ) {
-      $user = get_user_by( 'id', $user_id );
+    $user = get_user_by( 'id', $user_id );
+
+    if ( $user AND $this->disable_cli != 'yes' ) {
       $params['client']['email'] = $user->user_email;
       $client_with_params = $params['client'];
       $old_client_records = true;
@@ -709,7 +710,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
 
       if ( empty( $params['client_id'] ) ) {
-        $chip->set_key( $this->secret_key, $brand_id );
         $get_client = $chip->get_client_by_email( $client_with_params['email'] );
 
         if ( array_key_exists( '__all__', $get_client ) ) {
