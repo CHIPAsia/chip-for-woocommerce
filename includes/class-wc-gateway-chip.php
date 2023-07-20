@@ -302,7 +302,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
     }
 
-    if ( $payment['status'] == 'paid' ) {
+    if ( ( $payment['status'] == 'paid' ) OR ( $payment['status'] == 'preauthorized') AND $payment['purchase']['total_override'] == 0 ) {
       if ( !$order->is_paid() ) {
         $this->payment_complete( $order, $payment );
       }
@@ -748,6 +748,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
         $params['payment_method_whitelist'] = ['visa', 'mastercard'];
         $params['force_recurring'] = true;
+
+        if ( $params['purchase']['total_override'] == 0 ) {
+          $params['skip_capture'] = true;
+        }
       }
     }
 
