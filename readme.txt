@@ -30,7 +30,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.9 = 2023-07-XX =
+= 1.3.9 = 2023-07-21 =
+* Added   - Support for $0 initial checkout.
 * Changed - Set redirect parameter to direct_post_url for Visa/Mastercard payment method
 * Fixed   - Error after payment for admin after making payment
 * Fixed   - Missing client if the order created through dashboard
