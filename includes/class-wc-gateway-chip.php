@@ -625,6 +625,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function validate_fields() {
+    // Check and throw error if payment method not selected
+    if (is_array($this->payment_met) AND count($this->payment_met) == 1  AND $this->bypass_chip == 'yes') {
+      if ($this->payment_met[0] == 'fpx' AND isset($_POST['chip_fpx_bank']) AND strlen($_POST['chip_fpx_bank']) == 0) {
+        throw new Exception(__('<strong>Internet Banking</strong> is a required field.', 'chip-for-woocommerce'));
+      } elseif ($this->payment_met[0] == 'fpx_b2b1' AND isset($_POST['chip_fpx_b2b1_bank']) AND strlen($_POST['chip_fpx_b2b1_bank']) == 0) {
+        throw new Exception(__('<strong>Corporate Internet Banking</strong> is a required field.', 'chip-for-woocommerce'));
+      } elseif ($this->payment_met[0] == 'razer' AND isset($_POST['chip_razer_ewallet']) AND strlen($_POST['chip_razer_ewallet']) == 0) {
+        throw new Exception(__('<strong>E-Wallet</strong> is a required field.', 'chip-for-woocommerce'));
+      }
+    }
   }
 
   public function process_payment( $order_id ) {
