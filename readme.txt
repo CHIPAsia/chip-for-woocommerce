@@ -30,8 +30,11 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.3.9 = 2023-XX-XX =
+= 1.3.9 = 2023-07-21 =
+* Added   - Support for $0 initial checkout.
 * Changed - Set redirect parameter to direct_post_url for Visa/Mastercard payment method
+* Fixed   - Error after payment for admin after making payment
+* Fixed   - Missing client if the order created through dashboard
 
 = 1.3.8 = 2023-05-27 =
 * Added - State information for address in billing and shipping
@@ -50,29 +53,6 @@ The plugins do includes support for WooCommerce Subscription products.
 * Changed - Automatic force tokenization for card when subscription product exists
 * Removed - Removed save to account checkbox due to confusion
 * Fixed   - Prevent Fatal Error on WooCommerce Scheduler in the event of invalid secret key
-
-= 1.3.4 = 2023-04-13 =
-* Added   - Add purchase id to order note
-* Added   - Add action hooks for payment creation
-* Changed - Hide save payment method checkbox when force tokenization enabled
-* Changed - Hide add new payment method if no token
-* Fixed   - Issue with FPX payment when there is unsupported apostrophe
-
-= 1.3.3 = 2023-04-07 =
-* Fixed - Issue with Add/Change Payment method
-
-= 1.3.2 - 2023-03-29 =
-* Changed - Requery will stop attempt if status is expired
-* Changed - Ensure lock are released for requery
-* Added   - Declaration for WooCommerce HPOS compatibility
-* Added   - Bypass CHIP Payment Page for E-Wallet
-* Added   - Option to not using CHIP clients API for logged in user
-* Fixed   - Warning when non logged in user choose to save card
-* Fixed   - Warning when secret key changed and unable to requery the purchases
-
-= 1.3.1 - 2023-03-14 =
-* Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page
-* Fixed - Unable to redirect to CHIP Payment page when switching from test to production key
 
 == Installation ==
 
