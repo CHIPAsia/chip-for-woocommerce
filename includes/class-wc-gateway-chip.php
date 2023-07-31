@@ -17,7 +17,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $payment_met;
   protected $disable_red;
   protected $disable_cal;
-  protected $disable_aut;
+  protected $enable_auto;
   protected $public_key;
   protected $arecuring_p;
   protected $a_payment_m;
@@ -53,7 +53,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->payment_met = $this->get_option( 'payment_method_whitelist' );
     $this->disable_red = $this->get_option( 'disable_redirect' );
     $this->disable_cal = $this->get_option( 'disable_callback' );
-    $this->disable_aut = $this->get_option( 'enable_auto_clear_cart' );
+    $this->enable_auto = $this->get_option( 'enable_auto_clear_cart' );
     $this->debug       = $this->get_option( 'debug' );
     $this->public_key  = $this->get_option( 'public_key' );
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
@@ -808,7 +808,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
-    if (!$this->disable_aut) {
+    if ($this->enable_auto == 'yes') {
       WC()->cart->empty_cart();
     }
 
