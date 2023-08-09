@@ -17,6 +17,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $payment_met;
   protected $disable_red;
   protected $disable_cal;
+  protected $enable_auto;
   protected $public_key;
   protected $arecuring_p;
   protected $a_payment_m;
@@ -52,6 +53,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->payment_met = $this->get_option( 'payment_method_whitelist' );
     $this->disable_red = $this->get_option( 'disable_redirect' );
     $this->disable_cal = $this->get_option( 'disable_callback' );
+    $this->enable_auto = $this->get_option( 'enable_auto_clear_cart' );
     $this->debug       = $this->get_option( 'debug' );
     $this->public_key  = $this->get_option( 'public_key' );
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
@@ -279,8 +281,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->log_order_info( 'received success callback', $order );
 
-    $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
-    if ( !$payment_id AND isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
+    // $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
+
+    $payment = $order->get_meta( '_' . $this->id . '_purchase', true );
+    $payment_id = $payment['id'];
+
+    // if ( !$payment_id AND isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
+    if ( isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
       $content = file_get_contents( 'php://input' );
 
       if ( openssl_verify( $content,  base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1 ) {
@@ -297,7 +304,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
     }
 
-    if ( $payment['status'] == 'paid' ) {
+    if ( ( $payment['status'] == 'paid' ) OR ( $payment['status'] == 'preauthorized') AND $payment['purchase']['total_override'] == 0 ) {
       if ( !$order->is_paid() ) {
         $this->payment_complete( $order, $payment );
       }
@@ -468,6 +475,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'description' =>__( 'Tick to disable CHIP clients API integration.', 'chip-for-woocommerce' ),
       'default'     => 'no',
     );
+  
+    $this->form_fields['enable_auto_clear_cart'] = array(
+      'title' => __('Enable auto clear Cart', 'chip-for-woocommerce'),
+      'type' => 'checkbox',
+      'label' => __('Enable clear cart upon checkout', 'chip-for-woocommerce'),
+      'default' => 'no',
+    );
 
     $this->form_fields['force_tokenization'] = array(
       'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
@@ -620,6 +634,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function validate_fields() {
+    // Check and throw error if payment method not selected
+    if (is_array($this->payment_met) AND count($this->payment_met) == 1  AND $this->bypass_chip == 'yes') {
+      if ($this->payment_met[0] == 'fpx' AND isset($_POST['chip_fpx_bank']) AND strlen($_POST['chip_fpx_bank']) == 0) {
+        throw new Exception(__('<strong>Internet Banking</strong> is a required field.', 'chip-for-woocommerce'));
+      } elseif ($this->payment_met[0] == 'fpx_b2b1' AND isset($_POST['chip_fpx_b2b1_bank']) AND strlen($_POST['chip_fpx_b2b1_bank']) == 0) {
+        throw new Exception(__('<strong>Corporate Internet Banking</strong> is a required field.', 'chip-for-woocommerce'));
+      } elseif ($this->payment_met[0] == 'razer' AND isset($_POST['chip_razer_ewallet']) AND strlen($_POST['chip_razer_ewallet']) == 0) {
+        throw new Exception(__('<strong>E-Wallet</strong> is a required field.', 'chip-for-woocommerce'));
+      }
+    }
   }
 
   public function process_payment( $order_id ) {
@@ -692,8 +716,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $chip = $this->api();
 
-    if ( is_user_logged_in() AND $this->disable_cli != 'yes' ) {
-      $params['client']['email'] = wp_get_current_user()->user_email;
+    $user_id = $order->get_user_id();
+
+    $user = get_user_by( 'id', $user_id );
+
+    if ( $user AND $this->disable_cli != 'yes' ) {
+      $params['client']['email'] = $user->user_email;
       $client_with_params = $params['client'];
       $old_client_records = true;
       unset( $params['client'] );
@@ -739,6 +767,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
         $params['payment_method_whitelist'] = ['visa', 'mastercard'];
         $params['force_recurring'] = true;
+
+        if ( $params['purchase']['total_override'] == 0 ) {
+          $params['skip_capture'] = true;
+        }
       }
     }
 
@@ -776,7 +808,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
-    WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
+    if ($this->enable_auto == 'yes') {
+      WC()->cart->empty_cart();
+    }
+
+    // WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
 
     $this->log_order_info('got checkout url, redirecting', $order);
 
