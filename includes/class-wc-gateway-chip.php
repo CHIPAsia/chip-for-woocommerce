@@ -17,6 +17,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $payment_met;
   protected $disable_red;
   protected $disable_cal;
+  protected $enable_auto;
   protected $public_key;
   protected $arecuring_p;
   protected $a_payment_m;
@@ -52,6 +53,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->payment_met = $this->get_option( 'payment_method_whitelist' );
     $this->disable_red = $this->get_option( 'disable_redirect' );
     $this->disable_cal = $this->get_option( 'disable_callback' );
+    $this->enable_auto = $this->get_option( 'enable_auto_clear_cart' );
     $this->debug       = $this->get_option( 'debug' );
     $this->public_key  = $this->get_option( 'public_key' );
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
@@ -473,6 +475,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'description' =>__( 'Tick to disable CHIP clients API integration.', 'chip-for-woocommerce' ),
       'default'     => 'no',
     );
+  
+    $this->form_fields['enable_auto_clear_cart'] = array(
+      'title' => __('Enable auto clear Cart', 'chip-for-woocommerce'),
+      'type' => 'checkbox',
+      'label' => __('Enable clear cart upon checkout', 'chip-for-woocommerce'),
+      'default' => 'no',
+    );
 
     $this->form_fields['force_tokenization'] = array(
       'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
@@ -797,6 +806,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       return array(
         'result' => 'failure',
       );
+    }
+
+    if ($this->enable_auto == 'yes') {
+      WC()->cart->empty_cart();
     }
 
     // WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
