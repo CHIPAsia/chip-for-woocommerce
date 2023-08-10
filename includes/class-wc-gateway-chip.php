@@ -650,6 +650,20 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   public function process_payment( $order_id ) {
     $order = new WC_Order( $order_id );
 
+    // Add Processing Fee
+    $item_fee = new WC_Order_Item_Fee();
+
+    $item_fee->set_name( 'Processing Fee' );
+    $item_fee->set_amount( '2' ); // RM 2
+    $item_fee->set_total( '2' ); // RM 2
+
+    // Add Fee item to the order.
+    $order->add_item( $item_fee );
+
+    $order->calculate_totals();
+    $order->save();
+    // End of Add Processing Fee
+
     // Start of logic for subscription_payment_method_change_customer supports
     if ( isset( $_GET['change_payment_method'] ) AND $_GET['change_payment_method'] == $order_id ) {
       return $this->process_payment_method_change( $order_id );
@@ -993,6 +1007,21 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function auto_charge( $total_amount, $renewal_order ) {
+
+    // Add Processing Fee
+    $item_fee = new WC_Order_Item_Fee();
+
+    $item_fee->set_name( 'Processing Fee' );
+    $item_fee->set_amount( '2' ); // RM 2
+    $item_fee->set_total( '2' ); // RM 2
+
+    // Add Fee item to the order.
+    $renewal_order->add_item( $item_fee );
+
+    $renewal_order->calculate_totals();
+    $renewal_order->save();
+    // End of Add Processing Fee
+
     $renewal_order_id = $renewal_order->get_id();
     if ( empty( $tokens = WC_Payment_Tokens::get_order_tokens( $renewal_order_id ) ) ) {
       $renewal_order->update_status( 'failed' );
