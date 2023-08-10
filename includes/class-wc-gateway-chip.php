@@ -440,7 +440,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'title'       => __( 'Update client information', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
       'description' => __( 'Tick to update client information on purchase creation.', 'chip-for-woocommerce' ),
-      'default'     => 'no',
+      'default'     => 'yes',
     );
 
     $this->form_fields['system_url_scheme'] = array(
