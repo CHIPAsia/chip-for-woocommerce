@@ -121,7 +121,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $one_time_gateway = false;
 
     if ( is_array( $this->payment_met ) AND !empty( $this->payment_met ) ) {
-      foreach( [ 'visa', 'mastercard' ] as $card_network ) {
+      foreach( [ 'visa', 'mastercard', 'maestro' ] as $card_network ) {
         if ( in_array( $card_network, $this->payment_met ) ) {
           $one_time_gateway = false;
           break;
@@ -148,6 +148,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     add_action( 'woocommerce_subscription_change_payment_method_via_pay_shortcode', array( $this, 'handle_change_payment_method_shortcode' ), 10, 1 );
+
+    add_action( 'init', array( $this, 'register_script' ) );
   }
 
   public function add_filters() {
@@ -601,6 +603,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         ));
       }
     }
+
+    if ( is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' ) {
+      sort($this->payment_met);
+      $card_payment_method = array('visa', 'mastercard', 'maestro');
+      sort($card_payment_method);
+      if ( $this->payment_met === $card_payment_method ) {
+        wp_enqueue_script( "wc-{$this->id}-direct-post" );
+        $this->form(); 
+      }
+    }
   }
 
   public function get_language() {
@@ -759,13 +771,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     if ( isset( $_POST["wc-{$this->id}-new-payment-method"] ) AND in_array( $_POST["wc-{$this->id}-new-payment-method"], [ 'true', 1 ] ) ) {
-      $params['payment_method_whitelist'] = ['visa', 'mastercard'];
+      $params['payment_method_whitelist'] = ['visa', 'mastercard', 'maestro'];
       $params['force_recurring'] = true;
     }
 
     if ( function_exists( 'wcs_order_contains_subscription' ) ) {
       if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
-        $params['payment_method_whitelist'] = ['visa', 'mastercard'];
+        $params['payment_method_whitelist'] = ['visa', 'mastercard', 'maestro'];
         $params['force_recurring'] = true;
 
         if ( $params['purchase']['total_override'] == 0 ) {
@@ -852,7 +864,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( is_array( $payment['payment_method_whitelist'] ) AND !empty( $payment['payment_method_whitelist'] ) ) {
       foreach( $payment['payment_method_whitelist'] as $pm ) {
-        if ( !in_array( $pm, ['visa', 'mastercard'] ) ) {
+        if ( !in_array( $pm, ['visa', 'mastercard', 'maestro'] ) ) {
           $redirect_url = $payment['checkout_url'];
           break;
         }
@@ -864,6 +876,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     return array(
       'result' => 'success',
       'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
+      'messages' => '<div class="woocommerce-info">' . __( 'Redirecting to CHIP', 'chip-for-woocommerce' ) . '</div>',
     );
   }
 
@@ -1144,7 +1157,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     );
 
     $params = array(
-      'payment_method_whitelist' => ['mastercard', 'visa'],
+      'payment_method_whitelist' => ['mastercard', 'visa', 'maestro'],
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1441,7 +1454,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $params = array(
-      'payment_method_whitelist' => ['mastercard', 'visa'],
+      'payment_method_whitelist' => ['mastercard', 'visa', 'maestro'],
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1500,7 +1513,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( is_array( $payment['payment_method_whitelist'] ) AND !empty( $payment['payment_method_whitelist'] ) ) {
       foreach( $payment['payment_method_whitelist'] as $pm ) {
-        if ( !in_array( $pm, ['visa', 'mastercard'] ) ) {
+        if ( !in_array( $pm, ['visa', 'mastercard', 'maestro'] ) ) {
           $redirect_url = $payment['checkout_url'];
           break;
         }
@@ -1659,5 +1672,66 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $name = preg_replace('/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']\ /', '', $name);
 
     return substr( $name, 0, 128 );
+  }
+
+  public function register_script() {
+    wp_register_script(
+      "wc-{$this->id}-direct-post",
+      trailingslashit( WC_CHIP_URL ) . 'includes/js/direct-post.js',
+      array( 'jquery' ),
+      '1.0.0',
+      true
+    );
+
+    wp_localize_script( "wc-{$this->id}-direct-post", 'gateway_option', ['id' => $this->id ] );
+  }
+
+  public function form() {
+    wp_enqueue_script( 'wc-credit-card-form' );
+
+    $fields = array();
+
+    $cvc_field = '<p class="form-row form-row-last">
+      <label for="' . esc_attr( $this->id ) . '-card-cvc">' . esc_html__( 'Card code', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+      <input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVV', 'chip-for-woocommerce' ) . '" style="width:100px" />
+    </p>';
+
+    $default_fields = array(
+      'card-name-field' => '<p class="form-row form-row-wide">
+        <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+        <input id="' . esc_attr( $this->id ) . '-card-name" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="Name" />
+      </p>',
+      'card-number-field' => '<p class="form-row form-row-wide">
+        <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+        <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;" />
+      </p>',
+      'card-expiry-field' => '<p class="form-row form-row-first">
+        <label for="' . esc_attr( $this->id ) . '-card-expiry">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+        <input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="7" placeholder="' . esc_attr__( 'MM / YY', 'chip-for-woocommerce' ) . '" />
+      </p>',
+    );
+
+    if ( ! $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
+      $default_fields['card-cvc-field'] = $cvc_field;
+    }
+
+    $fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_fields', $default_fields, $this->id ) );
+    ?>
+
+    <fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
+      <?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
+      <?php
+      foreach ( $fields as $field ) {
+        echo $field; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
+      }
+      ?>
+      <?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
+      <div class="clear"></div>
+    </fieldset>
+    <?php
+
+    if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
+      echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
+    }
   }
 }
