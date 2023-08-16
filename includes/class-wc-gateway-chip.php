@@ -57,7 +57,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->debug       = $this->get_option( 'debug' );
     $this->public_key  = $this->get_option( 'public_key' );
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
-    $this->a_payment_m = $this->get_option( 'available_payment_method' );
+    $this->a_payment_m = $this->get_option( 'available_payment_method', $this->get_default_payment_method() );
     $this->description = $this->get_option( 'description' );
     $this->webhook_pub = $this->get_option( 'webhook_public_key' );
     $this->bypass_chip = $this->get_option( 'bypass_chip' );
@@ -88,7 +88,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   protected function init_title() {
-    $this->title = __( 'FPX', 'chip-for-woocommerce' );
+    $this->title = __( 'Online Banking (FPX)', 'chip-for-woocommerce' );
   }
 
   protected function init_method_title() {
@@ -364,7 +364,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'title'       => __( 'Description', 'chip-for-woocommerce' ),
       'type'        => 'text',
       'description' => __( 'This controls the description which the user sees during checkout.', 'chip-for-woocommerce' ),
-      'default'     => __( 'Pay with Online Banking / E-Wallet / Credit Card / Debit Card. You will choose your payment option on the next page', 'chip-for-woocommerce' ),
+      'default'     => __( 'Pay with Online Banking (FPX)', 'chip-for-woocommerce' ),
     );
 
     $this->form_fields['credentials'] = array(
@@ -440,7 +440,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'title'       => __( 'Update client information', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
       'description' => __( 'Tick to update client information on purchase creation.', 'chip-for-woocommerce' ),
-      'default'     => 'no',
+      'default'     => 'yes',
     );
 
     $this->form_fields['system_url_scheme'] = array(
@@ -496,6 +496,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'type'        => 'multiselect',
       'class'       => 'wc-enhanced-select',
       'description' => __( 'Choose payment method to enforce payment method whitelisting if possible.', 'chip-for-woocommerce' ),
+      'default'     => ['fpx'],
       'options'     => $this->a_payment_m,
       'disabled'    => empty( $this->a_payment_m )
     );
@@ -1659,5 +1660,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $name = preg_replace('/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']\ /', '', $name);
 
     return substr( $name, 0, 128 );
+  }
+
+  public function get_default_payment_method() {
+    return ['fpx' => 'Fpx'];
   }
 }
