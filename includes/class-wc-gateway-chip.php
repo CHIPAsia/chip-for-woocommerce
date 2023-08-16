@@ -24,6 +24,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $webhook_pub;
   protected $bypass_chip;
   protected $debug;
+  protected $add_charges;
+  protected $fix_charges;
+  protected $per_charges;
   
   protected $cached_api;
   protected $cached_payment_method;
@@ -61,6 +64,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->description = $this->get_option( 'description' );
     $this->webhook_pub = $this->get_option( 'webhook_public_key' );
     $this->bypass_chip = $this->get_option( 'bypass_chip' );
+    $this->add_charges = $this->get_option( 'enable_additional_charges' );
+    $this->fix_charges = $this->get_option( 'fixed_charges', 100 );
+    $this->per_charges = $this->get_option( 'percent_charges', 0 );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -522,6 +528,32 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'description' => sprintf( __( 'This option to set public key that are generated through CHIP Dashboard >> Webhooks page. The callback url is: <code>%s</code>', 'chip-for-woocommerce' ), $callback_url ),
     );
 
+    $this->form_fields['additional_charges'] = array(
+      'title'       => __( 'Additional Charges', 'chip-for-woocommerce' ),
+      'type'        => 'title',
+      'description' => __( 'Options to add additional charges after checkout.', 'chip-for-woocommerce' ),
+    );
+
+    $this->form_fields['enable_additional_charges'] = array(
+      'title'       => __( 'Enable Additional Charges', 'chip-for-woocommerce' ),
+      'type'        => 'checkbox',
+      'description' => __( 'Tick to activate additional charges.', 'chip-for-woocommerce' ),
+    );
+
+    $this->form_fields['fixed_charges'] = array(
+      'title'       => __( 'Fixed Charges (cents)', 'chip-for-woocommerce' ),
+      'type'        => 'number',
+      'description' => __( 'Fixed charges in cents. Default to: <code>100</code>. This will only be applied when additional charges are activated.', 'chip-for-woocommerce' ),
+      'default'     => '100',
+    );
+
+    $this->form_fields['percent_charges'] = array(
+      'title'       => __( 'Percentage Charges (%)', 'chip-for-woocommerce' ),
+      'type'        => 'number',
+      'description' => __( 'Percentage charges. Input <code>100</code> for 1%. Default to: <code>0</code>. This will only be applied when additional charges are activated.', 'chip-for-woocommerce' ),
+      'default'     => '0',
+    );
+
     $this->form_fields['troubleshooting'] = array(
       'title'       => __( 'Troubleshooting', 'chip-for-woocommerce' ),
       'type'        => 'title',
@@ -648,13 +680,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function process_payment( $order_id ) {
-    $order = new WC_Order( $order_id );
+    do_action( 'wc_' . $this->id . '_before_process_payment', $order_id, $this );
 
     // Start of logic for subscription_payment_method_change_customer supports
     if ( isset( $_GET['change_payment_method'] ) AND $_GET['change_payment_method'] == $order_id ) {
       return $this->process_payment_method_change( $order_id );
     }
     // End of logic for subscription_payment_method_change_customer supports
+
+    $order = new WC_Order( $order_id );
+
+    if ($this->add_charges == 'yes') {
+      $this->add_item_order_fee($order);
+    }
 
     $callback_url  = add_query_arg( [ 'id' => $order_id ], WC()->api_request_url( $this->id ) );
     if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
@@ -862,6 +900,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
+    do_action( 'wc_' . $this->id . '_after_process_payment', $order_id, $this );
+
     return array(
       'result' => 'success',
       'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
@@ -993,6 +1033,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function auto_charge( $total_amount, $renewal_order ) {
+
+    if ($this->add_charges == 'yes') {
+      $this->add_item_order_fee($renewal_order);
+    }
+
     $renewal_order_id = $renewal_order->get_id();
     if ( empty( $tokens = WC_Payment_Tokens::get_order_tokens( $renewal_order_id ) ) ) {
       $renewal_order->update_status( 'failed' );
@@ -1664,5 +1709,33 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function get_default_payment_method() {
     return ['fpx' => 'Fpx'];
+  }
+
+  public function add_item_order_fee(&$order) {
+
+    do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
+
+    if ($this->fix_charges > 0) {
+      $item_fee = new WC_Order_Item_Fee();
+
+      $item_fee->set_name( 'Fixed Processing Fee' );
+      $item_fee->set_amount( $this->fix_charges / 100 );
+      $item_fee->set_total( $this->fix_charges / 100 );
+      $order->add_item( $item_fee );
+    }
+
+    if ($this->per_charges > 0) {
+      $item_fee = new WC_Order_Item_Fee();
+
+      $item_fee->set_name( 'Variable Processing Fee' );
+      $item_fee->set_amount( $order->get_total() * ($this->per_charges / 100) / 100 );
+      $item_fee->set_total( $order->get_total() * ($this->per_charges / 100) / 100 );
+      $order->add_item( $item_fee );
+    }
+
+    $order->calculate_totals();
+    $order->save();
+
+    do_action( 'wc_' . $this->id . '_after_add_item_order_fee', $order, $this );
   }
 }
