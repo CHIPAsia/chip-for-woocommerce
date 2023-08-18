@@ -165,6 +165,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function get_icon() {
     $style = apply_filters( 'wc_' . $this->id . '_get_icon_style', 'max-height: 25px; width: auto', $this );
+
+    if ( in_array($this->get_option( 'display_logo', 'logo' ), ['paywithchip_all', 'paywithchip_fpx']) ) {
+      $style = '';
+    }
+    
     $icon = '<img class="chip-for-woocommerce-" ' . $this->id . ' src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
     return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
   }
@@ -411,6 +416,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'fpx_b2b1' => 'FPX B2B1',
         'ewallet'  => 'E-Wallet',
         'card'     => 'Card',
+
+        'paywithchip_all' => 'Pay with CHIP (All)',
+        'paywithchip_fpx' => 'Pay with CHIP (FPX)',
       ),
     );
 
@@ -466,14 +474,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->form_fields['bypass_chip'] = array(
       'title'       => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to bypass CHIP payment page. Only works for <code>FPX</code>, <code>FPX B2B1</code> and <code>E-Wallet</code>', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to bypass CHIP payment page.', 'chip-for-woocommerce' ),
       'default'     => 'yes',
     );
 
     $this->form_fields['disable_recurring_support'] = array(
       'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code> and <code>Mastercard</code>.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Maestro</code> and <code>Mastercard</code>.', 'chip-for-woocommerce' ),
       'default'     => 'no',
     );
 
@@ -605,11 +613,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->tokenization_script();
       $this->saved_payment_methods();
 
-      if ( ! is_add_payment_method_page() && ! isset( $_GET['change_payment_method'] ) ) {
-        if ( $this->force_token != 'yes' ) {
-          // $this->save_payment_method_checkbox();
-        }
-      }
     } else {
       parent::payment_fields();
 
@@ -1738,18 +1741,18 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $fields = array();
 
     $cvc_field = '<p class="form-row form-row-last">
-      <label for="' . esc_attr( $this->id ) . '-card-cvc">' . esc_html__( 'Card code', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-      <input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVV', 'chip-for-woocommerce' ) . '" style="width:100px" />
+      <label for="' . esc_attr( $this->id ) . '-card-cvc">' . esc_html__( 'CVC', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+      <input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'chip-for-woocommerce' ) . '" style="width:100px" />
     </p>';
 
     $default_fields = array(
       'card-name-field' => '<p class="form-row form-row-wide">
-        <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-name" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="Name" />
+        <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+        <input id="' . esc_attr( $this->id ) . '-card-name" style="font-size: 1.5em; padding: 8px;" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="30" placeholder="Name" />
       </p>',
       'card-number-field' => '<p class="form-row form-row-wide">
         <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;" />
+        <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="1234 1234 1234 1234" />
       </p>',
       'card-expiry-field' => '<p class="form-row form-row-first">
         <label for="' . esc_attr( $this->id ) . '-card-expiry">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
@@ -1776,9 +1779,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     </fieldset>
     <?php
 
+    if ( ! is_add_payment_method_page() && ! isset( $_GET['change_payment_method'] ) ) {
+      if ( $this->force_token != 'yes' ) {
+        $this->save_payment_method_checkbox();
+      }
+    }
+
     if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
       echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
     }
+  }
 
   public function get_default_payment_method() {
     return ['fpx' => 'Fpx'];

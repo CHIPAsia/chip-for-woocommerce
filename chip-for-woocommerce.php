@@ -3,13 +3,13 @@
 /**
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
- * Description: CHIP - Better Payment & Business Solutions
- * Version: 1.3.9
+ * Description: CHIP - Digital Finance Platform
+ * Version: 1.4.0
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
  *
  * WC requires at least: 5.1
- * WC tested up to: 7.7
+ * WC tested up to: 8.0
  *
  * Copyright: © 2023 CHIP
  * License: GNU General Public License v3.0
@@ -53,7 +53,7 @@ class Chip_Woocommerce {
   }
 
   public function define() {
-    define( 'WC_CHIP_MODULE_VERSION', 'v1.3.9' );
+    define( 'WC_CHIP_MODULE_VERSION', 'v1.4.0' );
     define( 'WC_CHIP_FILE', __FILE__ );
     define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
     define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
