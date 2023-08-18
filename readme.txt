@@ -2,7 +2,7 @@
 Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
-Tested up to: 6.2
+Tested up to: 6.3
 Stable tag: 1.4.0
 Requires PHP: 7.1
 License: GPLv3

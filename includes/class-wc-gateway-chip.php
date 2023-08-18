@@ -642,7 +642,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    if ( is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' ) {
+    if ( is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
       sort($this->payment_met);
       $card_payment_method = array('visa', 'mastercard', 'maestro');
       sort($card_payment_method);
