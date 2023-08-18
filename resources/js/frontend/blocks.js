@@ -58,6 +58,14 @@ const FpxBankList = (props) => {
     };
   }, [onPaymentProcessing, bankId]);
 
+  const fpx_b2c = GATEWAY.fpx_b2c
+
+  var fpx_b2c_array = [];
+
+  Object.keys(fpx_b2c).forEach(key => {
+    fpx_b2c_array.push({name: fpx_b2c[key], id: key});
+  });
+
   return (
     <TreeSelect
       label={__("Internet Banking", "chip-for-woocommerce")}
@@ -66,40 +74,7 @@ const FpxBankList = (props) => {
         setBankId(selected_bank_id);
       }}
       selectedId={bankId}
-      tree={[
-        {
-          name: __("Affin Bank", "chip-for-woocommerce"),
-          id: "ABB0233",
-        },
-        {
-          name: __("Alliance Bank (Personal)", "chip-for-woocommerce"),
-          id: "ABMB0212",
-        },
-        { name: __("AGRONet", "chip-for-woocommerce"), id: "AGRO01" },
-        { name: __("AmBank", "chip-for-woocommerce"), id: "AMBB0209" },
-        { name: __("Bank Islam", "chip-for-woocommerce"), id: "BIMB0340" },
-        { name: __("Bank Muamalat", "chip-for-woocommerce"), id: "BMMB0341" },
-        { name: __("Bank Rakyat", "chip-for-woocommerce"), id: "BKRM0602" },
-        { name: __("Bank Of China", "chip-for-woocommerce"), id: "BOCM01" },
-        { name: __("BSN", "chip-for-woocommerce"), id: "BSN0601" },
-        { name: __("CIMB Bank", "chip-for-woocommerce"), id: "BCBB0235" },
-        {
-          name: __("Hong Leong Bank", "chip-for-woocommerce"),
-          id: "HLB0224",
-        },
-        { name: __("HSBC Bank", "chip-for-woocommerce"), id: "HSBC0223" },
-        { name: __("KFH", "chip-for-woocommerce"), id: "KFH0346" },
-        { name: __("Maybank2E", "chip-for-woocommerce"), id: "MBB0228" },
-        { name: __("Maybank2u", "chip-for-woocommerce"), id: "MB2U0227" },
-        { name: __("OCBC Bank", "chip-for-woocommerce"), id: "OCBC0229" },
-        { name: __("Public Bank", "chip-for-woocommerce"), id: "PBB0233" },
-        { name: __("RHB Bank", "chip-for-woocommerce"), id: "RHB0218" },
-        {
-          name: __("Standard Chartered", "chip-for-woocommerce"),
-          id: "SCB0216",
-        },
-        { name: __("UOB Bank", "chip-for-woocommerce"), id: "UOB0226" },
-      ]}
+      tree={fpx_b2c_array}
     />
   );
 };
@@ -137,6 +112,14 @@ const Fpxb2b1BankList = (props) => {
     };
   }, [onPaymentProcessing, bankIdB2b]);
 
+  const fpx_b2b1 = GATEWAY.fpx_b2b1
+
+  var fpx_b2b1_array = [];
+
+  Object.keys(fpx_b2b1).forEach(key => {
+    fpx_b2b1_array.push({name: fpx_b2b1[key], id: key});
+  });
+
   return (
     <TreeSelect
       label={__("Internet Banking", "chip-for-woocommerce")}
@@ -145,41 +128,7 @@ const Fpxb2b1BankList = (props) => {
         setBankIdB2b(selected_bank_id);
       }}
       selectedId={bankIdB2b}
-      tree={[
-        { name: __("AFFINMAX", "chip-for-woocommerce"), id: "ABB0235" },
-        {
-          name: __("Alliance Bank (Business)", "chip-for-woocommerce"),
-          id: "ABMB0213",
-        },
-        { name: __("AGRONetBIZ", "chip-for-woocommerce"), id: "AGRO02" },
-        { name: __("AmBank", "chip-for-woocommerce"), id: "AMBB0208" },
-        { name: __("Bank Islam", "chip-for-woocommerce"), id: "BIMB0340" },
-        { name: __("Bank Muamalat", "chip-for-woocommerce"), id: "BMMB0342" },
-        { name: __("BNP Paribas", "chip-for-woocommerce"), id: "BNP003" },
-        { name: __("CIMB Bank", "chip-for-woocommerce"), id: "BCBB0235" },
-        {
-          name: __("Citibank Corporate Banking", "chip-for-woocommerce"),
-          id: "CIT0218",
-        },
-        { name: __("Deutsche Bank", "chip-for-woocommerce"), id: "DBB0199" },
-        { name: __("Hong Leong Bank", "chip-for-woocommerce"), id: "HLB0224" },
-        { name: __("HSBC Bank", "chip-for-woocommerce"), id: "HSBC0223" },
-        { name: __("Bank Rakyat", "chip-for-woocommerce"), id: "BKRM0602" },
-        { name: __("KFH", "chip-for-woocommerce"), id: "KFH0346" },
-        { name: __("Maybank2E", "chip-for-woocommerce"), id: "MBB0228" },
-        { name: __("OCBC Bank", "chip-for-woocommerce"), id: "OCBC0229" },
-        { name: __("Public Bank", "chip-for-woocommerce"), id: "PBB0233" },
-        {
-          name: __("Public Bank PB enterprise", "chip-for-woocommerce"),
-          id: "PBB0234",
-        },
-        { name: __("RHB Bank", "chip-for-woocommerce"), id: "RHB0218" },
-        {
-          name: __("Standard Chartered", "chip-for-woocommerce"),
-          id: "SCB0215",
-        },
-        { name: __("UOB Regional", "chip-for-woocommerce"), id: "UOB0228" },
-      ]}
+      tree={fpx_b2b1_array}
     />
   );
 };

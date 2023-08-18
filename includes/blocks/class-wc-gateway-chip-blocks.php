@@ -34,7 +34,16 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
       true
     );
 
-    wp_localize_script( "wc-{$this->name}-blocks", 'GATEWAY', ['id' => $this->name ] );
+    $fpx_b2c = $this->gateway->list_fpx_banks();
+    $fpx_b2b1 = $this->gateway->list_fpx_b2b1_banks();
+
+    $localize_variable = array(
+      'id' => $this->name,
+      'fpx_b2c' => $fpx_b2c,
+      'fpx_b2b1' => $fpx_b2b1
+    );
+
+    wp_localize_script( "wc-{$this->name}-blocks", 'GATEWAY', $localize_variable );
 
     return [ "wc-{$this->name}-blocks" ];
   }

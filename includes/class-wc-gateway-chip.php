@@ -1454,7 +1454,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
       $fpx = $fpx_api->get_fpx();
 
-      set_transient( 'chip_fpx_b2c_banks', $fpx, 60 );
+      set_transient( 'chip_fpx_b2c_banks', $fpx, 60 * 3 ); // 60 seconds * 3
     }
 
     $this->filter_non_available_fpx($default_fpx, $fpx);
@@ -1493,7 +1493,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
       $fpx = $fpx_api->get_fpx_b2b1();
 
-      set_transient( 'chip_fpx_b2b1_banks', $fpx, 60 );
+      set_transient( 'chip_fpx_b2b1_banks', $fpx, 60 * 3 ); // 60 seconds * 3
     }
 
     $this->filter_non_available_fpx($default_fpx, $fpx);
