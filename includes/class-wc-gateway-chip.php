@@ -654,7 +654,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    if ( is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
+    if ( ! is_add_payment_method_page() AND is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
       sort($this->payment_met);
       $card_payment_method = array('visa', 'mastercard', 'maestro');
       sort($card_payment_method);
@@ -1830,10 +1830,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     </fieldset>
     <?php
 
-    if ( ! is_add_payment_method_page() && ! isset( $_GET['change_payment_method'] ) ) {
-      if ( $this->force_token != 'yes' ) {
-        $this->save_payment_method_checkbox();
-      }
+    if ( $this->force_token != 'yes' ) {
+      $this->save_payment_method_checkbox();
     }
 
     if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
