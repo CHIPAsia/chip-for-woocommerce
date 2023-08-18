@@ -29,6 +29,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $per_charges;
   
   protected $cached_api;
+  protected $cached_fpx_api;
   protected $cached_payment_method;
   const PREFERRED_TYPE = 'Online Banking';
 
@@ -187,6 +188,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     return $this->cached_api;
+  }
+
+  public function fpx_api() {
+    if ( !$this->cached_fpx_api ) {
+      $this->cached_fpx_api = new Chip_Woocommerce_API_FPX(
+        new Chip_Woocommerce_Logger(),
+        $this->debug
+      );
+    }
+
+    return $this->cached_fpx_api;
   }
 
   private function log_order_info( $msg, $order ) {
@@ -1413,7 +1425,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function list_fpx_banks() {
-    return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', array(
+    $default_fpx = array(
       '' => __( 'Choose an option', 'chip-for-woocommerce' ),
       'ABB0233'  => __( 'Affin Bank', 'chip-for-woocommerce' ),
       'ABMB0212' => __( 'Alliance Bank (Personal)', 'chip-for-woocommerce' ),
@@ -1435,11 +1447,23 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
       'SCB0216'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
       'UOB0226'  => __( 'UOB Bank', 'chip-for-woocommerce' ),
-    ));
+    );
+
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) ) {
+      $fpx_api = $this->fpx_api();
+
+      $fpx = $fpx_api->get_fpx();
+
+      set_transient( 'chip_fpx_b2c_banks', $fpx, 60 );
+    }
+
+    $this->filter_non_available_fpx($default_fpx, $fpx);
+
+    return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', $default_fpx);
   }
 
   public function list_fpx_b2b1_banks() {
-    return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', array(
+    $default_fpx = array(
       '' => __( 'Choose an option', 'chip-for-woocommerce' ),
       'ABB0235'  => __( 'AFFINMAX', 'chip-for-woocommerce' ),
       'ABMB0213' => __( 'Alliance Bank (Business)', 'chip-for-woocommerce' ),
@@ -1462,7 +1486,32 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
       'SCB0215'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
       'UOB0228'  => __( 'UOB Regional', 'chip-for-woocommerce' ),
-    ) );
+    );
+
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) ) {
+      $fpx_api = $this->fpx_api();
+
+      $fpx = $fpx_api->get_fpx_b2b1();
+
+      set_transient( 'chip_fpx_b2b1_banks', $fpx, 60 );
+    }
+
+    $this->filter_non_available_fpx($default_fpx, $fpx);
+
+    return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', $default_fpx );
+  }
+
+  public function filter_non_available_fpx(&$default_fpx, $fpx) {
+    if (is_array($fpx)){
+      foreach ($default_fpx as $key => $value) {
+        if ($key === '') {
+          continue;
+        }
+        if ($fpx[$key] != 1) {
+          unset($default_fpx[$key]);
+        }
+      }
+    }
   }
 
   public function list_razer_ewallets() {

@@ -41,6 +41,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added - Default payment method whitelist for easier configuration.
 * Added - Item charge for adding additional fee.
 * Added - New icon.
+* Added - Now bypass payment page for FPX will be based on banks availability for legacy checkout.
 
 = 1.3.9 = 2023-07-21 =
 * Added   - Support for $0 initial checkout.

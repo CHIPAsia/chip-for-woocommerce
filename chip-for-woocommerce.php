@@ -62,6 +62,7 @@ class Chip_Woocommerce {
   public function includes() {
     $includes_dir = plugin_dir_path( WC_CHIP_FILE ) . 'includes/';
     include $includes_dir . 'class-wc-api.php';
+    include $includes_dir . 'class-wc-api-fpx.php';
     include $includes_dir . 'class-wc-logger.php';
     include $includes_dir . 'class-wc-gateway-chip.php';
     include $includes_dir . 'class-wc-migration.php';
