@@ -164,11 +164,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function get_icon() {
-    $style = apply_filters( 'wc_' . $this->id . '_get_icon_style', 'max-height: 25px; width: auto', $this );
+    $style = 'max-height: 25px; width: auto';
 
     if ( in_array($this->get_option( 'display_logo', 'logo' ), ['paywithchip_all', 'paywithchip_fpx']) ) {
       $style = '';
     }
+
+    $style = apply_filters( 'wc_' . $this->id . '_get_icon_style', $style, $this );
     
     $icon = '<img class="chip-for-woocommerce-" ' . $this->id . ' src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
     return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
