@@ -1844,9 +1844,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function add_item_order_fee(&$order) {
+    if ($order->get_meta( '_' . $this->id . '_fee', true) == 'yes') {
+      return;
+    }
 
     do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
-
     if ($this->fix_charges > 0) {
       $item_fee = new WC_Order_Item_Fee();
 
@@ -1865,6 +1867,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $order->add_item( $item_fee );
     }
 
+    $order->update_meta_data( '_' . $this->id . '_fee', 'yes' );
     $order->calculate_totals();
     $order->save();
 
