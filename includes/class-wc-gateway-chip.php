@@ -660,7 +660,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       sort($card_payment_method);
       if ( $this->payment_met === $card_payment_method ) {
         wp_enqueue_script( "wc-{$this->id}-direct-post" );
-        $this->form(); 
+        $this->form();
       }
     }
   }
