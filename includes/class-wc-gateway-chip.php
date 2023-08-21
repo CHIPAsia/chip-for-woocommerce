@@ -782,6 +782,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
+    foreach ( $params['client'] as $key => $value ) {
+      if ( empty( $value ) ) {
+        unset( $params['client'][$key] );
+      }
+    }
+
     $chip = $this->api();
 
     $user_id = $order->get_user_id();
@@ -856,12 +862,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( !empty( $order->get_customer_note() ) ) {
       $params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
-    }
-
-    foreach ( $params['client'] as $key => $value ) {
-      if ( empty( $value ) ) {
-        unset( $params['client'][$key] );
-      }
     }
 
     $params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
