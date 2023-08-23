@@ -4,13 +4,26 @@ jQuery(($) => {
 		return false;
 	}
 
+  $('body').on('keypress', 'input.wc-credit-card-form-card-name', function(e) {
+    var $target, card, digit, length, re, upperLength, value;
+    digit = String.fromCharCode(e.which);
+    var regex = new RegExp("[a-zA-Z \'\.\-]+$");
+    if (!regex.test(digit)) {
+      e.preventDefault();
+    }
+	});
+
   $('form.checkout').on('checkout_place_order_'+gateway_option.id, function(event, wc_checkout_form) {
-    if ($('input[name="wc-' + gateway_option.id + '-payment-token"]:checked').val() != 'new') {
+    // if ($('input[name="wc-' + gateway_option.id + '-payment-token"]:checked').val() != 'new') {
+    //   return true;
+    // }
+
+    if ($('.wc-payment-form').is(":hidden")) {
       return true;
     }
 
     if ($('#' + gateway_option.id + '-card-name').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Card Name cannot be empty</div>' ); // eslint-disable-line max-len
+      wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name cannot be empty</div>' ); // eslint-disable-line max-len
       return false;
     }
 
@@ -20,12 +33,12 @@ jQuery(($) => {
     }
 
     if ($('#' + gateway_option.id + '-card-expiry').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Card Expiry cannot be empty</div>' ); // eslint-disable-line max-len
+      wc_checkout_form.submit_error( '<div class="woocommerce-error">Expiry (MM/YY) cannot be empty</div>' ); // eslint-disable-line max-len
       return false;
     }
 
     if ($('#' + gateway_option.id + '-card-cvc').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Card Code cannot be empty</div>' ); // eslint-disable-line max-len
+      wc_checkout_form.submit_error( '<div class="woocommerce-error">CVC cannot be empty</div>' ); // eslint-disable-line max-len
       return false;
     }
     
@@ -37,7 +50,7 @@ jQuery(($) => {
     var card_expiry = $('#' + gateway_option.id + '-card-expiry').val();
     var card_no_space_expiry = card_expiry.replaceAll(' ', '');
 
-    if (wc_checkout_form.get_payment_method() == gateway_option.id && $('input[name="wc-' + gateway_option.id + '-payment-token"]:checked').val() == 'new') {
+    if (wc_checkout_form.get_payment_method() == gateway_option.id && $('.wc-payment-form').is(":visible")) {
       if(result.result == 'success') {
         var redirect_location = result.redirect;
         var form = '<input type="hidden" name="cardholder_name" value="'+$('#' + gateway_option.id + '-card-name').val()+'">';

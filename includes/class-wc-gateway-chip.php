@@ -29,6 +29,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $per_charges;
   
   protected $cached_api;
+  protected $cached_fpx_api;
   protected $cached_payment_method;
   const PREFERRED_TYPE = 'Online Banking';
 
@@ -164,7 +165,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function get_icon() {
-    $style = apply_filters( 'wc_' . $this->id . '_get_icon_style', 'max-height: 25px; width: auto', $this );
+    $style = 'max-height: 25px; width: auto';
+
+    if ( in_array($this->get_option( 'display_logo', 'logo' ), ['paywithchip_all', 'paywithchip_fpx']) ) {
+      $style = '';
+    }
+
+    $style = apply_filters( 'wc_' . $this->id . '_get_icon_style', $style, $this );
+    
     $icon = '<img class="chip-for-woocommerce-" ' . $this->id . ' src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
     return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
   }
@@ -180,6 +188,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     return $this->cached_api;
+  }
+
+  public function fpx_api() {
+    if ( !$this->cached_fpx_api ) {
+      $this->cached_fpx_api = new Chip_Woocommerce_API_FPX(
+        new Chip_Woocommerce_Logger(),
+        $this->debug
+      );
+    }
+
+    return $this->cached_fpx_api;
   }
 
   private function log_order_info( $msg, $order ) {
@@ -411,6 +430,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'fpx_b2b1' => 'FPX B2B1',
         'ewallet'  => 'E-Wallet',
         'card'     => 'Card',
+
+        'paywithchip_all' => 'Pay with CHIP (All)',
+        'paywithchip_fpx' => 'Pay with CHIP (FPX)',
       ),
     );
 
@@ -466,14 +488,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->form_fields['bypass_chip'] = array(
       'title'       => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to bypass CHIP payment page. Only works for <code>FPX</code>, <code>FPX B2B1</code> and <code>E-Wallet</code>', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to bypass CHIP payment page.', 'chip-for-woocommerce' ),
       'default'     => 'yes',
     );
 
     $this->form_fields['disable_recurring_support'] = array(
       'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code> and <code>Mastercard</code>.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Maestro</code> and <code>Mastercard</code>.', 'chip-for-woocommerce' ),
       'default'     => 'no',
     );
 
@@ -605,11 +627,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->tokenization_script();
       $this->saved_payment_methods();
 
-      if ( ! is_add_payment_method_page() && ! isset( $_GET['change_payment_method'] ) ) {
-        if ( $this->force_token != 'yes' ) {
-          // $this->save_payment_method_checkbox();
-        }
-      }
     } else {
       parent::payment_fields();
 
@@ -637,13 +654,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    if ( is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' ) {
+    if ( !is_wc_endpoint_url( 'order-pay' ) AND ! is_add_payment_method_page() AND is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
       sort($this->payment_met);
       $card_payment_method = array('visa', 'mastercard', 'maestro');
       sort($card_payment_method);
       if ( $this->payment_met === $card_payment_method ) {
         wp_enqueue_script( "wc-{$this->id}-direct-post" );
-        $this->form(); 
+        $this->form();
       }
     }
   }
@@ -765,6 +782,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
+    foreach ( $params['client'] as $key => $value ) {
+      if ( empty( $value ) ) {
+        unset( $params['client'][$key] );
+      }
+    }
+
     $chip = $this->api();
 
     $user_id = $order->get_user_id();
@@ -839,12 +862,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( !empty( $order->get_customer_note() ) ) {
       $params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
-    }
-
-    foreach ( $params['client'] as $key => $value ) {
-      if ( empty( $value ) ) {
-        unset( $params['client'][$key] );
-      }
     }
 
     $params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
@@ -1408,7 +1425,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function list_fpx_banks() {
-    return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', array(
+    $default_fpx = array(
       '' => __( 'Choose an option', 'chip-for-woocommerce' ),
       'ABB0233'  => __( 'Affin Bank', 'chip-for-woocommerce' ),
       'ABMB0212' => __( 'Alliance Bank (Personal)', 'chip-for-woocommerce' ),
@@ -1430,11 +1447,23 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
       'SCB0216'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
       'UOB0226'  => __( 'UOB Bank', 'chip-for-woocommerce' ),
-    ));
+    );
+
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) ) {
+      $fpx_api = $this->fpx_api();
+
+      $fpx = $fpx_api->get_fpx();
+
+      set_transient( 'chip_fpx_b2c_banks', $fpx, 60 * 3 ); // 60 seconds * 3
+    }
+
+    $this->filter_non_available_fpx($default_fpx, $fpx);
+
+    return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', $default_fpx);
   }
 
   public function list_fpx_b2b1_banks() {
-    return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', array(
+    $default_fpx = array(
       '' => __( 'Choose an option', 'chip-for-woocommerce' ),
       'ABB0235'  => __( 'AFFINMAX', 'chip-for-woocommerce' ),
       'ABMB0213' => __( 'Alliance Bank (Business)', 'chip-for-woocommerce' ),
@@ -1457,7 +1486,32 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
       'SCB0215'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
       'UOB0228'  => __( 'UOB Regional', 'chip-for-woocommerce' ),
-    ) );
+    );
+
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) ) {
+      $fpx_api = $this->fpx_api();
+
+      $fpx = $fpx_api->get_fpx_b2b1();
+
+      set_transient( 'chip_fpx_b2b1_banks', $fpx, 60 * 3 ); // 60 seconds * 3
+    }
+
+    $this->filter_non_available_fpx($default_fpx, $fpx);
+
+    return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', $default_fpx );
+  }
+
+  public function filter_non_available_fpx(&$default_fpx, $fpx) {
+    if (is_array($fpx)){
+      foreach ($default_fpx as $key => $value) {
+        if ($key === '') {
+          continue;
+        }
+        if ($fpx[$key] != 1) {
+          unset($default_fpx[$key]);
+        }
+      }
+    }
   }
 
   public function list_razer_ewallets() {
@@ -1738,18 +1792,18 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $fields = array();
 
     $cvc_field = '<p class="form-row form-row-last">
-      <label for="' . esc_attr( $this->id ) . '-card-cvc">' . esc_html__( 'Card code', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-      <input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVV', 'chip-for-woocommerce' ) . '" style="width:100px" />
+      <label for="' . esc_attr( $this->id ) . '-card-cvc">' . esc_html__( 'CVC', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+      <input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'chip-for-woocommerce' ) . '" style="width:100px" />
     </p>';
 
     $default_fields = array(
       'card-name-field' => '<p class="form-row form-row-wide">
-        <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-name" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="Name" />
+        <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
+        <input id="' . esc_attr( $this->id ) . '-card-name" style="font-size: 1.5em; padding: 8px;" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="30" placeholder="Name" />
       </p>',
       'card-number-field' => '<p class="form-row form-row-wide">
         <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;" />
+        <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="1234 1234 1234 1234" />
       </p>',
       'card-expiry-field' => '<p class="form-row form-row-first">
         <label for="' . esc_attr( $this->id ) . '-card-expiry">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
@@ -1776,18 +1830,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     </fieldset>
     <?php
 
+    if ( $this->force_token != 'yes' ) {
+      $this->save_payment_method_checkbox();
+    }
+
     if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
       echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
     }
+  }
 
   public function get_default_payment_method() {
     return ['fpx' => 'Fpx'];
   }
 
   public function add_item_order_fee(&$order) {
+    if ($order->get_meta( '_' . $this->id . '_fee', true) == 'yes') {
+      return;
+    }
 
     do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
-
     if ($this->fix_charges > 0) {
       $item_fee = new WC_Order_Item_Fee();
 
@@ -1806,6 +1867,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $order->add_item( $item_fee );
     }
 
+    $order->update_meta_data( '_' . $this->id . '_fee', 'yes' );
     $order->calculate_totals();
     $order->save();
 

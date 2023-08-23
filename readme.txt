@@ -2,19 +2,24 @@
 Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
-Tested up to: 6.2
-Stable tag: 1.3.9
+Tested up to: 6.3
+Stable tag: 1.4.0
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-CHIP - Better Payment & Business Solutions. Securely accept one-time and subscription payment with CHIP for WooCommerce.
+CHIP - Digital Finance Platform. Securely accept one-time and subscription payment with CHIP for WooCommerce.
 
 == Description ==
 
 This is an official CHIP plugin for WooCommerce.
 
-CHIP is a payment and business solutions platform that allow you to securely sell your products and get paid via multiple payment methods.
+CHIP is a comprehensive Digital Finance Platform specifically designed to support and empower Micro, Small and Medium Enterprises (MSMEs). We provide a suite of solutions encompassing payment collection, expense management, risk mitigation, and treasury management.
+
+Our aim is to help businesses streamline their financial processes, reduce
+operational complexity, and drive growth.
+
+With CHIP, you gain a financial partner committed to simplifying, digitizing, and enhancing your financial operations for ultimate success.
 
 This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://developer.chip-in.asia).
 
@@ -29,6 +34,14 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.4.0 = 2023-08-18 =
+* Added - Support for bypass payment page for WooCommerce Blocks checkout for FPX B2C and FPX B2B1
+* Added - Support for bypass payment page for legacy WooCommerce checkout for cards.
+* Added - Default payment method whitelist for easier configuration.
+* Added - Item charge for adding additional fee.
+* Added - New icon.
+* Added - Now bypass payment page for FPX will be based on banks availability.
 
 = 1.3.9 = 2023-07-21 =
 * Added   - Support for $0 initial checkout.
