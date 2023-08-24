@@ -1449,7 +1449,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'UOB0226'  => __( 'UOB Bank', 'chip-for-woocommerce' ),
     );
 
-    if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) ) {
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) AND false === ( get_transient( 'chip_fpx_b2c_banks_load' ) ) ) {
+      set_transient( 'chip_fpx_b2c_banks_load', 'loaded', 60 * 3 - 3 ); // 60 seconds * 3
       $fpx_api = $this->fpx_api();
 
       $fpx = $fpx_api->get_fpx();
@@ -1488,7 +1489,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'UOB0228'  => __( 'UOB Regional', 'chip-for-woocommerce' ),
     );
 
-    if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) ) {
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) AND false === ( get_transient( 'chip_fpx_b2b1_banks_load' ) ) ) {
+      set_transient( 'chip_fpx_b2b1_banks_load', 'loaded', 60 * 3 - 3 ); // 60 seconds * 3
       $fpx_api = $this->fpx_api();
 
       $fpx = $fpx_api->get_fpx_b2b1();
@@ -1779,7 +1781,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       "wc-{$this->id}-direct-post",
       trailingslashit( WC_CHIP_URL ) . 'includes/js/direct-post.js',
       array( 'jquery' ),
-      '1.0.0',
+      WC_CHIP_MODULE_VERSION,
       true
     );
 
