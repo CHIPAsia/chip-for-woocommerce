@@ -34,14 +34,22 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
       true
     );
 
-    $fpx_b2c = $this->gateway->list_fpx_banks();
-    $fpx_b2b1 = $this->gateway->list_fpx_b2b1_banks();
-
     $localize_variable = array(
       'id' => $this->name,
-      'fpx_b2c' => $fpx_b2c,
-      'fpx_b2b1' => $fpx_b2b1
+      'fpx_b2c' => ['empty' => 'bank'],
+      'fpx_b2b1' => ['empty' => 'bank']
     );
+
+    $whitelisted_payment_method = $this->gateway->get_payment_method_whitelist();
+    $bypass_chip = $this->gateway->get_bypass_chip();
+
+    if (is_array($whitelisted_payment_method) AND count($whitelisted_payment_method) == 1  AND $bypass_chip == 'yes') {
+      if ($whitelisted_payment_method[0] == 'fpx') {
+        $localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
+      } elseif ($whitelisted_payment_method[0] == 'fpx_b2b1') {
+        $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
+      }
+    }
 
     wp_localize_script( "wc-{$this->name}-blocks", 'GATEWAY', $localize_variable );
 

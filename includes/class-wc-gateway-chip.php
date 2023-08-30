@@ -655,12 +655,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     if ( !is_wc_endpoint_url( 'order-pay' ) AND ! is_add_payment_method_page() AND is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
-      sort($this->payment_met);
-      $card_payment_method = array('visa', 'mastercard', 'maestro');
-      sort($card_payment_method);
-      if ( $this->payment_met === $card_payment_method ) {
-        wp_enqueue_script( "wc-{$this->id}-direct-post" );
-        $this->form();
+      foreach( $this->payment_met as $pm ) {
+        if ( in_array( $pm, ['visa', 'mastercard', 'maestro'] ) ) {
+          wp_enqueue_script( "wc-{$this->id}-direct-post" );
+          $this->form();
+          break;
+        }
       }
     }
   }
@@ -833,13 +833,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     if ( isset( $_POST["wc-{$this->id}-new-payment-method"] ) AND in_array( $_POST["wc-{$this->id}-new-payment-method"], [ 'true', 1 ] ) ) {
-      $params['payment_method_whitelist'] = ['visa', 'mastercard', 'maestro'];
+      $params['payment_method_whitelist'] = $this->payment_met;
       $params['force_recurring'] = true;
     }
 
     if ( function_exists( 'wcs_order_contains_subscription' ) ) {
       if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
-        $params['payment_method_whitelist'] = ['visa', 'mastercard', 'maestro'];
+        $params['payment_method_whitelist'] = $this->payment_met;
         $params['force_recurring'] = true;
 
         if ( $params['purchase']['total_override'] == 0 ) {
@@ -1220,7 +1220,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     );
 
     $params = array(
-      'payment_method_whitelist' => ['mastercard', 'visa', 'maestro'],
+      'payment_method_whitelist' => $this->payment_met,
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1449,8 +1449,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'UOB0226'  => __( 'UOB Bank', 'chip-for-woocommerce' ),
     );
 
-    if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) AND false === ( get_transient( 'chip_fpx_b2c_banks_load' ) ) ) {
-      set_transient( 'chip_fpx_b2c_banks_load', 'loaded', 60 * 3 - 3 ); // 60 seconds * 3
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) ) {
+      // This to avoid mutiple request on very high traffic site
+      set_transient( 'chip_fpx_b2c_banks', 'temp', 5 ); // 5 seconds
       $fpx_api = $this->fpx_api();
 
       $fpx = $fpx_api->get_fpx();
@@ -1489,8 +1490,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'UOB0228'  => __( 'UOB Regional', 'chip-for-woocommerce' ),
     );
 
-    if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) AND false === ( get_transient( 'chip_fpx_b2b1_banks_load' ) ) ) {
-      set_transient( 'chip_fpx_b2b1_banks_load', 'loaded', 60 * 3 - 3 ); // 60 seconds * 3
+    if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) ) {
+      // This to avoid mutiple request on very high traffic site
+      set_transient( 'chip_fpx_b2b1_banks', 'temp', 5 ); // 5 seconds
       $fpx_api = $this->fpx_api();
 
       $fpx = $fpx_api->get_fpx_b2b1();
@@ -1556,7 +1558,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $params = array(
-      'payment_method_whitelist' => ['mastercard', 'visa', 'maestro'],
+      'payment_method_whitelist' => $this->payment_met,
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1874,5 +1876,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $order->save();
 
     do_action( 'wc_' . $this->id . '_after_add_item_order_fee', $order, $this );
+  }
+
+  public function get_payment_method_whitelist() {
+    return $this->payment_met;
+  }
+
+  public function get_bypass_chip() {
+    return $this->bypass_chip;
   }
 }
