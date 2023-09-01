@@ -38,6 +38,7 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.4.1 = 2023-09-01 =
 * Fixed - Performance improvement for FPX bypass page status check.
 * Fixed - Ensure bypass chip payment page works without maestro option.
+* Fixed - Fix checkout issue with CheckoutWC
 
 = 1.4.0 = 2023-08-18 =
 * Added - Support for bypass payment page for WooCommerce Blocks checkout for FPX B2C and FPX B2B1
