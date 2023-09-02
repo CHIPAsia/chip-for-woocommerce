@@ -19,7 +19,11 @@ jQuery(($) => {
     // }
 
     if ( typeof wc_checkout_form === 'undefined' ) {
-      return;
+      return true;
+    }
+
+    if (typeof wc_checkout_form.submit_error !== "function") {
+      return true;
     }
 
     if ($('.wc-payment-form').is(":hidden")) {
