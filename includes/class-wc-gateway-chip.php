@@ -654,7 +654,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    if ( !is_wc_endpoint_url( 'order-pay' ) AND ! is_add_payment_method_page() AND is_array( $this->payment_met ) AND count ($this->payment_met) == 3 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
+    if ( !is_wc_endpoint_url( 'order-pay' ) AND ! is_add_payment_method_page() AND is_array( $this->payment_met ) AND count ($this->payment_met) >= 2 AND $this->bypass_chip == 'yes' AND !isset($_GET['change_payment_method'])) {
       foreach( $this->payment_met as $pm ) {
         if ( in_array( $pm, ['visa', 'mastercard', 'maestro'] ) ) {
           wp_enqueue_script( "wc-{$this->id}-direct-post" );
@@ -833,13 +833,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     if ( isset( $_POST["wc-{$this->id}-new-payment-method"] ) AND in_array( $_POST["wc-{$this->id}-new-payment-method"], [ 'true', 1 ] ) ) {
-      $params['payment_method_whitelist'] = $this->payment_met;
+      $params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
       $params['force_recurring'] = true;
     }
 
     if ( function_exists( 'wcs_order_contains_subscription' ) ) {
       if ( $this->supports( 'tokenization' ) AND wcs_order_contains_subscription( $order ) ) {
-        $params['payment_method_whitelist'] = $this->payment_met;
+        $params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
         $params['force_recurring'] = true;
 
         if ( $params['purchase']['total_override'] == 0 ) {
@@ -1220,7 +1220,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     );
 
     $params = array(
-      'payment_method_whitelist' => $this->payment_met,
+      'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1558,7 +1558,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $params = array(
-      'payment_method_whitelist' => $this->payment_met,
+      'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1884,5 +1884,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function get_bypass_chip() {
     return $this->bypass_chip;
+  }
+
+  public function get_payment_method_for_recurring() {
+
+    if ( count( $pmw = $this->get_payment_method_whitelist() ) >= 1 ) {
+      return $pmw;
+    } else if ( $this->supports( 'tokenization' ) ) {
+      return ['visa', 'mastercard']; // return the most generic card payment method
+    }
+
+    return null;
   }
 }
