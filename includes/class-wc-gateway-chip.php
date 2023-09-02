@@ -1888,7 +1888,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function get_payment_method_for_recurring() {
 
-    if ( count( $pmw = $this->get_payment_method_whitelist() ) >= 1 ) {
+    if ( is_countable( $pmw = $this->get_payment_method_whitelist() ) AND count( $pmw ) >= 1 ) {
       return $pmw;
     } else if ( $this->supports( 'tokenization' ) ) {
       return ['visa', 'mastercard']; // return the most generic card payment method
