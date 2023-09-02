@@ -495,7 +495,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->form_fields['disable_recurring_support'] = array(
       'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Maestro</code> and <code>Mastercard</code>.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code> and <code>Maestro</code>.', 'chip-for-woocommerce' ),
       'default'     => 'no',
     );
 
@@ -516,7 +516,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->form_fields['force_tokenization'] = array(
       'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
-      'description' =>__( 'Tick to force tokenization if possible. This only applies when <code>Visa</code> and <code>Mastercard</code> payment method are available.', 'chip-for-woocommerce' ),
+      'description' =>__( 'Tick to force tokenization if possible. This only applies when <code>Visa</code> or <code>Mastercard</code> or <code>Maestro</code> payment method are available.', 'chip-for-woocommerce' ),
       'default'     => 'no',
       'disabled'    => empty( $this->arecuring_p )
     );
