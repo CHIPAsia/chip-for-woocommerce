@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.3
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,6 +34,11 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.4.1 = 2023-09-01 =
+* Fixed - Performance improvement for FPX bypass page status check.
+* Fixed - Ensure bypass chip payment page works without maestro option.
+* Fixed - Fix checkout issue with CheckoutWC
 
 = 1.4.0 = 2023-08-18 =
 * Added - Support for bypass payment page for WooCommerce Blocks checkout for FPX B2C and FPX B2B1

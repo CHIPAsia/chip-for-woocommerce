@@ -18,6 +18,14 @@ jQuery(($) => {
     //   return true;
     // }
 
+    if ( typeof wc_checkout_form === 'undefined' ) {
+      return true;
+    }
+
+    if (typeof wc_checkout_form.submit_error !== "function") {
+      return true;
+    }
+
     if ($('.wc-payment-form').is(":hidden")) {
       return true;
     }
@@ -47,6 +55,11 @@ jQuery(($) => {
   // https://stackoverflow.com/questions/19036684/jquery-redirect-with-post-data
 
   $('form.checkout').on( 'checkout_place_order_success', function( event, result, wc_checkout_form ) {
+
+    if ( typeof wc_checkout_form === 'undefined' ) {
+      return;
+    }
+
     var card_expiry = $('#' + gateway_option.id + '-card-expiry').val();
     var card_no_space_expiry = card_expiry.replaceAll(' ', '');
 

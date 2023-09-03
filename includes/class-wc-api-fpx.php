@@ -69,7 +69,7 @@ class Chip_Woocommerce_API_FPX
       'sslverify' => !defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
       'headers'   => $headers,
       'body'      => $params,
-      'timeout'   => 3, // charge card require longer timeout
+      'timeout'   => 3
     ));
 
     $response = wp_remote_retrieve_body( $wp_request );
