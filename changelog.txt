@@ -1,5 +1,19 @@
 *** Changelog ***
 
+= 1.3.7 = 2023-05-24 =
+* Added - Quantity in CHIP Purchase invoice.
+
+= 1.3.6 = 2023-05-23 =
+* Changed - Put meaningful description in option page to reduce confusion
+* Added   - More hooks for better data manipulation
+* Fixed   - Issue when product price is less than zero
+
+= 1.3.5 = 2023-05-08 =
+* Changed - Put meaningful description to reduce confusion
+* Changed - Automatic force tokenization for card when subscription product exists
+* Removed - Removed save to account checkbox due to confusion
+* Fixed   - Prevent Fatal Error on WooCommerce Scheduler in the event of invalid secret key
+
 = 1.3.4 = 2023-04-13 =
 * Added   - Add purchase id to order note
 * Added   - Add action hooks for payment creation

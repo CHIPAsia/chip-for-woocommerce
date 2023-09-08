@@ -1330,10 +1330,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    $order->payment_complete( $payment['id'] );
-    $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
-    $order->save();
     $order->add_order_note( sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
+    $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+    $order->payment_complete( $payment['id'] );
+    $order->save();
 
     if ( $payment['is_test'] == true ) {
       $order->add_order_note( sprintf( __( 'The payment (%s) made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment['id'] ) );
@@ -1426,7 +1426,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function list_fpx_banks() {
     $default_fpx = array(
-      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      '' => __( 'Choose your bank', 'chip-for-woocommerce' ),
       'ABB0233'  => __( 'Affin Bank', 'chip-for-woocommerce' ),
       'ABMB0212' => __( 'Alliance Bank (Personal)', 'chip-for-woocommerce' ),
       'AGRO01'   => __( 'AGRONet', 'chip-for-woocommerce' ),
@@ -1466,7 +1466,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function list_fpx_b2b1_banks() {
     $default_fpx = array(
-      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      '' => __( 'Choose your bank', 'chip-for-woocommerce' ),
       'ABB0235'  => __( 'AFFINMAX', 'chip-for-woocommerce' ),
       'ABMB0213' => __( 'Alliance Bank (Business)', 'chip-for-woocommerce' ),
       'AGRO02'   => __( 'AGRONetBIZ', 'chip-for-woocommerce' ),
