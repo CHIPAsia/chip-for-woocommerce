@@ -1221,6 +1221,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
+      'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+      'platform'         => 'woocommerce_subscriptions',
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1559,6 +1561,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
+      'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+      'platform'         => 'woocommerce_subscriptions',
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
