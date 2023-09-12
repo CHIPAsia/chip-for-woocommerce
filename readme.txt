@@ -37,6 +37,7 @@ The plugins do includes support for WooCommerce Subscription products.
 
 = 1.4.2 = 2023-09-XX =
 * Added   - Add platform value for add_payment_method and process_payment_method_change
+* Added   - Add order note for mentioning token id for easier troubleshooting
 * Changed - Change Choose an option to Choose your bank based on community feedback
 * Changed - Order note will be stored first before woocommerce order status change
 

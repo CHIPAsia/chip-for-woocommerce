@@ -897,6 +897,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         $this->add_payment_token( $order->get_id(), $token );
 
         $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
+        $order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
         $get_payment = $chip->get_payment( $payment['id'] );
         $payment_requery_status = $get_payment['status'];
@@ -1150,6 +1151,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
     }
+
+    $renewal_order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
     $this->release_lock( $renewal_order_id );
   }
