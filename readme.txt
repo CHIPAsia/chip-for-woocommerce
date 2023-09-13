@@ -40,6 +40,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added   - Add order note for mentioning token id for easier troubleshooting
 * Added   - Automatically delete invalid token
 * Added   - Ensure empty cart will be prefilled with generic product name
+* Added   - Add logo without CHIP logo.
 * Changed - Change Choose an option to Choose your bank based on community feedback
 * Changed - Order note will be stored first before woocommerce order status change
 

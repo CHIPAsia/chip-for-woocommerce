@@ -430,6 +430,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'fpx_b2b1' => 'FPX B2B1',
         'ewallet'  => 'E-Wallet',
         'card'     => 'Card',
+        'fpx_only' => 'FPX Only',
+        'ewallet_only' => 'E-Wallet Only',
+        'card_only' => 'Card Only',
 
         'paywithchip_all' => 'Pay with CHIP (All)',
         'paywithchip_fpx' => 'Pay with CHIP (FPX)',
