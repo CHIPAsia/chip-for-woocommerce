@@ -9,7 +9,7 @@
  * Author URI: https://www.chip-in.asia
  *
  * WC requires at least: 5.1
- * WC tested up to: 8.0
+ * WC tested up to: 8.1
  *
  * Copyright: © 2023 CHIP
  * License: GNU General Public License v3.0
