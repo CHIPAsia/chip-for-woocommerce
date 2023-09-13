@@ -782,6 +782,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
+    /**
+     * Ensure product is not empty as some WooCommerce installation doesn't have any product
+     */
+
+    if ( empty ( $params['purchase']['products'] ) ) {
+      $params['purchase']['products'] = array(
+        [
+          'name'     => 'Product',
+          'price'    => round( $order->get_total() * 100 ),
+        ]
+      );
+    }
+
     foreach ( $params['client'] as $key => $value ) {
       if ( empty( $value ) ) {
         unset( $params['client'][$key] );
