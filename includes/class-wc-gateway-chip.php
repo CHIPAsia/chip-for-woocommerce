@@ -430,6 +430,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'fpx_b2b1' => 'FPX B2B1',
         'ewallet'  => 'E-Wallet',
         'card'     => 'Card',
+        'fpx_only' => 'FPX Only',
+        'ewallet_only' => 'E-Wallet Only',
+        'card_only' => 'Card Only',
 
         'paywithchip_all' => 'Pay with CHIP (All)',
         'paywithchip_fpx' => 'Pay with CHIP (FPX)',
@@ -782,6 +785,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       );
     }
 
+    /**
+     * Ensure product is not empty as some WooCommerce installation doesn't have any product
+     */
+
+    if ( empty ( $params['purchase']['products'] ) ) {
+      $params['purchase']['products'] = array(
+        [
+          'name'     => 'Product',
+          'price'    => round( $order->get_total() * 100 ),
+        ]
+      );
+    }
+
     foreach ( $params['client'] as $key => $value ) {
       if ( empty( $value ) ) {
         unset( $params['client'][$key] );
@@ -890,13 +906,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $token_id = wc_clean( $_POST["wc-{$this->id}-payment-token"] );
 
       if ( $token = WC_Payment_Tokens::get( $token_id ) ) {
-        if ( $token->get_user_id() !== get_current_user_id() ) {
+        if ( $token->get_user_id() !== $user_id ) {
           return array( 'result' => 'failure' );
         }
 
         $this->add_payment_token( $order->get_id(), $token );
 
-        $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
+        $charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
+        $order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
+
+        $this->maybe_delete_payment_token( $charge_payment, $token_id );
 
         $get_payment = $chip->get_payment( $payment['id'] );
         $payment_requery_status = $get_payment['status'];
@@ -1138,9 +1157,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 
+    $this->maybe_delete_payment_token($charge_payment, $token->get_id());
+
     if ( is_array($charge_payment) AND array_key_exists( '__all__', $charge_payment ) ){
       $renewal_order->update_status( 'failed' );
-      $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment, true ) ) );
+      $renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment['__all__'], true ) ) );
     } elseif ( is_array($charge_payment) AND $charge_payment['status'] == 'paid' ) {
       $this->payment_complete( $renewal_order, $charge_payment );
       $renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
@@ -1150,6 +1171,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $renewal_order->update_status( 'failed' );
       $renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
     }
+
+    $renewal_order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
     $this->release_lock( $renewal_order_id );
   }
@@ -1221,6 +1244,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
+      'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+      'platform'         => 'woocommerce_subscriptions',
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1330,10 +1355,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    $order->payment_complete( $payment['id'] );
-    $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
-    $order->save();
     $order->add_order_note( sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
+    $order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+    $order->payment_complete( $payment['id'] );
+    $order->save();
 
     if ( $payment['is_test'] == true ) {
       $order->add_order_note( sprintf( __( 'The payment (%s) made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment['id'] ) );
@@ -1426,7 +1451,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function list_fpx_banks() {
     $default_fpx = array(
-      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      '' => __( 'Choose your bank', 'chip-for-woocommerce' ),
       'ABB0233'  => __( 'Affin Bank', 'chip-for-woocommerce' ),
       'ABMB0212' => __( 'Alliance Bank (Personal)', 'chip-for-woocommerce' ),
       'AGRO01'   => __( 'AGRONet', 'chip-for-woocommerce' ),
@@ -1466,7 +1491,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function list_fpx_b2b1_banks() {
     $default_fpx = array(
-      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      '' => __( 'Choose your bank', 'chip-for-woocommerce' ),
       'ABB0235'  => __( 'AFFINMAX', 'chip-for-woocommerce' ),
       'ABMB0213' => __( 'Alliance Bank (Business)', 'chip-for-woocommerce' ),
       'AGRO02'   => __( 'AGRONetBIZ', 'chip-for-woocommerce' ),
@@ -1559,6 +1584,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $params = array(
       'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
+      'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+      'platform'         => 'woocommerce_subscriptions',
       'success_redirect' => $url,
       'failure_redirect' => $url,
       'force_recurring'  => true,
@@ -1895,5 +1922,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     return null;
+  }
+
+  public function maybe_delete_payment_token( $charge_payment, $token_id ) {
+    if ( is_array($charge_payment) AND array_key_exists( '__all__', $charge_payment ) ){
+      if ( is_array( $charge_payment['__all__'] ) ) {
+        foreach ( $charge_payment['__all__'] as $errors ) {
+          if ( isset($errors['code']) AND $errors['code'] == 'invalid_recurring_token') {
+            WC_Payment_Tokens::delete( $token_id );
+          }
+        }
+      }
+    }
   }
 }

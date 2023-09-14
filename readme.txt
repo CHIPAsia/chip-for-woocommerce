@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.3
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -35,6 +35,15 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
+= 1.4.2 = 2023-09-XX =
+* Added   - Add platform value for add_payment_method and process_payment_method_change
+* Added   - Add order note for mentioning token id for easier troubleshooting
+* Added   - Automatically delete invalid token
+* Added   - Ensure empty cart will be prefilled with generic product name
+* Added   - Add logo without CHIP logo.
+* Changed - Change Choose an option to Choose your bank based on community feedback
+* Changed - Order note will be stored first before woocommerce order status change
+
 = 1.4.1 = 2023-09-01 =
 * Fixed - Performance improvement for FPX bypass page status check.
 * Fixed - Ensure bypass chip payment page works without maestro option.
@@ -57,20 +66,6 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.3.8 = 2023-05-27 =
 * Added - State information for address in billing and shipping
 * Fixed - Zip code billing should taken from billing
-
-= 1.3.7 = 2023-05-24 =
-* Added - Quantity in CHIP Purchase invoice.
-
-= 1.3.6 = 2023-05-23 =
-* Changed - Put meaningful description in option page to reduce confusion
-* Added   - More hooks for better data manipulation
-* Fixed   - Issue when product price is less than zero
-
-= 1.3.5 = 2023-05-08 =
-* Changed - Put meaningful description to reduce confusion
-* Changed - Automatic force tokenization for card when subscription product exists
-* Removed - Removed save to account checkbox due to confusion
-* Fixed   - Prevent Fatal Error on WooCommerce Scheduler in the event of invalid secret key
 
 == Installation ==
 
