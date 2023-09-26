@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.3
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -35,7 +35,10 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.4.2 = 2023-09-XX =
+= 1.4.3 = 2023-09-26 =
+* Fixed - Issue with cardholder name input in mobile view
+
+= 1.4.2 = 2023-09-14 =
 * Added   - Add platform value for add_payment_method and process_payment_method_change
 * Added   - Add order note for mentioning token id for easier troubleshooting
 * Added   - Automatically delete invalid token
