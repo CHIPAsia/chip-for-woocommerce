@@ -1830,7 +1830,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $default_fields = array(
       'card-name-field' => '<p class="form-row form-row-wide">
         <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-name" style="font-size: 1.5em; padding: 8px;" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="30" placeholder="Name" />
+        <input id="' . esc_attr( $this->id ) . '-card-name" style="font-size: 1.5em; padding: 8px;" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="text" maxlength="30" placeholder="Name" />
       </p>',
       'card-number-field' => '<p class="form-row form-row-wide">
         <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
