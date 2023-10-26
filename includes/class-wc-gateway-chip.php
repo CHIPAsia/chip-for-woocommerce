@@ -225,7 +225,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
       if ( openssl_verify( $content,  base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1) {
         $message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
-        $this->log_order_info( $message, $order );
         exit( $message );
       }
 
@@ -433,6 +432,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         'fpx_only' => 'FPX Only',
         'ewallet_only' => 'E-Wallet Only',
         'card_only' => 'Card Only',
+        'card_international' => 'Card with Maestro',
+        'card_international_only' => 'Card with Maestro Only',
 
         'paywithchip_all' => 'Pay with CHIP (All)',
         'paywithchip_fpx' => 'Pay with CHIP (FPX)',
@@ -709,6 +710,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         throw new Exception(__('<strong>E-Wallet</strong> is a required field.', 'chip-for-woocommerce'));
       }
     }
+
+    return true;
   }
 
   public function process_payment( $order_id ) {
@@ -727,7 +730,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $callback_url  = add_query_arg( [ 'id' => $order_id ], WC()->api_request_url( $this->id ) );
-    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
+    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME === true ) {
       $callback_url = home_url( '/?wc-api=' . get_class( $this ). '&id=' . $order_id );
     }
 
@@ -771,6 +774,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $items = $order->get_items();
 
     foreach ( $items as $item ) {
+      /** @var \WC_Order_Item_Product $item **/
       $price = round( $item->get_total() * 100 );
       $qty   = $item->get_quantity();
 
@@ -972,6 +976,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     return apply_filters( 'wc_' . $this->id . '_can_refund_order', $can_refund_order, $order, $this );
   }
 
+  /**
+   * @return bool|WP_Error
+   */
   public function process_refund( $order_id, $amount = null, $reason = '' ) {
     $order = wc_get_order( $order_id );
 
@@ -1095,7 +1102,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $callback_url = add_query_arg( [ 'id' => $renewal_order_id ], WC()->api_request_url( $this->id ) );
-    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
+    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME === true ) {
       $callback_url = home_url( '/?wc-api=' . get_class( $this ). '&id=' . $renewal_order_id );
     }
 
@@ -1578,7 +1585,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $customer = new WC_Customer( get_current_user_id() );
 
     $url = add_query_arg( [ 'id' => $order_id, 'process_payment_method_change' => 'yes' ], WC()->api_request_url( $this->id ) );
-    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME ) {
+    if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) AND WC_CHIP_OLD_URL_SCHEME === true ) {
       $url = home_url( '/?wc-api=' . get_class( $this ). '&id=' . $order_id );
     }
 
@@ -1905,6 +1912,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     do_action( 'wc_' . $this->id . '_after_add_item_order_fee', $order, $this );
   }
 
+  /**
+   * @return array
+   */
   public function get_payment_method_whitelist() {
     return $this->payment_met;
   }

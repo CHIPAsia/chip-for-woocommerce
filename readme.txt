@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.3
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,6 +34,10 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.4.4 = 2023-10-26 =
+* Added - Maestro logo option for international payment method support
+* Fixed - Syntax error on preauthorize action when X Signature is failed
 
 = 1.4.3 = 2023-09-26 =
 * Fixed - Issue with cardholder name input in mobile view
