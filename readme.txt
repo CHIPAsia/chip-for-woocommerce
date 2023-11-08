@@ -2,8 +2,8 @@
 Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
-Tested up to: 6.3
-Stable tag: 1.4.4
+Tested up to: 6.4
+Stable tag: 1.4.5
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -35,6 +35,9 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
+= 1.4.5 = 2023-11-08 =
+* Added - Introduce alternative payment journey for unpaid order
+
 = 1.4.4 = 2023-10-26 =
 * Added - Maestro logo option for international payment method support
 * Fixed - Syntax error on preauthorize action when X Signature is failed
@@ -55,24 +58,6 @@ The plugins do includes support for WooCommerce Subscription products.
 * Fixed - Performance improvement for FPX bypass page status check.
 * Fixed - Ensure bypass chip payment page works without maestro option.
 * Fixed - Fix checkout issue with CheckoutWC
-
-= 1.4.0 = 2023-08-18 =
-* Added - Support for bypass payment page for WooCommerce Blocks checkout for FPX B2C and FPX B2B1
-* Added - Support for bypass payment page for legacy WooCommerce checkout for cards.
-* Added - Default payment method whitelist for easier configuration.
-* Added - Item charge for adding additional fee.
-* Added - New icon.
-* Added - Now bypass payment page for FPX will be based on banks availability.
-
-= 1.3.9 = 2023-07-21 =
-* Added   - Support for $0 initial checkout.
-* Changed - Set redirect parameter to direct_post_url for Visa/Mastercard payment method
-* Fixed   - Error after payment for admin after making payment
-* Fixed   - Missing client if the order created through dashboard
-
-= 1.3.8 = 2023-05-27 =
-* Added - State information for address in billing and shipping
-* Fixed - Zip code billing should taken from billing
 
 == Installation ==
 
