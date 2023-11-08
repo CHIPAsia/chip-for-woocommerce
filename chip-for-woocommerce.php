@@ -7,6 +7,8 @@
  * Version: 1.4.5
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
+ * Requires PHP: 7.1
+ * Requires at least: 4.7
  *
  * WC requires at least: 5.1
  * WC tested up to: 8.2
