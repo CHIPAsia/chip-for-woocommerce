@@ -27,6 +27,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $add_charges;
   protected $fix_charges;
   protected $per_charges;
+  protected $cancel_order_flow;
   
   protected $cached_api;
   protected $cached_fpx_api;
@@ -68,6 +69,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->add_charges = $this->get_option( 'enable_additional_charges' );
     $this->fix_charges = $this->get_option( 'fixed_charges', 100 );
     $this->per_charges = $this->get_option( 'percent_charges', 0 );
+    $this->cancel_order_flow = $this->get_option( 'cancel_order_flow' );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -360,7 +362,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $this->release_lock( $order_id );
 
-    wp_safe_redirect( $this->get_return_url( $order ) );
+    $redirect_url = $this->get_return_url( $order );
+
+    if ( $this->cancel_order_flow == 'yes' AND !$order->is_paid() ) {
+      $redirect_url = esc_url_raw($order->get_cancel_order_url_raw());
+    }
+
+    $redirect_url = apply_filters('wc_' . $this->id . '_order_redirect_url', $redirect_url, $this);
+
+    wp_safe_redirect( $redirect_url );
+
     exit;
   }
 
@@ -540,6 +551,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'type'        => 'textarea',
       'description' => __( 'Public key for validating callback will be auto-filled upon successful configuration.', 'chip-for-woocommerce' ),
       'disabled'    => true,
+    );
+
+    $this->form_fields['cancel_order_flow'] = array(
+      'title'       => __( 'Cancel Order Flow', 'chip-for-woocommerce' ),
+      'type'        => 'checkbox',
+      'description' =>__( 'Tick to redirect customer to cancel order URL for unsuccessful payment.', 'chip-for-woocommerce' ),
+      'default'     => 'no',
     );
 
     $this->form_fields['webhooks'] = array(
