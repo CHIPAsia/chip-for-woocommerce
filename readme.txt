@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.4
-Stable tag: 1.4.5
+Stable tag: 1.4.6
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,6 +34,10 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.4.6 = 2023-12-11 =
+* Fixed   - Issue with WooCommerce Block checkout where bypass payment page not work
+* Changed - Change API endpoint to api.chip-in.asia/health_check/fpx_b2c
 
 = 1.4.5 = 2023-11-08 =
 * Added - Introduce alternative payment journey for unpaid order

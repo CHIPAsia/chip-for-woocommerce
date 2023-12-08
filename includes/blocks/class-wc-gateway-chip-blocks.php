@@ -16,8 +16,8 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
   }
 
   public function get_payment_method_script_handles() {
-    $script_path       = 'assets/js/frontend/blocks.js';
-    $script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks.asset.php';
+    $script_path       = 'assets/js/frontend/blocks_'.$this->name.'.js';
+    $script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_'.$this->name.'.asset.php';
     $script_asset      = file_exists( $script_asset_path )
       ? require( $script_asset_path )
       : array(
@@ -46,12 +46,14 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
     if (is_array($whitelisted_payment_method) AND count($whitelisted_payment_method) == 1  AND $bypass_chip == 'yes') {
       if ($whitelisted_payment_method[0] == 'fpx') {
         $localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
+        unset($localize_variable['fpx_b2c']['']);
       } elseif ($whitelisted_payment_method[0] == 'fpx_b2b1') {
         $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
+        unset($localize_variable['fpx_b2b1']['']);
       }
     }
 
-    wp_localize_script( "wc-{$this->name}-blocks", 'GATEWAY', $localize_variable );
+    wp_localize_script( "wc-{$this->name}-blocks", 'gateway_' . $this->name, $localize_variable );
 
     return [ "wc-{$this->name}-blocks" ];
   }

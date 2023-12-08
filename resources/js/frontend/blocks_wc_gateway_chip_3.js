@@ -5,7 +5,7 @@ import { getSetting } from "@woocommerce/settings";
 import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect } from "@wordpress/element";
 
-const settings = getSetting(GATEWAY.id + "_data", {});
+const settings = getSetting(gateway_wc_gateway_chip_3.id + "_data", {});
 
 const defaultLabel = __("CHIP", "chip-for-woocommerce");
 
@@ -28,7 +28,7 @@ const Label = (props) => {
 const FpxBankList = (props) => {
   const [bankId, setBankId] = useState(undefined);
   const { eventRegistration, emitResponse } = props;
-  const { onPaymentProcessing } = eventRegistration;
+  const { onPaymentSetup } = eventRegistration;
 
   const onSubmit = () => {
     if (undefined === bankId) {
@@ -52,15 +52,15 @@ const FpxBankList = (props) => {
   };
 
   useEffect(() => {
-    const unsubscribeProcessing = onPaymentProcessing(onSubmit);
+    const unsubscribeProcessing = onPaymentSetup(onSubmit);
     return () => {
       unsubscribeProcessing();
     };
-  }, [onPaymentProcessing, bankId]);
+  }, [onPaymentSetup, bankId]);
 
-  const fpx_b2c = GATEWAY.fpx_b2c
+  const fpx_b2c = gateway_wc_gateway_chip_3.fpx_b2c
 
-  var fpx_b2c_array = [];
+  let fpx_b2c_array = [];
 
   Object.keys(fpx_b2c).forEach(key => {
     fpx_b2c_array.push({name: fpx_b2c[key], id: key});
@@ -69,7 +69,7 @@ const FpxBankList = (props) => {
   return (
     <TreeSelect
       label={__("Internet Banking", "chip-for-woocommerce")}
-      noOptionLabel={__("Choose an option", "chip-for-woocommerce")}
+      noOptionLabel={__("Choose your bank", "chip-for-woocommerce")}
       onChange={(selected_bank_id) => {
         setBankId(selected_bank_id);
       }}
@@ -82,7 +82,7 @@ const FpxBankList = (props) => {
 const Fpxb2b1BankList = (props) => {
   const [bankIdB2b, setBankIdB2b] = useState(undefined);
   const { eventRegistration, emitResponse } = props;
-  const { onPaymentProcessing } = eventRegistration;
+  const { onPaymentSetup } = eventRegistration;
 
   const onSubmit = () => {
     if (undefined === bankIdB2b) {
@@ -106,15 +106,15 @@ const Fpxb2b1BankList = (props) => {
   };
 
   useEffect(() => {
-    const unsubscribeProcessing = onPaymentProcessing(onSubmit);
+    const unsubscribeProcessing = onPaymentSetup(onSubmit);
     return () => {
       unsubscribeProcessing();
     };
-  }, [onPaymentProcessing, bankIdB2b]);
+  }, [onPaymentSetup, bankIdB2b]);
 
-  const fpx_b2b1 = GATEWAY.fpx_b2b1
+  const fpx_b2b1 = gateway_wc_gateway_chip_3.fpx_b2b1
 
-  var fpx_b2b1_array = [];
+  let fpx_b2b1_array = [];
 
   Object.keys(fpx_b2b1).forEach(key => {
     fpx_b2b1_array.push({name: fpx_b2b1[key], id: key});

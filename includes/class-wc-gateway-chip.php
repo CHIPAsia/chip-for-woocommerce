@@ -1561,7 +1561,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         if ($key === '') {
           continue;
         }
-        if ($fpx[$key] != 1) {
+        if (isset($fpx[$key]) && $fpx[$key] != 'A') {
           unset($default_fpx[$key]);
         }
       }
