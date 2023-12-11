@@ -21,7 +21,7 @@ operational complexity, and drive growth.
 
 With CHIP, you gain a financial partner committed to simplifying, digitizing, and enhancing your financial operations for ultimate success.
 
-This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://developer.chip-in.asia).
+This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://docs.chip-in.asia).
 
 The plugins do includes support for WooCommerce Subscription products.
 
@@ -35,33 +35,11 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.4.6 = 2023-12-11 =
+= 1.4.6 2023-12-11 =
 * Fixed   - Issue with WooCommerce Block checkout where bypass payment page not work
 * Changed - Change API endpoint to api.chip-in.asia/health_check/fpx_b2c
 
-= 1.4.5 = 2023-11-08 =
-* Added - Introduce alternative payment journey for unpaid order
-
-= 1.4.4 = 2023-10-26 =
-* Added - Maestro logo option for international payment method support
-* Fixed - Syntax error on preauthorize action when X Signature is failed
-
-= 1.4.3 = 2023-09-26 =
-* Fixed - Issue with cardholder name input in mobile view
-
-= 1.4.2 = 2023-09-14 =
-* Added   - Add platform value for add_payment_method and process_payment_method_change
-* Added   - Add order note for mentioning token id for easier troubleshooting
-* Added   - Automatically delete invalid token
-* Added   - Ensure empty cart will be prefilled with generic product name
-* Added   - Add logo without CHIP logo.
-* Changed - Change Choose an option to Choose your bank based on community feedback
-* Changed - Order note will be stored first before woocommerce order status change
-
-= 1.4.1 = 2023-09-01 =
-* Fixed - Performance improvement for FPX bypass page status check.
-* Fixed - Ensure bypass chip payment page works without maestro option.
-* Fixed - Fix checkout issue with CheckoutWC
+[See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
 == Installation ==
 
@@ -71,22 +49,22 @@ The plugins do includes support for WooCommerce Subscription products.
 
 = Minimum Requirements =
 
-* WordPress 4.7 or greater
+* PHP 7.4 or greater is required (PHP 8.0 or greater is recommended)
+* MySQL 5.6 or greater, OR MariaDB version 10.1 or greater, is required
 
 = Automatic installation =
 
-Automatic installation is the easiest option as WordPress handles the file transfers itself and you don’t need to leave your web browser. To do an automatic install of, log in to your WordPress dashboard, navigate to the Plugins menu and click Add New.
+Automatic installation is the easiest option -- WordPress will handle the file transfer, and you won’t need to leave your web browser. To do an automatic install of WooCommerce, log in to your WordPress dashboard, navigate to the Plugins menu, and click “Add New.”
 
-In the search field type "CHIP for WooCommerce" and click Search Plugins. Once you’ve found our plugin you can view details about it such as the point release, rating and description. Most importantly of course, you can install it by simply clicking “Install Now”.
+In the search field type “CHIP for WooCommerce,” then click “Search Plugins.” Once you’ve found us,  you can view details about it such as the point release, rating, and description. Most importantly of course, you can install it by! Click “Install Now,” and WordPress will take it from there.
 
 = Manual installation =
 
-The manual installation method involves downloading our plugin and uploading it to your webserver via your favorite FTP application. The
-WordPress codex contains [instructions on how to do this here](http://codex.wordpress.org/Managing_Plugins#Manual_Plugin_Installation).
+Manual installation method requires downloading the CHIP for WooCommerce plugin and uploading it to your web server via your favorite FTP application. The WordPress codex contains [instructions on how to do this here](https://wordpress.org/support/article/managing-plugins/#manual-plugin-installation).
 
 = Updating =
 
-Automatic updates should work like a charm; as always though, ensure you backup your site just in case.
+Automatic updates should work smoothly, but we still recommend you back up your site.
 
 == Frequently Asked Questions ==
 
@@ -100,7 +78,7 @@ Optional. You may set the public key for webhook to synchronize the card token a
 
 = Where can I find documentation? =
 
-You can visit our [API documentation](https://developer.chip-in.asia/) for your reference.
+You can visit our [API documentation](https://docs.chip-in.asia/) for your reference.
 
 = What CHIP API services used in this plugin? =
 
@@ -147,6 +125,6 @@ Create a PHP constant in your wp-config.php file with the following code:
 
 [Privacy Policy](https://www.chip-in.asia/privacy-policy)
 
-[API Documentation](https://developer.chip-in.asia/)
+[API Documentation](https://docs.chip-in.asia/)
 
 [CHIP Merchants & DEV Community](https://www.facebook.com/groups/3210496372558088)

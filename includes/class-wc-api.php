@@ -1,6 +1,6 @@
 <?php
 
-// This is CHIP API URL Endpoint as per documented in: https://developer.chip-in.asia/api
+// This is CHIP API URL Endpoint as per documented in: https://docs.chip-in.asia
 define('WC_CHIP_ROOT_URL', 'https://gate.chip-in.asia/api');
 
 class Chip_Woocommerce_API
