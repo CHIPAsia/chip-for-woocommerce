@@ -1570,7 +1570,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   public function list_razer_ewallets() {
     return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', array(
-      '' => __( 'Choose an option', 'chip-for-woocommerce' ),
+      '' => __( 'Choose your e-wallet', 'chip-for-woocommerce' ),
       // 'BOOST'        => __( 'Boost', 'chip-for-woocommerce' ),
       'GrabPay'         => __( 'GrabPay', 'chip-for-woocommerce'),
       'TNG-EWALLET'     => __( 'Touch \'n Go eWallet', 'chip-for-woocommerce'),

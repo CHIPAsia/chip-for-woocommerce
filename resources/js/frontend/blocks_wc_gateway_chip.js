@@ -123,7 +123,7 @@ const Fpxb2b1BankList = (props) => {
   return (
     <TreeSelect
       label={__("Internet Banking", "chip-for-woocommerce")}
-      noOptionLabel={__("Choose an option", "chip-for-woocommerce")}
+      noOptionLabel={__("Choose your bank", "chip-for-woocommerce")}
       onChange={(selected_bank_id) => {
         setBankIdB2b(selected_bank_id);
       }}
