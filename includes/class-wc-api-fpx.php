@@ -1,6 +1,6 @@
 <?php
 
-define('WC_CHIP_FPX_ROOT_URL', 'https://webhookemail.chip-in.asia/fpx');
+define('WC_CHIP_FPX_ROOT_URL', 'https://api.chip-in.asia/health_check');
 
 class Chip_Woocommerce_API_FPX
 {
@@ -15,13 +15,13 @@ class Chip_Woocommerce_API_FPX
   public function get_fpx( ) {
     $this->log_info( 'fetch fpx b2c status' );
 
-    return $this->call( 'GET', '/get_status_b2c.php?time=' . time() );
+    return $this->call( 'GET', '/fpx_b2c?time=' . time() );
   }
 
   public function get_fpx_b2b1( ) {
     $this->log_info( 'fetch fpx b2b1 status' );
 
-    return $this->call( 'GET', '/get_status_b2b1.php?time=' . time() );
+    return $this->call( 'GET', '/fpx_b2b1?time=' . time() );
   }
 
   private function call( $method, $route, $params = [] ) {

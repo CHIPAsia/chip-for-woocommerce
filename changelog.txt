@@ -1,6 +1,30 @@
-*** Changelog ***
+== Changelog ==
 
-= 1.4.0 = 2023-08-18 =
+= 1.4.5 2023-11-08 =
+* Added - Introduce alternative payment journey for unpaid order
+
+= 1.4.4 2023-10-26 =
+* Added - Maestro logo option for international payment method support
+* Fixed - Syntax error on preauthorize action when X Signature is failed
+
+= 1.4.3 2023-09-26 =
+* Fixed - Issue with cardholder name input in mobile view
+
+= 1.4.2 2023-09-14 =
+* Added   - Add platform value for add_payment_method and process_payment_method_change
+* Added   - Add order note for mentioning token id for easier troubleshooting
+* Added   - Automatically delete invalid token
+* Added   - Ensure empty cart will be prefilled with generic product name
+* Added   - Add logo without CHIP logo.
+* Changed - Change Choose an option to Choose your bank based on community feedback
+* Changed - Order note will be stored first before woocommerce order status change
+
+= 1.4.1 2023-09-01 =
+* Fixed - Performance improvement for FPX bypass page status check.
+* Fixed - Ensure bypass chip payment page works without maestro option.
+* Fixed - Fix checkout issue with CheckoutWC
+
+= 1.4.0 2023-08-18 =
 * Added - Support for bypass payment page for WooCommerce Blocks checkout for FPX B2C and FPX B2B1
 * Added - Support for bypass payment page for legacy WooCommerce checkout for cards.
 * Added - Default payment method whitelist for easier configuration.
@@ -8,41 +32,41 @@
 * Added - New icon.
 * Added - Now bypass payment page for FPX will be based on banks availability.
 
-= 1.3.9 = 2023-07-21 =
+= 1.3.9 2023-07-21 =
 * Added   - Support for $0 initial checkout.
 * Changed - Set redirect parameter to direct_post_url for Visa/Mastercard payment method
 * Fixed   - Error after payment for admin after making payment
 * Fixed   - Missing client if the order created through dashboard
 
-= 1.3.8 = 2023-05-27 =
+= 1.3.8 2023-05-27 =
 * Added - State information for address in billing and shipping
 * Fixed - Zip code billing should taken from billing
 
-= 1.3.7 = 2023-05-24 =
+= 1.3.7 2023-05-24 =
 * Added - Quantity in CHIP Purchase invoice.
 
-= 1.3.6 = 2023-05-23 =
+= 1.3.6 2023-05-23 =
 * Changed - Put meaningful description in option page to reduce confusion
 * Added   - More hooks for better data manipulation
 * Fixed   - Issue when product price is less than zero
 
-= 1.3.5 = 2023-05-08 =
+= 1.3.5 2023-05-08 =
 * Changed - Put meaningful description to reduce confusion
 * Changed - Automatic force tokenization for card when subscription product exists
 * Removed - Removed save to account checkbox due to confusion
 * Fixed   - Prevent Fatal Error on WooCommerce Scheduler in the event of invalid secret key
 
-= 1.3.4 = 2023-04-13 =
+= 1.3.4 2023-04-13 =
 * Added   - Add purchase id to order note
 * Added   - Add action hooks for payment creation
 * Changed - Hide save payment method checkbox when force tokenization enabled
 * Changed - Hide add new payment method if no token
 * Fixed   - Issue with FPX payment when there is unsupported apostrophe
 
-= 1.3.3 = 2023-04-07 =
+= 1.3.3 2023-04-07 =
 * Fixed - Issue with Add/Change Payment method
 
-= 1.3.2 - 2023-03-29 =
+= 1.3.2 2023-03-29 =
 * Changed - Requery will stop attempt if status is expired
 * Changed - Ensure lock are released for requery
 * Added   - Declaration for WooCommerce HPOS compatibility
@@ -51,11 +75,11 @@
 * Fixed   - Warning when non logged in user choose to save card
 * Fixed   - Warning when secret key changed and unable to requery the purchases
 
-= 1.3.1 - 2023-03-14 =
+= 1.3.1 2023-03-14 =
 * Fixed - Unable to redirect to FPX B2B1 when using Bypass CHIP Payment Page
 * Fixed - Unable to redirect to CHIP Payment page when switching from test to production key
 
-= 1.3.0 - 2023-03-13 =
+= 1.3.0 2023-03-13 =
 * Added   - Add support for WooCommerce Subscription
 * Added   - Hook token deletion with CHIP
 * Added   - WC_Gateway_Chip can be extended for cloning
@@ -79,40 +103,40 @@
 * Removed - Enable Payment method selection is now removed
 * Fixed   - Customer still shown a failed payment page when there is failed attempt
 
-= 1.2.7 - 2023-03-05 =
+= 1.2.7 2023-03-05 =
 * Fixed - Issue with due timestamp when woocommerce hold stock option is empty
 * Fixed - Warning with e-wallet
 
-= 1.2.6 - 2023-01-26 =
+= 1.2.6 2023-01-26 =
 * Added - Add FPX extra information on failure
 * Fixed - Enable payment method selection requires total amount
 
-= 1.2.5 - 2023-01-01 =
+= 1.2.5 2023-01-01 =
 * Fixed - Amount deducted twice when using coupon
 
-= 1.2.4 - 2022-12-28 =
+= 1.2.4 2022-12-28 =
 * Added - Add error logging on create purchase error
 
-= 1.2.3 - 2022-12-15 =
+= 1.2.3 2022-12-15 =
 * Added   - Add maestro as card group
 * Added   - Constant WC_CHIP_OLD_URL_SCHEME for switch to old URL scheme
 * Changed - Redirect URL using new URL scheme
 
-= 1.2.2 - 2022-11-25 =
+= 1.2.2 2022-11-25 =
 * Tweak - Enhance locking to lock per order id
 * Fix   - Issue with error when payment with visa and mastercard
 
-= 1.2.1 - 2022-11-12 =
+= 1.2.1 2022-11-12 =
 * Add - Support for success_callback verification using public key
 
-= 1.2.0 - 2022-11-8 =
+= 1.2.0 2022-11-8 =
 * Add    - Add filters wc_chip_supports to allow refund to be disabled
 * Add    - Timezone support for due strict
 * Tweak  - Revamp how preferred payment option being presented
 * Tweak  - Hide custom field for chip_transaction_id as it is not meant to be edited
 * Update - New logo
 
-= 1.1.4 - 2022-11-7 =
+= 1.1.4 2022-11-7 =
 * Add    - Check payment id to avoid spoofing
 * Add    - Add hooks to allow checkout page to be customized
 * Add    - CHIP Icon on checkout page
@@ -120,10 +144,10 @@
 * Update - Standardize terminology for secret key
 * Update - Change FPX B2C to FPX
 
-= 1.1.3 - 2022-10-12 =
+= 1.1.3 2022-10-12 =
 * New   - Intial Repack Release.
 * Tweak - Added due strict to enforce payment timeout based on Hold Stock (Minutes)
 * Tweak - Removed country selection on checkout page.
 
-= 1.1.2 - 2022-10-11 =
+= 1.1.2 2022-10-11 =
 * Initial release
