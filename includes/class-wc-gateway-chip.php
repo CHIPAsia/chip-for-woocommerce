@@ -666,13 +666,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           'label'    => __('Corporate Internet Banking', 'chip-for-woocommerce'),
           'options'  => $this->list_fpx_b2b1_banks()
         ));
-      } elseif ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'razer' AND $this->bypass_chip == 'yes' ) {
-        woocommerce_form_field('chip_razer_ewallet', array(
-          'type'     => 'select',
-          'required' => true,
-          'label'    => __('E-Wallet', 'chip-for-woocommerce'),
-          'options'  => $this->list_razer_ewallets()
-        ));
       }
     }
 
@@ -724,8 +717,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         throw new Exception(__('<strong>Internet Banking</strong> is a required field.', 'chip-for-woocommerce'));
       } elseif ($this->payment_met[0] == 'fpx_b2b1' AND isset($_POST['chip_fpx_b2b1_bank']) AND strlen($_POST['chip_fpx_b2b1_bank']) == 0) {
         throw new Exception(__('<strong>Corporate Internet Banking</strong> is a required field.', 'chip-for-woocommerce'));
-      } elseif ($this->payment_met[0] == 'razer' AND isset($_POST['chip_razer_ewallet']) AND strlen($_POST['chip_razer_ewallet']) == 0) {
-        throw new Exception(__('<strong>E-Wallet</strong> is a required field.', 'chip-for-woocommerce'));
       }
     }
 
@@ -1568,25 +1559,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
   }
 
-  public function list_razer_ewallets() {
-    return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', array(
-      '' => __( 'Choose your e-wallet', 'chip-for-woocommerce' ),
-      // 'BOOST'        => __( 'Boost', 'chip-for-woocommerce' ),
-      'GrabPay'         => __( 'GrabPay', 'chip-for-woocommerce'),
-      'TNG-EWALLET'     => __( 'Touch \'n Go eWallet', 'chip-for-woocommerce'),
-      'ShopeePay'       => __( 'ShopeePay', 'chip-for-woocommerce'),
-      'MB2U_QRPay-Push' => __( 'Maybank QRPay', 'chip-for-woocommerce'),
-    ) );
-  }
-
   public function bypass_chip( $url, $payment ) {
     if ( $this->bypass_chip == 'yes' AND !$payment['is_test']) {
       if ( isset( $_POST['chip_fpx_bank'] ) AND !empty( $_POST['chip_fpx_bank'] ) ) {
         $url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_bank'] );
       } elseif ( isset( $_POST['chip_fpx_b2b1_bank']) AND !empty( $_POST['chip_fpx_b2b1_bank'] )) {
         $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
-      } elseif ( isset( $_POST['chip_razer_ewallet']) AND !empty( $_POST['chip_razer_ewallet'] )) {
-        $url .= '?preferred=razer&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
       }
     }
     return $url;
