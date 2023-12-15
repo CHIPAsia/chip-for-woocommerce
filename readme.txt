@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.4
-Stable tag: 1.4.6
+Stable tag: 1.4.7
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,9 +34,9 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.4.6 2023-12-11 =
-* Fixed   - Issue with WooCommerce Block checkout where bypass payment page not work
-* Changed - Change API endpoint to api.chip-in.asia/health_check/fpx_b2c
+= 1.4.7 2023-12-18 =
+* Added - Support for E-Wallet bypass payment page
+* Added - Validation for card holder name from unsupported character
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
@@ -101,6 +101,13 @@ This plugin rely on CHIP API ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
     - This is for getting client in CHIP with email
   - **/clients/<id\>/**
     - This to get client and patch client information
+
+Additionally, for FPX Bank status, this plugin rely on CHIP API ([WC_CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
+
+  - **/fpx_b2c**
+    - This is for getting FPX B2C status
+  - **/fpx_b2b1**
+    - This is for getting FPX B2B1 status
 
 = How to clone CHIP for WooCommerce? =
 
