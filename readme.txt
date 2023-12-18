@@ -37,6 +37,7 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.4.7 2023-12-18 =
 * Added - Support for E-Wallet bypass payment page
 * Added - Validation for card holder name from unsupported character
+* Added - Email address fallback when email address is not available
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

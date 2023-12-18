@@ -28,6 +28,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $fix_charges;
   protected $per_charges;
   protected $cancel_order_flow;
+  protected $email_fallback;
   
   protected $cached_api;
   protected $cached_fpx_api;
@@ -70,6 +71,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->fix_charges = $this->get_option( 'fixed_charges', 100 );
     $this->per_charges = $this->get_option( 'percent_charges', 0 );
     $this->cancel_order_flow = $this->get_option( 'cancel_order_flow' );
+    $this->email_fallback = $this->get_option( 'email_fallback' );
 
     $this->init_form_fields();
     $this->init_settings();
@@ -560,6 +562,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'default'     => 'no',
     );
 
+    $this->form_fields['email_fallback'] = array(
+      'title'       => __( 'Email fallback', 'chip-for-woocommerce' ),
+      'type'        => 'email',
+      'description' => __( 'When email address is not requested to the customer, use this email address.', 'chip-for-woocommerce' ),
+    );
+
     $this->form_fields['webhooks'] = array(
       'title'       => __( 'Webhooks', 'chip-for-woocommerce' ),
       'type'        => 'title',
@@ -902,6 +910,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( !empty( $order->get_customer_note() ) ) {
       $params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
+    }
+
+    if ( !isset($params['client_id']) AND (!isset($params['client']['email']) OR empty($params['client']['email']))) {
+      $params['client']['email'] = $this->email_fallback;
     }
 
     $params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
