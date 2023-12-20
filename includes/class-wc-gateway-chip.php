@@ -334,6 +334,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
     }
 
+    if ( has_action( 'wc_' . $this->id . '_before_handle_callback_order' ) ) {
+      do_action( 'wc_' . $this->id . '_before_handle_callback_order', $order, $payment, $this );
+
+      $payment = $this->api()->get_payment( $payment_id );
+    }
+
     if ( ( $payment['status'] == 'paid' ) OR ( $payment['status'] == 'preauthorized') AND $payment['purchase']['total_override'] == 0 ) {
       if ( !$order->is_paid() ) {
         $this->payment_complete( $order, $payment );
@@ -363,6 +369,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
 
     $this->release_lock( $order_id );
+
+    if ( has_action( 'wc_' . $this->id . '_after_handle_callback_order' ) ) {
+      do_action( 'wc_' . $this->id . '_after_handle_callback_order', $order, $payment, $this );
+    }
 
     $redirect_url = $this->get_return_url( $order );
 

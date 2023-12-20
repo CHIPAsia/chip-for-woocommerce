@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 1.4.7 2023-12-18 =
+* Added - Support for E-Wallet bypass payment page
+* Added - Validation for card holder name from unsupported character
+* Added - Email address fallback when email address is not available
+
 = 1.4.6 2023-12-11 =
 * Fixed   - Issue with WooCommerce Block checkout where bypass payment page not work
 * Changed - Change API endpoint to api.chip-in.asia/health_check/fpx_b2c
