@@ -53,6 +53,18 @@ class Chip_Woocommerce_API
     return $this->call( 'POST', "/purchases/$purchase_id/delete_recurring_token/" );
   }
 
+  public function capture_payment( $payment_id, $params = [] ) {
+    $this->log_info( "capture payment: {$payment_id}" );
+
+    return $this->call( 'POST', "/purchases/{$payment_id}/capture/", $params );
+  }
+
+  public function release_payment( $payment_id ) {
+    $this->log_info( "release payment: {$payment_id}" );
+
+    return $this->call( 'POST', "/purchases/{$payment_id}/release/" );
+  }
+
   public function charge_payment( $payment_id, $params ) {
     $this->log_info( "charge payment: {$payment_id}" );
 
