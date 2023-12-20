@@ -35,6 +35,13 @@ jQuery(($) => {
       return false;
     }
 
+    let illegal_character = /[^a-zA-Z \'\.\-]/;
+    let chip_card_name = $('#' + gateway_option.id + '-card-name').val();
+    if (illegal_character.test(chip_card_name)) {
+      wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name contains illegal character</div>' ); // eslint-disable-line max-len
+      return false;
+    }
+
     if ($('#' + gateway_option.id + '-card-number').val() === '') {
       wc_checkout_form.submit_error( '<div class="woocommerce-error">Card Number cannot be empty</div>' ); // eslint-disable-line max-len
       return false;
