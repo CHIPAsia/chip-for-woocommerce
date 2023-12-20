@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.4
-Stable tag: 1.4.7
+Stable tag: 1.4.8
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,10 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.4.7 2023-12-18 =
-* Added - Support for E-Wallet bypass payment page
-* Added - Validation for card holder name from unsupported character
-* Added - Email address fallback when email address is not available
+= 1.4.8 2023-12-20 =
+* Added - Hook for _before_handle_callback_order and _after_handle_callback_order
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
