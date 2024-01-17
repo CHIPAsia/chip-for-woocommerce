@@ -63,7 +63,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->debug       = $this->get_option( 'debug' );
     $this->public_key  = $this->get_option( 'public_key' );
     $this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
-    $this->a_payment_m = $this->get_option( 'available_payment_method', $this->get_default_payment_method() );
+    $this->a_payment_m = $this->get_payment_method_list();
     $this->description = $this->get_option( 'description' );
     $this->webhook_pub = $this->get_option( 'webhook_public_key' );
     $this->bypass_chip = $this->get_option( 'bypass_chip' );
@@ -1075,7 +1075,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if ( is_array( $public_key ) ) {
       $this->add_error( sprintf( __( 'Configuration error: %1$s', 'chip-for-woocommerce' ), current( $public_key['__all__'] )['message'] ) );
       $this->update_option( 'public_key', '' );
-      $this->update_option( 'available_payment_method', array() );
       $this->update_option( 'available_recurring_payment_method', array() );
       return false;
     }
@@ -1084,31 +1083,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $woocommerce_currency = apply_filters( 'wc_' . $this->id . '_purchase_currency', get_woocommerce_currency(), $this );
 
-    $get_available_payment_method = $chip->payment_methods( $woocommerce_currency, $this->get_language(), 200 );
-
-    if ( !array_key_exists( 'available_payment_methods', $get_available_payment_method ) OR empty( $get_available_payment_method['available_payment_methods'] ) ) {
-      $this->add_error( sprintf( __( 'Configuration error: No payment method available for the Brand ID: %1$s', 'chip-for-woocommerce' ), $brand_id ) );
-      $this->update_option( 'public_key', '' );
-      $this->update_option( 'available_payment_method', array() );
-      $this->update_option( 'available_recurring_payment_method', array() );
-      return false;
-    }
-
-    $available_payment_method = array();
     $available_recurring_payment_method = array();
 
     $get_available_recurring_payment_method = $chip->payment_recurring_methods( $woocommerce_currency, $this->get_language(), 200 );
-
-    foreach( $get_available_payment_method['available_payment_methods'] as $apm ) {
-      $available_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm == 'razer' ? 'e-Wallet' : $apm ) );
-    }
 
     foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
       $available_recurring_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
     }
 
     $this->update_option( 'public_key', $public_key );
-    $this->update_option( 'available_payment_method', $available_payment_method );
     $this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
 
     $webhook_public_key = $post["woocommerce_{$this->id}_webhook_public_key"];
@@ -1936,8 +1919,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     }
   }
 
-  public function get_default_payment_method() {
-    return ['fpx' => 'Fpx'];
+  public function get_payment_method_list() {
+    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer' => 'Razer', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng'];
   }
 
   public function add_item_order_fee(&$order) {
