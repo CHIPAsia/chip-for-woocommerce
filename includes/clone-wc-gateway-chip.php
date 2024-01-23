@@ -12,10 +12,6 @@ class WC_Gateway_Chip_2 extends WC_Gateway_Chip {
     $this->form_fields['payment_method_whitelist']['default'] = ['fpx_b2b1'];
     $this->form_fields['description']['default'] = __( 'Pay with Corporate Online Banking (FPX)', 'chip-for-woocommerce' );
   }
-
-  public function get_default_payment_method() {
-    return ['fpx_b2b1' => 'Fpx B2B1'];
-  }
 }
 class WC_Gateway_Chip_3 extends WC_Gateway_Chip {
   const PREFERRED_TYPE = 'Card';
@@ -29,10 +25,6 @@ class WC_Gateway_Chip_3 extends WC_Gateway_Chip {
     $this->form_fields['payment_method_whitelist']['default'] = ['maestro', 'visa', 'mastercard'];
     $this->form_fields['description']['default'] = __( 'Pay with Visa / Mastercard', 'chip-for-woocommerce' );
   }
-
-  public function get_default_payment_method() {
-    return ['maestro' => 'Maestro', 'visa' => 'Visa', 'mastercard' => 'Mastercard'];
-  }
 }
 class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
   const PREFERRED_TYPE = 'E-Wallet';
@@ -43,12 +35,8 @@ class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
 
   public function init_form_fields() {
     parent::init_form_fields();
-    $this->form_fields['payment_method_whitelist']['default'] = ['razer'];
+    $this->form_fields['payment_method_whitelist']['default'] = ['razer', 'razer_atome', 'razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
     $this->form_fields['description']['default'] = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
-  }
-
-  public function get_default_payment_method() {
-    return ['razer' => 'E-Wallet'];
   }
 }
 
