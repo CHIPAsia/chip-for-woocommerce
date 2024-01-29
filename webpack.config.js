@@ -32,6 +32,7 @@ module.exports = {
     'frontend/blocks_wc_gateway_chip_2': '/resources/js/frontend/blocks_wc_gateway_chip_2.js',
     'frontend/blocks_wc_gateway_chip_3': '/resources/js/frontend/blocks_wc_gateway_chip_3.js',
     'frontend/blocks_wc_gateway_chip_4': '/resources/js/frontend/blocks_wc_gateway_chip_4.js',
+    'frontend/blocks_wc_gateway_chip_5': '/resources/js/frontend/blocks_wc_gateway_chip_5.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'assets/js' ),

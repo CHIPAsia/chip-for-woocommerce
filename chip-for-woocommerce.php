@@ -156,6 +156,7 @@ class Chip_Woocommerce {
           $payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_5_Blocks_Support );
         }
       );
     }

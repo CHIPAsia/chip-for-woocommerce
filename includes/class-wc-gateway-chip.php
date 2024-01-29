@@ -691,6 +691,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           'label'    => __('E-Wallet', 'chip-for-woocommerce'),
           'options'  => $this->list_razer_ewallets()
         ));
+      } elseif ( $this->id == 'wc_gateway_chip_5' ) {
+        woocommerce_form_field('chip_razer_atome', array(
+          'type'     => 'hidden'
+        ), 'true');
       }
     }
 
@@ -1094,7 +1098,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $this->update_option( 'public_key', $public_key );
     $this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
 
-    $webhook_public_key = $post["woocommerce_{$this->id}_webhook_public_key"];
+    $webhook_public_key = $post["woocommerce_{$this->id}_webhook_public_key"] ?? '';
 
     if ( !empty( $webhook_public_key ) ) {
       $webhook_public_key = str_replace( '\n', "\n", $webhook_public_key );
@@ -1611,6 +1615,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
       } elseif ( isset( $_POST['chip_razer_ewallet']) AND !empty( $_POST['chip_razer_ewallet'] )) {
         $url .= '?preferred=razer&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
+      } elseif ( isset( $_POST['chip_razer_atome']) ) {
+        $url .= '?preferred=razer&razer_bank_code=razer_atome';
       }
     }
     return $url;
