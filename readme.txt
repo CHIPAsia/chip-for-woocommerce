@@ -37,6 +37,7 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.5.0 2024-01-30 =
 * Added - Dedicated Atome payment method
 * Added - WooCommerce Preorder support
+* Added - More clarity when payment method whitelist is unavailable
 * Fixed - Issue with additional charges being double charged
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).

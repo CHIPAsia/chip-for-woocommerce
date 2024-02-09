@@ -935,7 +935,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     $payment = $chip->create_payment( $params );
 
     if ( !array_key_exists( 'id', $payment ) ) {
-      wc_add_notice( var_export( $payment, true ) , 'error' );
+      if ( array_key_exists ( '__all__', $payment )) {
+        foreach ($payment['__all__'] as $all_error) {
+          wc_add_notice( $all_error['message'], 'error' );
+          wc_add_notice( 'Brand ID: ' . $params['brand_id'], 'error' );
+          wc_add_notice( 'Payment Method: ' . implode(', ', $params['payment_method_whitelist']), 'error' );
+          wc_add_notice( 'Amount: ' . $params['purchase']['currency']. ' ' . number_format($params['purchase']['total_override']/100,2), 'error');
+        }
+      } else {
+        wc_add_notice( var_export( $payment, true ) , 'error' );
+      }
       $this->log_order_info('create payment failed. message: ' . print_r( $payment, true ), $order );
       return array(
         'result' => 'failure',
@@ -1930,8 +1939,26 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function add_item_order_fee(&$order) {
-    if ($order->get_meta( '_' . $this->id . '_fee', true) == 'yes') {
-      return;
+    // foreach( $order->get_items('fee') as $item_id => $item_value) {
+    //   if (in_array($item_value->get_name('chip_view'), ['Fixed Processing Fee', 'Variable Processing Fee'])) {
+    //     $order->remove_item($item_id);
+    //   }
+    // }
+
+    if (!empty($item_id = $order->get_meta( '_chip_fixed_processing_fee', true))) {
+      $item_id = absint( $item_id );
+      
+      if ( $order->get_item( $item_id ) ) {
+        $order->remove_item($item_id);
+      }
+    }
+
+    if (!empty($item_id = $order->get_meta( '_chip_variable_processing_fee', true))) {
+      $item_id = absint( $item_id );
+      
+      if ( $order->get_item( $item_id ) ) {
+        $order->remove_item($item_id);
+      }
     }
 
     do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
@@ -1941,7 +1968,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $item_fee->set_name( 'Fixed Processing Fee' );
       $item_fee->set_amount( $this->fix_charges / 100 );
       $item_fee->set_total( $this->fix_charges / 100 );
+      $item_fee->set_order_id( $order->get_id() );
+      $item_fee->save();
       $order->add_item( $item_fee );
+
+      $order->update_meta_data( '_chip_fixed_processing_fee', $item_fee->get_id() );
     }
 
     if ($this->per_charges > 0) {
@@ -1950,10 +1981,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $item_fee->set_name( 'Variable Processing Fee' );
       $item_fee->set_amount( $order->get_total() * ($this->per_charges / 100) / 100 );
       $item_fee->set_total( $order->get_total() * ($this->per_charges / 100) / 100 );
+      $item_fee->set_order_id( $order->get_id() );
+      $item_fee->save();
       $order->add_item( $item_fee );
+
+      $order->update_meta_data( '_chip_variable_processing_fee', $item_fee->get_id() );
     }
 
-    $order->update_meta_data( '_' . $this->id . '_fee', 'yes' );
     $order->calculate_totals();
     $order->save();
 
