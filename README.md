@@ -23,9 +23,9 @@ Set the **Brand ID** and **Secret Key** in the plugins settings.
 
 ## Known Issues
 
-- WooCommerce throw warning `woocommerce_add_order_item_meta is deprecated since version 3.0.0! Use woocommerce_new_order_item instead.` when calling method: `$order->update_meta_data();`. There is no immediate patch is known yet.
+* WooCommerce throw warning `woocommerce_add_order_item_meta is deprecated since version 3.0.0! Use woocommerce_new_order_item instead.` when calling method: `$order->update_meta_data();`. There is no immediate patch is known yet.
 
-- Additional fee does not apply to Pre-order fee.
+* Additional fee does not apply to Pre-order fee.
 
 ## Rebuild assets
 
