@@ -60,6 +60,10 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
     return ['razer_atome' => 'Razer Atome'];
   }
 
+  protected function init_one_time_gateway() {
+    $this->supports = [ 'products', 'refunds' ];
+  }
+
   public function init_form_fields() {
     parent::init_form_fields();
     $this->form_fields['payment_method_whitelist']['default'] = ['razer_atome'];
