@@ -385,7 +385,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $redirect_url = $this->get_return_url( $order );
 
-    if ( $this->cancel_order_flow == 'yes' AND !$order->is_paid() ) {
+    if ( $this->cancel_order_flow == 'yes' AND !$order->is_paid() AND $order->get_status() != 'pre-ordered' ) {
       $redirect_url = esc_url_raw($order->get_cancel_order_url_raw());
     }
 
