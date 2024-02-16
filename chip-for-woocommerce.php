@@ -13,7 +13,7 @@
  * WC requires at least: 5.1
  * WC tested up to: 8.6
  *
- * Copyright: © 2023 CHIP
+ * Copyright: © 2024 CHIP
  * License: GNU General Public License v3.0
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
