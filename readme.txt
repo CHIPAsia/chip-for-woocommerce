@@ -39,6 +39,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Added - WooCommerce Preorder support
 * Added - More clarity when payment method whitelist is unavailable
 * Fixed - Issue with additional charges being double charged
+* Fixed - Function wc_get_log_file_path is deprecated
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

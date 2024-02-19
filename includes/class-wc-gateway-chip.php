@@ -651,7 +651,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'label'       => __( 'Enable logging', 'chip-for-woocommerce' ),
       'default'     => 'no',
       'description' =>
-        sprintf( __( 'Log events to <code>%s</code>', 'chip-for-woocommerce' ), wc_get_log_file_path( $this->id ) ),
+        sprintf( __( 'Log events to <code>%s</code>', 'chip-for-woocommerce' ), esc_url( admin_url('admin.php?page=wc-status&tab=logs&source=chip-for-woocommerce') ) ),
     );
   }
 

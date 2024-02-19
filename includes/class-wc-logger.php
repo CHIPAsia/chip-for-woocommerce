@@ -8,6 +8,6 @@ class Chip_Woocommerce_Logger {
   }
 
   public function log( $message ) {
-    $this->logger->add( 'chip', $message ); 
+    $this->logger->notice( $message, array( 'source' => 'chip-for-woocommerce' ) ); 
   }  
 }
