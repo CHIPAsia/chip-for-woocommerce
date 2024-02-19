@@ -4,16 +4,16 @@
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: CHIP - Digital Finance Platform
- * Version: 1.4.9
+ * Version: 1.5.0
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
  * Requires PHP: 7.1
  * Requires at least: 4.7
  *
  * WC requires at least: 5.1
- * WC tested up to: 8.4
+ * WC tested up to: 8.6
  *
- * Copyright: © 2023 CHIP
+ * Copyright: © 2024 CHIP
  * License: GNU General Public License v3.0
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
@@ -55,7 +55,7 @@ class Chip_Woocommerce {
   }
 
   public function define() {
-    define( 'WC_CHIP_MODULE_VERSION', 'v1.4.9' );
+    define( 'WC_CHIP_MODULE_VERSION', 'v1.5.0' );
     define( 'WC_CHIP_FILE', __FILE__ );
     define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
     define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
@@ -156,6 +156,7 @@ class Chip_Woocommerce {
           $payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support );
           $payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support );
+          $payment_method_registry->register( new WC_Gateway_Chip_5_Blocks_Support );
         }
       );
     }
