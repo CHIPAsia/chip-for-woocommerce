@@ -1,5 +1,12 @@
 == Changelog ==
 
+= 1.5.0 2024-01-30 =
+* Added - Dedicated Atome payment method
+* Added - WooCommerce Preorder support
+* Added - More clarity when payment method whitelist is unavailable
+* Fixed - Issue with additional charges being double charged
+* Fixed - Function wc_get_log_file_path is deprecated
+
 = 1.4.9 2024-01-18 =
 * Changed - Payment method whitelist option now always show all payment method.
 

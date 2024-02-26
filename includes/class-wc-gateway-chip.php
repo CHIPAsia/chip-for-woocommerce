@@ -1981,27 +1981,28 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function add_item_order_fee(&$order) {
-    // foreach( $order->get_items('fee') as $item_id => $item_value) {
-    //   if (in_array($item_value->get_name('chip_view'), ['Fixed Processing Fee', 'Variable Processing Fee'])) {
+    foreach( $order->get_items('fee') as $item_id => $item_value) {
+      if (in_array($item_value->get_name('chip_view'), ['Fixed Processing Fee', 'Variable Processing Fee'])) {
+        $order->remove_item($item_id);
+      }
+    }
+
+    // It cannot be baesd on the item id as in some cases the id is changed
+    // if (!empty($item_id = $order->get_meta( '_chip_fixed_processing_fee', true))) {
+    //   $item_id = absint( $item_id );
+      
+    //   if ( $order->get_item( $item_id ) ) {
     //     $order->remove_item($item_id);
     //   }
     // }
 
-    if (!empty($item_id = $order->get_meta( '_chip_fixed_processing_fee', true))) {
-      $item_id = absint( $item_id );
-      
-      if ( $order->get_item( $item_id ) ) {
-        $order->remove_item($item_id);
-      }
-    }
+    // if (!empty($item_id = $order->get_meta( '_chip_variable_processing_fee', true))) {
+    //   $item_id = absint( $item_id );
 
-    if (!empty($item_id = $order->get_meta( '_chip_variable_processing_fee', true))) {
-      $item_id = absint( $item_id );
-      
-      if ( $order->get_item( $item_id ) ) {
-        $order->remove_item($item_id);
-      }
-    }
+    //   if ( $order->get_item( $item_id ) ) {
+    //     $order->remove_item($item_id);
+    //   }
+    // }
 
     do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
     if ($this->fix_charges > 0) {

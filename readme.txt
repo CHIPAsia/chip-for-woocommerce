@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,12 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.5.0 2024-01-30 =
-* Added - Dedicated Atome payment method
-* Added - WooCommerce Preorder support
-* Added - More clarity when payment method whitelist is unavailable
-* Fixed - Issue with additional charges being double charged
-* Fixed - Function wc_get_log_file_path is deprecated
+= 1.5.1 2024-02-26 =
+* Fixed - Issue with additional charges being double charged when subscription renewal fails
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
