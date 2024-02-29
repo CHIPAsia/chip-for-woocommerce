@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 1.5.1 2024-02-26 =
+* Fixed - Issue with additional charges being double charged when subscription renewal fails
+
 = 1.5.0 2024-01-30 =
 * Added - Dedicated Atome payment method
 * Added - WooCommerce Preorder support
