@@ -119,6 +119,22 @@ class Chip_Woocommerce_API
     return $result;
   }
 
+  public function turnover() {
+    $this->log_info( 'getting company turnover' );
+
+    $result = $this->call( 'GET', '/account/json/turnover/?currency=MYR' );
+
+    return $result;
+  }
+
+  public function balance() {
+    $this->log_info( 'getting company balance' );
+
+    $result = $this->call( 'GET', '/account/json/balance/?currency=MYR' );
+
+    return $result;
+  }
+
   private function call( $method, $route, $params = [] ) {
     $secret_key = $this->secret_key;
     if ( !empty( $params ) ) {
