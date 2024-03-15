@@ -1,5 +1,9 @@
 == Changelog ==
 
+= 1.5.2 2024-03-01 =
+* Added   - Metabox option for reporting on total account turnover
+* Changed - Option for description are now using textarea instead of text
+
 = 1.5.1 2024-02-26 =
 * Fixed - Issue with additional charges being double charged when subscription renewal fails
 
