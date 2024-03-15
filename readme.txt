@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.4
-Stable tag: 1.5.2
+Stable tag: 1.5.3
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,9 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.5.2 2024-03-01 =
-* Added   - Metabox option for reporting on total account turnover
-* Changed - Option for description are now using textarea instead of text
+= 1.5.3 2024-03-15 =
+* Fixed   - Fixed error for dedicated Atome payment method.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

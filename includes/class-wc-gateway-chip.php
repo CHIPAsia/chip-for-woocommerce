@@ -1684,9 +1684,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       } elseif ( isset( $_POST['chip_fpx_b2b1_bank']) AND !empty( $_POST['chip_fpx_b2b1_bank'] )) {
         $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
       } elseif ( isset( $_POST['chip_razer_ewallet']) AND !empty( $_POST['chip_razer_ewallet'] )) {
-        $url .= '?preferred=razer&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
+
+        $preferred = 'razer';
+        // If the value is "Atome", change preferred value to "razer_atome"
+        if ( $_POST['chip_razer_ewallet'] == 'Atome') {
+          $preferred = 'razer_atome';
+        }
+
+        $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
       } elseif ( isset( $_POST['chip_razer_atome']) ) {
-        $url .= '?preferred=razer&razer_bank_code=razer_atome';
+        $url .= '?preferred=razer_atome&razer_bank_code=Atome';
       }
     }
     return $url;
