@@ -11,7 +11,7 @@
  * Requires at least: 4.7
  *
  * WC requires at least: 5.1
- * WC tested up to: 8.6
+ * WC tested up to: 8.7
  *
  * Copyright: © 2024 CHIP
  * License: GNU General Public License v3.0

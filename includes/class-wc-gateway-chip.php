@@ -29,6 +29,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $per_charges;
   protected $cancel_order_flow;
   protected $email_fallback;
+  protected $enable_metabox;
   
   protected $cached_api;
   protected $cached_fpx_api;
