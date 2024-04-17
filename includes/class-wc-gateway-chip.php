@@ -1690,9 +1690,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         }
 
         $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
-      } elseif ( $this->id == 'wc_gateway_chip_5' ) {
-        $url .= '?preferred=razer_atome&razer_bank_code=Atome';
+      } elseif ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'duitnow_qr' ) {
+        $url .= '?preferred=duitnow_qr';
       }
+    } elseif ( $this->id == 'wc_gateway_chip_5' ) {
+      $url .= '?preferred=razer_atome&razer_bank_code=Atome';
     }
     return $url;
   }
