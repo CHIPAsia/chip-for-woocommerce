@@ -13,3 +13,7 @@ class WC_Gateway_Chip_4_Blocks_Support extends WC_Gateway_Chip_Blocks_Support {
 class WC_Gateway_Chip_5_Blocks_Support extends WC_Gateway_Chip_Blocks_Support {
   protected $name = 'wc_gateway_chip_5';
 }
+
+class WC_Gateway_Chip_6_Blocks_Support extends WC_Gateway_Chip_Blocks_Support {
+  protected $name = 'wc_gateway_chip_6';
+}

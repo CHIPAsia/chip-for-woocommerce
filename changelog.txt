@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 1.5.3 2024-03-15 =
+* Fixed   - Fixed error for dedicated Atome payment method.
+
 = 1.5.2 2024-03-01 =
 * Added   - Metabox option for reporting on total account turnover
 * Changed - Option for description are now using textarea instead of text
