@@ -1692,7 +1692,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         }
 
         $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
-      } elseif ( isset( $_POST['chip_razer_atome']) ) {
+      } elseif ( $this->id == 'wc_gateway_chip_5' AND isset( $_POST['chip_razer_atome']) ) {
         $url .= '?preferred=razer_atome&razer_bank_code=Atome';
       }
     }
