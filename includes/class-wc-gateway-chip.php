@@ -97,7 +97,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   protected function init_icon() {
     $logo = $this->get_option( 'display_logo', 'logo' );
-    $this->icon = apply_filters( 'wc_' . $this->id . '_load_icon' , plugins_url("assets/{$logo}.png", WC_CHIP_FILE ) );
+
+    $file_extension = 'png';
+    $file_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/' . $logo . '.png';
+    if ( !file_exists($file_path) ) {
+      $file_extension = 'svg';
+    }
+
+    $this->icon = apply_filters( 'wc_' . $this->id . '_load_icon' , plugins_url("assets/{$logo}.{$file_extension}", WC_CHIP_FILE ) );
   }
 
   protected function init_title() {
@@ -477,6 +484,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
         'paywithchip_all' => 'Pay with CHIP (All)',
         'paywithchip_fpx' => 'Pay with CHIP (FPX)',
+
+        'duitnow' => 'Duitnow QR',
+        'duitnow_only' => 'Duitnow QR Only',
       ),
     );
 
