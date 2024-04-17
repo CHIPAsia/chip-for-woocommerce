@@ -720,9 +720,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           'options'  => $this->list_razer_ewallets()
         ));
       } elseif ( $this->id == 'wc_gateway_chip_5' ) {
-        woocommerce_form_field('chip_razer_atome', array(
-          'type'     => 'hidden'
-        ), 'true');
+        // do nothing
       }
     }
 
@@ -1692,7 +1690,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         }
 
         $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
-      } elseif ( $this->id == 'wc_gateway_chip_5' AND isset( $_POST['chip_razer_atome']) ) {
+      } elseif ( $this->id == 'wc_gateway_chip_5' ) {
         $url .= '?preferred=razer_atome&razer_bank_code=Atome';
       }
     }
