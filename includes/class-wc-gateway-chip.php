@@ -29,6 +29,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $per_charges;
   protected $cancel_order_flow;
   protected $email_fallback;
+  protected $enable_metabox;
   
   protected $cached_api;
   protected $cached_fpx_api;
@@ -96,7 +97,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
   protected function init_icon() {
     $logo = $this->get_option( 'display_logo', 'logo' );
-    $this->icon = apply_filters( 'wc_' . $this->id . '_load_icon' , plugins_url("assets/{$logo}.png", WC_CHIP_FILE ) );
+
+    $file_extension = 'png';
+    $file_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/' . $logo . '.png';
+    if ( !file_exists($file_path) ) {
+      $file_extension = 'svg';
+    }
+
+    $this->icon = apply_filters( 'wc_' . $this->id . '_load_icon' , plugins_url("assets/{$logo}.{$file_extension}", WC_CHIP_FILE ) );
   }
 
   protected function init_title() {
@@ -476,6 +484,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
         'paywithchip_all' => 'Pay with CHIP (All)',
         'paywithchip_fpx' => 'Pay with CHIP (FPX)',
+
+        'duitnow' => 'Duitnow QR',
+        'duitnow_only' => 'Duitnow QR Only',
       ),
     );
 
@@ -720,9 +731,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           'options'  => $this->list_razer_ewallets()
         ));
       } elseif ( $this->id == 'wc_gateway_chip_5' ) {
-        woocommerce_form_field('chip_razer_atome', array(
-          'type'     => 'hidden'
-        ), 'true');
+        // do nothing
       }
     }
 
@@ -1692,9 +1701,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         }
 
         $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
-      } elseif ( isset( $_POST['chip_razer_atome']) ) {
-        $url .= '?preferred=razer_atome&razer_bank_code=Atome';
+      } elseif ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'duitnow_qr' ) {
+        $url .= '?preferred=duitnow_qr';
       }
+    } elseif ( $this->id == 'wc_gateway_chip_5' ) {
+      $url .= '?preferred=razer_atome&razer_bank_code=Atome';
     }
     return $url;
   }
@@ -2003,7 +2014,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function get_payment_method_list() {
-    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer' => 'Razer', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng'];
+    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer' => 'Razer', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR'];
   }
 
   public function add_item_order_fee(&$order) {

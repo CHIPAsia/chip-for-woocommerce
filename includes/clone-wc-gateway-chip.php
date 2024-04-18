@@ -78,6 +78,20 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
   }
 }
 
+class WC_Gateway_Chip_6 extends WC_Gateway_Chip {
+  const PREFERRED_TYPE = 'Duitnow QR';
+
+  protected function init_title() {
+    $this->title = __( 'Duitnow QR', 'chip-for-woocommerce' );
+  }
+
+  public function init_form_fields() {
+    parent::init_form_fields();
+    $this->form_fields['payment_method_whitelist']['default'] = ['duitnow_qr'];
+    $this->form_fields['description']['default'] = __( 'Pay with Duitnow QR', 'chip-for-woocommerce' );
+  }
+}
+
 add_filter( 'woocommerce_payment_gateways', 'chip_clone_wc_gateways' );
 
 function chip_clone_wc_gateways( $methods ) {
@@ -85,6 +99,7 @@ function chip_clone_wc_gateways( $methods ) {
   $methods[] = WC_Gateway_Chip_3::class;
   $methods[] = WC_Gateway_Chip_4::class;
   $methods[] = WC_Gateway_Chip_5::class;
+  $methods[] = WC_Gateway_Chip_6::class;
 
   return $methods;
 }
