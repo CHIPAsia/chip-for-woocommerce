@@ -1683,6 +1683,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $ewallet_list['TNG-EWALLET'] = __('Touch \'n Go eWallet', 'chip-for-woocommerce');
     }
 
+    if (in_array('duitnow_qr', $this->payment_met)) {
+      $ewallet_list['duitnow-qr'] = __('Duitnow QR', 'chip-for-woocommerce');
+    }
+
     return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', $ewallet_list);
   }
 
@@ -1698,6 +1702,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
         // If the value is "Atome", change preferred value to "razer_atome"
         if ( $_POST['chip_razer_ewallet'] == 'Atome') {
           $preferred = 'razer_atome';
+        } elseif ($_POST['chip_razer_ewallet'] == 'duitnow-qr') {
+          $preferred = 'duitnow_qr';
         }
 
         $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
