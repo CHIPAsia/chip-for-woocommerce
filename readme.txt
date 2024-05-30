@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.5
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,8 +34,10 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.6.0 2024-04-22 =
-* Added - Add payment method for Duitnow QR.
+= 1.6.1 2024-05-30 =
+* Added - Add DuitNow payment option in e-wallet
+* Added - Add payment method logo in checkout blocks
+* Fixed - Fix issue with pricing for E-Wallet
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
