@@ -4,6 +4,7 @@ import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
 import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect } from "@wordpress/element";
+import * as React from "react";
 
 const settings = getSetting(gateway_wc_gateway_chip.id + "_data", {});
 
@@ -20,9 +21,22 @@ const Content = () => {
   return decodeEntities(settings.description || "");
 };
 
+const Icon = () => {
+	return settings.icon 
+		? <img src={settings.icon} style={{ float: 'right', marginRight: '20px' }} /> 
+		: ''
+}
+
 const Label = (props) => {
   const { PaymentMethodLabel } = props.components;
-  return <PaymentMethodLabel text={label} />;
+
+  return (
+    <span style={{ width: '100%' }}>
+        {label}
+        <Icon />
+    </span>
+  )
+  // return <PaymentMethodLabel text={label} />;
 };
 
 const FpxBankList = (props) => {
@@ -144,6 +158,8 @@ const ContentContainer = (props) => {
     </>
   );
 };
+
+
 
 const wc_gateway_chip = {
   name: settings.method_name,

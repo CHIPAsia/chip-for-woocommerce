@@ -1170,8 +1170,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $get_available_recurring_payment_method = $chip->payment_recurring_methods( $woocommerce_currency, $this->get_language(), 200 );
 
-    foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
-      $available_recurring_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
+    if (isset($get_available_recurring_payment_method['available_payment_methods'])) {
+      foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
+        $available_recurring_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
+      }  
     }
 
     $this->update_option( 'public_key', $public_key );
