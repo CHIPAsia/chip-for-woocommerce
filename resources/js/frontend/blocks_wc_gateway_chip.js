@@ -158,8 +158,6 @@ const ContentContainer = (props) => {
   );
 };
 
-
-
 const wc_gateway_chip = {
   name: settings.method_name,
   label: <Label />,
