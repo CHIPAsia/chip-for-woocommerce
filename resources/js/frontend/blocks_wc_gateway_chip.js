@@ -4,7 +4,6 @@ import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
 import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect } from "@wordpress/element";
-import * as React from "react";
 
 const settings = getSetting(gateway_wc_gateway_chip.id + "_data", {});
 
