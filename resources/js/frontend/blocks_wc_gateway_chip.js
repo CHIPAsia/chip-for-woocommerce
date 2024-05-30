@@ -20,9 +20,22 @@ const Content = () => {
   return decodeEntities(settings.description || "");
 };
 
+const Icon = () => {
+	return settings.icon 
+		? <img src={settings.icon} style={{ float: 'right', marginRight: '20px' }} /> 
+		: ''
+}
+
 const Label = (props) => {
   const { PaymentMethodLabel } = props.components;
-  return <PaymentMethodLabel text={label} />;
+
+  return (
+    <span style={{ width: '100%' }}>
+        {label}
+        <Icon />
+    </span>
+  )
+  // return <PaymentMethodLabel text={label} />;
 };
 
 const FpxBankList = (props) => {

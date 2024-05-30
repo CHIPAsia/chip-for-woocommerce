@@ -79,6 +79,7 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
       'saved_option' => $this->gateway->supports( 'tokenization' ),
       'save_option' => false,
       'js_display'  => $js_display,
+      'icon'        => $this->gateway->icon,
     ];
   }
 }

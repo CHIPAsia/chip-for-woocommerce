@@ -1170,8 +1170,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     $get_available_recurring_payment_method = $chip->payment_recurring_methods( $woocommerce_currency, $this->get_language(), 200 );
 
-    foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
-      $available_recurring_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
+    if (isset($get_available_recurring_payment_method['available_payment_methods'])) {
+      foreach( $get_available_recurring_payment_method['available_payment_methods'] as $apm ) {
+        $available_recurring_payment_method[$apm] = ucwords( str_replace( '_', ' ', $apm ) );
+      }  
     }
 
     $this->update_option( 'public_key', $public_key );
@@ -1670,7 +1672,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
     if (in_array('razer_grabpay', $this->payment_met)) {
       $ewallet_list['GrabPay'] = __('GrabPay', 'chip-for-woocommerce');
     }
-
     if (in_array('razer_maybankqr', $this->payment_met)) {
       $ewallet_list['MB2U_QRPay-Push'] = __('Maybank QRPay', 'chip-for-woocommerce');
     }
@@ -1683,6 +1684,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $ewallet_list['TNG-EWALLET'] = __('Touch \'n Go eWallet', 'chip-for-woocommerce');
     }
 
+    if (in_array('duitnow_qr', $this->payment_met)) {
+      $ewallet_list['duitnow-qr'] = __('Duitnow QR', 'chip-for-woocommerce');
+    }
+
     return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', $ewallet_list);
   }
 
@@ -1693,11 +1698,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       } elseif ( isset( $_POST['chip_fpx_b2b1_bank']) AND !empty( $_POST['chip_fpx_b2b1_bank'] )) {
         $url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
       } elseif ( isset( $_POST['chip_razer_ewallet']) AND !empty( $_POST['chip_razer_ewallet'] )) {
-
-        $preferred = 'razer';
-        // If the value is "Atome", change preferred value to "razer_atome"
-        if ( $_POST['chip_razer_ewallet'] == 'Atome') {
-          $preferred = 'razer_atome';
+        switch($_POST['chip_razer_ewallet']) {
+          case 'Atome':
+            $preferred = 'razer_atome';
+            break;
+          case 'GrabPay':
+            $preferred = 'razer_grabpay';
+            break;
+          case 'TNG-EWALLET':
+            $preferred = 'razer_tng';
+            break;
+          case 'ShopeePay':
+            $preferred = 'razer_shopeepay';
+            break;
+          case 'MB2U_QRPay-Push':
+            $preferred = 'razer_maybankqr';
+            break;
+          case 'duitnow-qr':
+            $preferred = 'duitnow_qr';
+            break;
         }
 
         $url .= '?preferred='.$preferred.'&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
