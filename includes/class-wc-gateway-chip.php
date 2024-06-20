@@ -508,7 +508,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       'title'       => __( 'Purchase Send Receipt', 'chip-for-woocommerce' ),
       'type'        => 'checkbox',
       'description' => __( 'Tick to ask CHIP to send receipt upon successful payment. If activated, CHIP will send purchase receipt upon payment completion.', 'chip-for-woocommerce' ),
-      'default'     => 'yes',
+      'default'     => 'no',
     );
 
     $this->form_fields['purchase_time_zone'] = array(
