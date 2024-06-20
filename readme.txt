@@ -35,7 +35,7 @@ The plugins do includes support for WooCommerce Subscription products.
 == Changelog ==
 
 = 1.6.2 2024-06-20 =
-* Fixed - Uncheck Purchase Send Receipt by Default
+* Changed - Uncheck Purchase Send Receipt by Default
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
