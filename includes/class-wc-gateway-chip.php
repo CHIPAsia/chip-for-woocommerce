@@ -34,6 +34,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   protected $cached_api;
   protected $cached_fpx_api;
   protected $cached_payment_method;
+
+  // metabox property
+  protected $chip_incoming_count = 0; 
+  protected $chip_incoming_fee = 0;
+  protected $chip_incoming_turnover = 0;
+  protected $chip_outgoing_count = 0;
+  protected $chip_outgoing_fee = 0;
+  protected $chip_outgoing_turnover = 0;
+  protected $chip_company_balance = 0;
+  // end of metabox property
   const PREFERRED_TYPE = 'Online Banking';
 
   public function __construct() {
@@ -2291,12 +2301,20 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     if ( false === ( $turnover = get_transient( 'chip_' . $this->id . '_turnover' ) ) ) {
       $turnover = $this->api()->turnover();
-      set_transient( 'chip_' . $this->id . '_turnover', $turnover, HOUR_IN_SECONDS ); // 5 seconds
+      set_transient( 'chip_' . $this->id . '_turnover', $turnover, HOUR_IN_SECONDS );
+    }
+
+    if (!isset($turnover['incoming'])) {
+      return;
     }
 
     if ( false === ( $balance = get_transient( 'chip_' . $this->id . '_balance' ) ) ) {
       $balance = $this->api()->balance();
-      set_transient( 'chip_' . $this->id . '_balance', $balance, HOUR_IN_SECONDS ); // 5 seconds
+      set_transient( 'chip_' . $this->id . '_balance', $balance, HOUR_IN_SECONDS );
+    }
+
+    if (!isset($balance['MYR'])) {
+      return;
     }
 
     $this->chip_incoming_count = $turnover['incoming']['count']['all'];
