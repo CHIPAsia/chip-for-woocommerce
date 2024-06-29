@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.5
-Stable tag: 1.6.2
+Stable tag: 1.6.3
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,8 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.6.2 2024-06-20 =
-* Changed - Uncheck Purchase Send Receipt by Default
+= 1.6.3 2024-06-29 =
+* Fixed - Issue with metabox when no collection available
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
