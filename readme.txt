@@ -2,8 +2,8 @@
 Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
-Tested up to: 6.5
-Stable tag: 1.6.3
+Tested up to: 6.6
+Stable tag: 1.6.4
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,8 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.6.3 2024-06-29 =
-* Fixed - Issue with metabox when no collection available
+= 1.6.4 2024-07-17 =
+* Fixed - Fix issue image class name for classic checkout
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
