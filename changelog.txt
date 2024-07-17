@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 1.6.3 2024-06-29 =
+* Fixed - Issue with metabox when no collection available
+
 = 1.6.2 2024-06-20 =
 * Changed - Uncheck Purchase Send Receipt by Default
 
