@@ -146,13 +146,68 @@ const Fpxb2b1BankList = (props) => {
   );
 };
 
+const EwalletList = (props) => {
+  const [bankIdEwallet, setBankIdEwallet] = useState(undefined);
+  const { eventRegistration, emitResponse } = props;
+  const { onPaymentSetup } = eventRegistration;
+
+  const onSubmit = () => {
+    if (undefined === bankIdEwallet) {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __(
+          "<strong>Ewallet</strong> is a required field.",
+          "chip-for-woocommerce"
+        ),
+      };
+    }
+
+    return {
+      type: emitResponse.responseTypes.SUCCESS,
+      meta: {
+        paymentMethodData: {
+          chip_razer_ewallet: bankIdEwallet,
+        },
+      },
+    };
+  };
+
+  useEffect(() => {
+    const unsubscribeProcessing = onPaymentSetup(onSubmit);
+    return () => {
+      unsubscribeProcessing();
+    };
+  }, [onPaymentSetup, bankIdEwallet]);
+
+  const ewallet = gateway_wc_gateway_chip_4.ewallet
+
+  let ewallet_array = [];
+
+  Object.keys(ewallet).forEach(key => {
+    ewallet_array.push({name: ewallet[key], id: key});
+  });
+
+  return (
+    <TreeSelect
+      label={__("Ewallet", "chip-for-woocommerce")}
+      noOptionLabel={__("Choose your Ewallet", "chip-for-woocommerce")}
+      onChange={(selected_bank_id) => {
+        setBankIdEwallet(selected_bank_id);
+      }}
+      selectedId={bankIdEwallet}
+      tree={ewallet_array}
+    />
+  );
+};
+
 const ContentContainer = (props) => {
   return (
     <>
       <Content />
       {settings.js_display == "fpx" ? <FpxBankList {...props} /> : null}
-      {settings.js_display == "fpx_b2b1" ? (
-        <Fpxb2b1BankList {...props} />
+      {settings.js_display == "fpx_b2b1" ? <Fpxb2b1BankList {...props} /> : null}
+      {settings.js_display == "ewallet" ? (
+        <EwalletList {...props} />
       ) : null}
     </>
   );
