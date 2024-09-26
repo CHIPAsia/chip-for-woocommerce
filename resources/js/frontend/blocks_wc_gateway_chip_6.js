@@ -153,7 +153,6 @@ const RazerEWalletList = (props) => {
 
   const onSubmit = () => {
     if (undefined === walletId) {
-      console.log('Inside undefined')
       return {
         type: emitResponse.responseTypes.ERROR,
         message: __(

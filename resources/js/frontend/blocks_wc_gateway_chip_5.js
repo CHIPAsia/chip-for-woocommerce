@@ -14,8 +14,6 @@ const defaultLabel = __("CHIP", "chip-for-woocommerce");
  * wc.wcSettings.allSettings;
  */
 
-console.log(settings.js_display)
-
 const label = decodeEntities(settings.title) || defaultLabel;
 
 const Content = () => {
@@ -43,9 +41,9 @@ const Label = (props) => {
 const wc_gateway_chip = {
   name: settings.method_name,
   label: <Label />,
+  canMakePayment: () => true,
   content: <Content />,
   edit: <Content />,
-  canMakePayment: () => true,
   ariaLabel: label,
   supports: {
     showSavedCards: settings.saved_option,
