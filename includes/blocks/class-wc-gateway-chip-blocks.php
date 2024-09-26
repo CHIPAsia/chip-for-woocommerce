@@ -46,18 +46,20 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 
     $razer_ewallet_list = ['razer', 'razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
 
-    if (is_array($whitelisted_payment_method) AND count($whitelisted_payment_method) == 1  AND $bypass_chip == 'yes') {
-      if ($whitelisted_payment_method[0] == 'fpx') {
-        $localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
-        unset($localize_variable['fpx_b2c']['']);
-      } elseif ($whitelisted_payment_method[0] == 'fpx_b2b1') {
-        $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
-        unset($localize_variable['fpx_b2b1']['']);
-      } 
-    } elseif(count(array_diff($whitelisted_payment_method, $razer_ewallet_list)) == 0) {
-        $localize_variable['razer'] = $this->gateway->list_razer_ewallets();
-        unset($localize_variable['razer']['']);
-    }
+    if (is_array($whitelisted_payment_method) AND $bypass_chip == 'yes') {
+      if (count($whitelisted_payment_method) == 1) {
+        if ($whitelisted_payment_method[0] == 'fpx') {
+            $localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
+            unset($localize_variable['fpx_b2c']['']);
+        } elseif ($whitelisted_payment_method[0] == 'fpx_b2b1') {
+            $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
+            unset($localize_variable['fpx_b2b1']['']);
+        } 
+      } elseif(count(array_diff($whitelisted_payment_method, $razer_ewallet_list)) == 0) {
+          $localize_variable['razer'] = $this->gateway->list_razer_ewallets();
+          unset($localize_variable['razer']['']);
+        }
+    } 
 
     wp_localize_script( "wc-{$this->name}-blocks", 'gateway_' . $this->name, $localize_variable );
 
