@@ -51,11 +51,7 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
       } elseif ($whitelisted_payment_method[0] == 'fpx_b2b1') {
         $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
         unset($localize_variable['fpx_b2b1']['']);
-      } elseif ($whitelisted_payment_method[0] == 'razer') {
-        echo '<h1> Razer is whitelisted </h1>';
-        $localize_variable['razer'] = $this->gateway->list_razer_ewallets();
-        unset($localize_variable['razer']['']);
-      }
+      } 
     } else {
       if ($whitelisted_payment_method[0] == 'razer') {
         $localize_variable['razer'] = $this->gateway->list_razer_ewallets();
