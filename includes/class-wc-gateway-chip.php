@@ -1216,6 +1216,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           array_unshift($whitelisted_pm, 'razer');
           $this->update_option( 'payment_method_whitelist', $whitelisted_pm );
         }
+      } 
+      elseif ($wpm === 'razer') {
+        $filtered_razer_array = preg_grep('/^razer_/', $whitelisted_pm);
+
+        if (count($filtered_razer_array) > 0) {
+          break;
+        } else {
+          unset($razer_ewallet_list[0]);
+          $whitelisted_pm = array_merge($razer_ewallet_list, $whitelisted_pm);
+          $this->update_option( 'payment_method_whitelist', $whitelisted_pm );
+        }     
       }
     }
 
