@@ -179,7 +179,7 @@ const RazerEWalletList = (props) => {
     };
   }, [onPaymentSetup, walletId]);
 
-  const razer_ewallets = gateway_wc_gateway_chip_4.razer
+  const razer_ewallets = gateway_wc_gateway_chip_2.razer
 
   let razer_ewallets_array = [];
 
