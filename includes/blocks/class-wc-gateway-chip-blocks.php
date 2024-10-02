@@ -38,29 +38,28 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
       'id' => $this->name,
       'fpx_b2c' => ['empty' => 'bank'],
       'fpx_b2b1' => ['empty' => 'bank'],
-      'ewallet' => ['empty' => 'bank'],
+      'razer' => ['empty' => 'ewallet'],
     );
 
     $whitelisted_payment_method = $this->gateway->get_payment_method_whitelist();
     $bypass_chip = $this->gateway->get_bypass_chip();
 
+    $razer_ewallet_list = ['razer', 'razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
+
     if (is_array($whitelisted_payment_method) AND $bypass_chip == 'yes') {
-
-      $razer_ewallet_list = ['razer', 'razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
-
       if (count($whitelisted_payment_method) == 1) {
         if ($whitelisted_payment_method[0] == 'fpx') {
-          $localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
-          unset($localize_variable['fpx_b2c']['']);
+            $localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
+            unset($localize_variable['fpx_b2c']['']);
         } elseif ($whitelisted_payment_method[0] == 'fpx_b2b1') {
-          $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
-          unset($localize_variable['fpx_b2b1']['']);
+            $localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
+            unset($localize_variable['fpx_b2b1']['']);
+        } 
+      } elseif(count(array_diff($whitelisted_payment_method, $razer_ewallet_list)) == 0) {
+          $localize_variable['razer'] = $this->gateway->list_razer_ewallets();
+          unset($localize_variable['razer']['']);
         }
-      } elseif (count(array_diff($whitelisted_payment_method, $razer_ewallet_list)) == 0) {
-        $localize_variable['ewallet'] = $this->gateway->list_razer_ewallets();
-        unset($localize_variable['ewallet']['']);
-      }
-    }
+    } 
 
     wp_localize_script( "wc-{$this->name}-blocks", 'gateway_' . $this->name, $localize_variable );
 
@@ -79,7 +78,7 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
     } elseif ( is_array( $pm_whitelist ) AND $bypass_chip == 'yes' ) {
       $razer_ewallet_list = ['razer', 'razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
       if (count(array_diff($pm_whitelist, $razer_ewallet_list)) == 0) {
-        $js_display = 'ewallet';
+        $js_display = 'razer';
       }
     }
 

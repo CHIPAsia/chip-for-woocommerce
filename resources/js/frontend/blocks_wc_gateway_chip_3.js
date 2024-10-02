@@ -146,17 +146,17 @@ const Fpxb2b1BankList = (props) => {
   );
 };
 
-const EwalletList = (props) => {
-  const [bankIdEwallet, setBankIdEwallet] = useState(undefined);
+const RazerEWalletList = (props) => {
+  const [walletId, setWalletId] = useState(undefined);
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
 
   const onSubmit = () => {
-    if (undefined === bankIdEwallet) {
+    if (undefined === walletId) {
       return {
         type: emitResponse.responseTypes.ERROR,
         message: __(
-          "<strong>Ewallet</strong> is a required field.",
+          "<strong>E-Wallet</strong> is a required field.",
           "chip-for-woocommerce"
         ),
       };
@@ -166,7 +166,7 @@ const EwalletList = (props) => {
       type: emitResponse.responseTypes.SUCCESS,
       meta: {
         paymentMethodData: {
-          chip_razer_ewallet: bankIdEwallet,
+          chip_razer_ewallet: walletId,
         },
       },
     };
@@ -177,25 +177,25 @@ const EwalletList = (props) => {
     return () => {
       unsubscribeProcessing();
     };
-  }, [onPaymentSetup, bankIdEwallet]);
+  }, [onPaymentSetup, walletId]);
 
-  const ewallet = gateway_wc_gateway_chip_3.ewallet
+  const razer_ewallets = gateway_wc_gateway_chip_3.razer
 
-  let ewallet_array = [];
+  let razer_ewallets_array = [];
 
-  Object.keys(ewallet).forEach(key => {
-    ewallet_array.push({name: ewallet[key], id: key});
+  Object.keys(razer_ewallets).forEach(key => {
+    razer_ewallets_array.push({name: razer_ewallets[key], id: key});
   });
 
   return (
     <TreeSelect
-      label={__("Ewallet", "chip-for-woocommerce")}
-      noOptionLabel={__("Choose your Ewallet", "chip-for-woocommerce")}
-      onChange={(selected_bank_id) => {
-        setBankIdEwallet(selected_bank_id);
+      label={__("E-Wallet", "chip-for-woocommerce")}
+      noOptionLabel={__("Choose your e-wallet", "chip-for-woocommerce")}
+      onChange={(selected_wallet_id) => {
+        setWalletId(selected_wallet_id);
       }}
-      selectedId={bankIdEwallet}
-      tree={ewallet_array}
+      selectedId={walletId}
+      tree={razer_ewallets_array}
     />
   );
 };
@@ -205,10 +205,12 @@ const ContentContainer = (props) => {
     <>
       <Content />
       {settings.js_display == "fpx" ? <FpxBankList {...props} /> : null}
-      {settings.js_display == "fpx_b2b1" ? <Fpxb2b1BankList {...props} /> : null}
-      {settings.js_display == "ewallet" ? (
-        <EwalletList {...props} />
-      ) : null}
+      {settings.js_display == "fpx_b2b1" ? (
+        <Fpxb2b1BankList {...props} />
+        ) : null}
+      {settings.js_display == "razer" ? (
+        <RazerEWalletList {...props} /> 
+        ) : null}
     </>
   );
 };

@@ -146,6 +146,60 @@ const Fpxb2b1BankList = (props) => {
   );
 };
 
+const RazerEWalletList = (props) => {
+  const [walletId, setWalletId] = useState(undefined);
+  const { eventRegistration, emitResponse } = props;
+  const { onPaymentSetup } = eventRegistration;
+
+  const onSubmit = () => {
+    if (undefined === walletId) {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __(
+          "<strong>E-Wallet</strong> is a required field.",
+          "chip-for-woocommerce"
+        ),
+      };
+    }
+
+    return {
+      type: emitResponse.responseTypes.SUCCESS,
+      meta: {
+        paymentMethodData: {
+          chip_razer_ewallet: walletId,
+        },
+      },
+    };
+  };
+
+  useEffect(() => {
+    const unsubscribeProcessing = onPaymentSetup(onSubmit);
+    return () => {
+      unsubscribeProcessing();
+    };
+  }, [onPaymentSetup, walletId]);
+
+  const razer_ewallets = gateway_wc_gateway_chip.razer
+
+  let razer_ewallets_array = [];
+
+  Object.keys(razer_ewallets).forEach(key => {
+    razer_ewallets_array.push({name: razer_ewallets[key], id: key});
+  });
+
+  return (
+    <TreeSelect
+      label={__("E-Wallet", "chip-for-woocommerce")}
+      noOptionLabel={__("Choose your e-wallet", "chip-for-woocommerce")}
+      onChange={(selected_wallet_id) => {
+        setWalletId(selected_wallet_id);
+      }}
+      selectedId={walletId}
+      tree={razer_ewallets_array}
+    />
+  );
+};
+
 const ContentContainer = (props) => {
   return (
     <>
@@ -153,7 +207,10 @@ const ContentContainer = (props) => {
       {settings.js_display == "fpx" ? <FpxBankList {...props} /> : null}
       {settings.js_display == "fpx_b2b1" ? (
         <Fpxb2b1BankList {...props} />
-      ) : null}
+        ) : null}
+      {settings.js_display == "razer" ? (
+        <RazerEWalletList {...props} /> 
+        ) : null}
     </>
   );
 };
