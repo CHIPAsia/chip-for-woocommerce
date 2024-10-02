@@ -1205,30 +1205,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->update_option( 'disable_clients_api', 'no' );
     }
 
-    $razer_ewallet_list = ['razer','razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
+    $razer_ewallet_list = ['razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
     $whitelisted_pm = $post["woocommerce_{$this->id}_payment_method_whitelist"];
 
-    foreach ($whitelisted_pm as $wpm) {
-      if (str_starts_with($wpm, "razer_")) {
-        if (in_array('razer', $whitelisted_pm)) {
-          break;
-        } else {
-          array_unshift($whitelisted_pm, 'razer');
-          $this->update_option( 'payment_method_whitelist', $whitelisted_pm );
-        }
-      } 
-      elseif ($wpm === 'razer') {
-        $filtered_razer_array = preg_grep('/^razer_/', $whitelisted_pm);
-
-        if (count($filtered_razer_array) > 0) {
-          break;
-        } else {
-          unset($razer_ewallet_list[0]);
-          $whitelisted_pm = array_merge($razer_ewallet_list, $whitelisted_pm);
-          $this->update_option( 'payment_method_whitelist', $whitelisted_pm );
-        }     
-      }
-    }
 
     return true;
   }
@@ -2068,7 +2047,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function get_payment_method_list() {
-    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer' => 'Razer', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR'];
+    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR'];
   }
 
   public function add_item_order_fee(&$order) {
