@@ -1205,10 +1205,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       $this->update_option( 'disable_clients_api', 'no' );
     }
 
-    $razer_ewallet_list = ['razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
-    $whitelisted_pm = $post["woocommerce_{$this->id}_payment_method_whitelist"];
-
-
     return true;
   }
 
