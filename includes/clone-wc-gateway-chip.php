@@ -35,7 +35,7 @@ class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
 
   public function init_form_fields() {
     parent::init_form_fields();
-    $this->form_fields['payment_method_whitelist']['default'] = ['razer', 'razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
+    $this->form_fields['payment_method_whitelist']['default'] = ['razer_grabpay','razer_maybankqr','razer_shopeepay','razer_tng'];
     $this->form_fields['description']['default'] = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
   }
 }
