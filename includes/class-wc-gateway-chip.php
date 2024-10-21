@@ -721,11 +721,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       
       // Check for razer
       $pattern = "/^razer_/";
-      $output = preg_grep($pattern, $this->payment_met );
       $is_razer = false;
 
-      if (count($output) > 0) {
-        $is_razer = true;
+      // Check if payment_met empty
+      if (is_array($this->payment_met)) {
+        $output = preg_grep($pattern, $this->payment_met );
+
+        if (count($output) > 0) {
+          $is_razer = true;
+        } 
       }
 
       if ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx' AND $this->bypass_chip == 'yes' ) {
@@ -805,14 +809,18 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    // Check for razer
-    $pattern = "/^razer_/";
-    $output = preg_grep($pattern, $this->payment_met );
-    $is_razer = false;
+     // Check for razer
+     $pattern = "/^razer_/";
+     $is_razer = false;
 
-    if (count($output) > 0) {
-      $is_razer = true;
-    } 
+     // Check if payment_met empty
+     if (is_array($this->payment_met)) {
+       $output = preg_grep($pattern, $this->payment_met );
+ 
+       if (count($output) > 0) {
+         $is_razer = true;
+       } 
+     }
 
     if (is_array($this->payment_met) AND $this->bypass_chip == 'yes' AND $is_razer AND isset($_POST['chip_razer_ewallet']) AND strlen($_POST['chip_razer_ewallet']) == 0) {
       throw new Exception(__("<strong>E-Wallet</strong> is a required field. $this->payment_met", 'chip-for-woocommerce'));
