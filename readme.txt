@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.6
-Stable tag: 1.6.4
+Stable tag: 1.6.5
 Requires PHP: 7.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,8 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.6.4 2024-07-17 =
-* Fixed - Fix issue image class name for classic checkout
+= 1.6.5 2024-10-02 =
+* Fixed - Fix Razer Checkout Block 
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

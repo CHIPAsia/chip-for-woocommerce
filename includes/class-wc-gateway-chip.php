@@ -718,6 +718,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
 
     } else {
       parent::payment_fields();
+      
+      // Check for razer
+      $pattern = "/^razer_/";
+      $output = preg_grep($pattern, $this->payment_met );
+      $is_razer = false;
+
+      if (count($output) > 0) {
+        $is_razer = true;
+      }
 
       if ( is_array( $this->payment_met ) AND count( $this->payment_met ) == 1 AND $this->payment_met[0] == 'fpx' AND $this->bypass_chip == 'yes' ) {
         woocommerce_form_field('chip_fpx_bank', array(
@@ -733,7 +742,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
           'label'    => __('Corporate Internet Banking', 'chip-for-woocommerce'),
           'options'  => $this->list_fpx_b2b1_banks()
         ));
-      } elseif ( is_array( $this->payment_met ) AND count( $this->payment_met ) > 1 AND in_array('razer', $this->payment_met) AND $this->bypass_chip == 'yes') {
+      } elseif ( is_array( $this->payment_met ) AND $is_razer AND $this->bypass_chip == 'yes') {
         woocommerce_form_field('chip_razer_ewallet', array(
           'type'     => 'select',
           'required' => true,
@@ -796,9 +805,18 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
       }
     }
 
-    if (is_array($this->payment_met) AND $this->bypass_chip == 'yes' AND in_array('razer', $this->payment_met) AND isset($_POST['chip_razer_ewallet']) AND strlen($_POST['chip_razer_ewallet']) == 0) {
-      throw new Exception(__('<strong>E-Wallet</strong> is a required field.', 'chip-for-woocommerce'));
-    }
+    // Check for razer
+    $pattern = "/^razer_/";
+    $output = preg_grep($pattern, $this->payment_met );
+    $is_razer = false;
+
+    if (count($output) > 0) {
+      $is_razer = true;
+    } 
+
+    if (is_array($this->payment_met) AND $this->bypass_chip == 'yes' AND $is_razer AND isset($_POST['chip_razer_ewallet']) AND strlen($_POST['chip_razer_ewallet']) == 0) {
+      throw new Exception(__("<strong>E-Wallet</strong> is a required field. $this->payment_met", 'chip-for-woocommerce'));
+    } 
 
     return true;
   }
@@ -2043,7 +2061,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway
   }
 
   public function get_payment_method_list() {
-    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer' => 'Razer', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR'];
+    return ['fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR'];
   }
 
   public function add_item_order_fee(&$order) {
