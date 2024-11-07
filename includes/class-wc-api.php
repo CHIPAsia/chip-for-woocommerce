@@ -1,223 +1,222 @@
 <?php
 
 // This is CHIP API URL Endpoint as per documented in: https://docs.chip-in.asia
-define('WC_CHIP_ROOT_URL', 'https://gate.chip-in.asia/api');
+define( 'WC_CHIP_ROOT_URL', 'https://gate.chip-in.asia/api' );
 
-class Chip_Woocommerce_API
-{
-  public $secret_key;
-  public $brand_id;
-  public $logger;
-  public $debug;
+class Chip_Woocommerce_API {
+	public $secret_key;
+	public $brand_id;
+	public $logger;
+	public $debug;
 
-  public function __construct( $secret_key, $brand_id, $logger, $debug ) {
-    $this->secret_key = $secret_key;
-    $this->brand_id   = $brand_id;
-    $this->logger     = $logger;
-    $this->debug      = $debug;
-  }
+	public function __construct( $secret_key, $brand_id, $logger, $debug ) {
+		$this->secret_key = $secret_key;
+		$this->brand_id = $brand_id;
+		$this->logger = $logger;
+		$this->debug = $debug;
+	}
 
-  public function set_key( $secret_key, $brand_id ) {
-    $this->secret_key = $secret_key;
-    $this->brand_id   = $brand_id;
-  }
+	public function set_key( $secret_key, $brand_id ) {
+		$this->secret_key = $secret_key;
+		$this->brand_id = $brand_id;
+	}
 
-  public function create_payment( $params ) {
-    $this->log_info( 'creating purchase' );
+	public function create_payment( $params ) {
+		$this->log_info( 'creating purchase' );
 
-    return $this->call( 'POST', '/purchases/?time=' . time(), $params );
-  }
+		return $this->call( 'POST', '/purchases/?time=' . time(), $params );
+	}
 
-  public function create_client( $params ) {
-    $this->log_info( 'creating client' );
-  
-    return $this->call( 'POST', '/clients/', $params );
-  }
+	public function create_client( $params ) {
+		$this->log_info( 'creating client' );
 
-  public function get_client_by_email( $email ) {
-    $this->log_info( "get client by email: {$email}" );
+		return $this->call( 'POST', '/clients/', $params );
+	}
 
-    $email_encoded = urlencode( $email );
-    return $this->call( 'GET', "/clients/?q={$email_encoded}" );
-  }
+	public function get_client_by_email( $email ) {
+		$this->log_info( "get client by email: {$email}" );
 
-  public function patch_client( $client_id, $params ) {
-    $this->log_info( "patch client: {$client_id}" );
+		$email_encoded = urlencode( $email );
+		return $this->call( 'GET', "/clients/?q={$email_encoded}" );
+	}
 
-    return $this->call( 'PATCH', "/clients/{$client_id}/", $params );
-  }
-  
-  public function delete_token( $purchase_id ) {
-    $this->log_info( "delete token: {$purchase_id}" );
+	public function patch_client( $client_id, $params ) {
+		$this->log_info( "patch client: {$client_id}" );
 
-    return $this->call( 'POST', "/purchases/$purchase_id/delete_recurring_token/" );
-  }
+		return $this->call( 'PATCH', "/clients/{$client_id}/", $params );
+	}
 
-  public function capture_payment( $payment_id, $params = [] ) {
-    $this->log_info( "capture payment: {$payment_id}" );
+	public function delete_token( $purchase_id ) {
+		$this->log_info( "delete token: {$purchase_id}" );
 
-    return $this->call( 'POST', "/purchases/{$payment_id}/capture/", $params );
-  }
+		return $this->call( 'POST', "/purchases/$purchase_id/delete_recurring_token/" );
+	}
 
-  public function release_payment( $payment_id ) {
-    $this->log_info( "release payment: {$payment_id}" );
+	public function capture_payment( $payment_id, $params = [] ) {
+		$this->log_info( "capture payment: {$payment_id}" );
 
-    return $this->call( 'POST', "/purchases/{$payment_id}/release/" );
-  }
+		return $this->call( 'POST', "/purchases/{$payment_id}/capture/", $params );
+	}
 
-  public function charge_payment( $payment_id, $params ) {
-    $this->log_info( "charge payment: {$payment_id}" );
+	public function release_payment( $payment_id ) {
+		$this->log_info( "release payment: {$payment_id}" );
 
-    return $this->call( 'POST', "/purchases/{$payment_id}/charge/", $params );
-  }
+		return $this->call( 'POST', "/purchases/{$payment_id}/release/" );
+	}
 
-  public function payment_methods( $currency, $language, $amount ) {
-    $this->log_info( 'fetching payment methods' );
+	public function charge_payment( $payment_id, $params ) {
+		$this->log_info( "charge payment: {$payment_id}" );
 
-    return $this->call(
-      'GET',
-      "/payment_methods/?brand_id={$this->brand_id}&currency={$currency}&language={$language}&amount={$amount}"
-    );
-  }
+		return $this->call( 'POST', "/purchases/{$payment_id}/charge/", $params );
+	}
 
-  public function payment_recurring_methods( $currency, $language, $amount ) {
-    $this->log_info( 'fetching payment methods' );
+	public function payment_methods( $currency, $language, $amount ) {
+		$this->log_info( 'fetching payment methods' );
 
-    return $this->call(
-      'GET',
-      "/payment_methods/?brand_id={$this->brand_id}&currency={$currency}&language={$language}&amount={$amount}&recurring=true"
-    );
-  }
+		return $this->call(
+			'GET',
+			"/payment_methods/?brand_id={$this->brand_id}&currency={$currency}&language={$language}&amount={$amount}"
+		);
+	}
 
-  public function get_payment( $payment_id ) {
-    $this->log_info( sprintf( "get payment: %s", $payment_id ) );
+	public function payment_recurring_methods( $currency, $language, $amount ) {
+		$this->log_info( 'fetching payment methods' );
 
-    // time() is to force fresh instead cache
-    $result = $this->call( 'GET', "/purchases/{$payment_id}/?time=" . time() );
-    $this->log_info( sprintf( 'success check result: %s', var_export( $result, true ) ) );
-    
-    return $result;
-  }
+		return $this->call(
+			'GET',
+			"/payment_methods/?brand_id={$this->brand_id}&currency={$currency}&language={$language}&amount={$amount}&recurring=true"
+		);
+	}
 
-  public function refund_payment( $payment_id, $params ) {
-    $this->log_info( sprintf( "refunding payment: %s", $payment_id ) );
+	public function get_payment( $payment_id ) {
+		$this->log_info( sprintf( "get payment: %s", $payment_id ) );
 
-    $result = $this->call( 'POST', "/purchases/{$payment_id}/refund/", $params );
+		// time() is to force fresh instead cache
+		$result = $this->call( 'GET', "/purchases/{$payment_id}/?time=" . time() );
+		$this->log_info( sprintf( 'success check result: %s', var_export( $result, true ) ) );
 
-    $this->log_info( sprintf( "payment refund result: %s", var_export( $result, true ) ) );
+		return $result;
+	}
 
-    return $result;
-  }
+	public function refund_payment( $payment_id, $params ) {
+		$this->log_info( sprintf( "refunding payment: %s", $payment_id ) );
 
-  public function public_key() {
-    $this->log_info( 'getting public key' );
+		$result = $this->call( 'POST', "/purchases/{$payment_id}/refund/", $params );
 
-    $result = $this->call( 'GET', '/public_key/' );
+		$this->log_info( sprintf( "payment refund result: %s", var_export( $result, true ) ) );
 
-    $this->log_info( sprintf( 'public key: %s', var_export( $result, true ) ) );
+		return $result;
+	}
 
-    return $result;
-  }
+	public function public_key() {
+		$this->log_info( 'getting public key' );
 
-  public function turnover() {
-    $this->log_info( 'getting company turnover' );
+		$result = $this->call( 'GET', '/public_key/' );
 
-    $result = $this->call( 'GET', '/account/json/turnover/?currency=MYR' );
+		$this->log_info( sprintf( 'public key: %s', var_export( $result, true ) ) );
 
-    return $result;
-  }
+		return $result;
+	}
 
-  public function balance() {
-    $this->log_info( 'getting company balance' );
+	public function turnover() {
+		$this->log_info( 'getting company turnover' );
 
-    $result = $this->call( 'GET', '/account/json/balance/?currency=MYR' );
+		$result = $this->call( 'GET', '/account/json/turnover/?currency=MYR' );
 
-    return $result;
-  }
+		return $result;
+	}
 
-  private function call( $method, $route, $params = [] ) {
-    $secret_key = $this->secret_key;
-    if ( !empty( $params ) ) {
-      $params = json_encode( $params );
-    }
+	public function balance() {
+		$this->log_info( 'getting company balance' );
 
-    $response = $this->request(
-      $method,
-      sprintf( '%s/v1%s', WC_CHIP_ROOT_URL, $route ),
-      $params,
-      [
-        'Content-type' => 'application/json',
-        'Authorization' => "Bearer {$secret_key}",
-      ]
-    );
-    
-    $this->log_info( sprintf( 'received response: %s', $response ) );
-    
-    $result = json_decode( $response, true );
-    
-    if ( !$result ) {
-      $this->log_error( 'JSON parsing error/NULL API response' );
-      return null;
-    }
+		$result = $this->call( 'GET', '/account/json/balance/?currency=MYR' );
 
-    if ( !empty( $result['errors'] ) ) {
-      $this->log_error( 'API error', $result['errors'] );
-      return null;
-    }
+		return $result;
+	}
 
-    return $result;
-  }
+	private function call( $method, $route, $params = [] ) {
+		$secret_key = $this->secret_key;
+		if ( ! empty( $params ) ) {
+			$params = json_encode( $params );
+		}
 
-  private function request( $method, $url, $params = [], $headers = [] ) {
-    $this->log_info( sprintf(
-      '%s `%s`\n%s\n%s',
-      $method,
-      $url,
-      var_export( $params, true ),
-      var_export( $headers, true )
-    ));
+		$response = $this->request(
+			$method,
+			sprintf( '%s/v1%s', WC_CHIP_ROOT_URL, $route ),
+			$params,
+			[ 
+				'Content-type' => 'application/json',
+				'Authorization' => "Bearer {$secret_key}",
+			]
+		);
 
-    $wp_request = wp_remote_request( $url, array(
-      'method'    => $method,
-      'sslverify' => !defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
-      'headers'   => $headers,
-      'body'      => $params,
-      'timeout'   => 10, // charge card require longer timeout
-    ));
+		$this->log_info( sprintf( 'received response: %s', $response ) );
 
-    $response = wp_remote_retrieve_body( $wp_request );
+		$result = json_decode( $response, true );
 
-    switch ( $code = wp_remote_retrieve_response_code( $wp_request ) ) {
-      case 200:
-      case 201:
-        break;
-      default:
-        $this->log_error(
-          sprintf( '%s %s: %d', $method, $url, $code ),
-          $response
-        );
-    }
+		if ( ! $result ) {
+			$this->log_error( 'JSON parsing error/NULL API response' );
+			return null;
+		}
 
-    if ( is_wp_error( $response ) ) {
-      $this->log_error( 'wp_remote_request', $response->get_error_message() );
-    }
-    
-    return $response;
-  }
+		if ( ! empty( $result['errors'] ) ) {
+			$this->log_error( 'API error', $result['errors'] );
+			return null;
+		}
 
-  public function log_info( $text ) {
-    if ( $this->debug ) {
-      $this->logger->log( "INFO: {$text};" );
-    }
-  }
+		return $result;
+	}
 
-  public function log_error( $error_text, $error_data = null ) {
-    $error_text = "ERROR: {$error_text};";
+	private function request( $method, $url, $params = [], $headers = [] ) {
+		$this->log_info( sprintf(
+			'%s `%s`\n%s\n%s',
+			$method,
+			$url,
+			var_export( $params, true ),
+			var_export( $headers, true )
+		) );
 
-    if ( $error_data ) {
-      $error_text .= ' ERROR DATA: ' . var_export($error_data, true) . ';';
-    }
+		$wp_request = wp_remote_request( $url, array(
+			'method' => $method,
+			'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
+			'headers' => $headers,
+			'body' => $params,
+			'timeout' => 10, // charge card require longer timeout
+		) );
 
-    $this->logger->log( $error_text );
-  }
+		$response = wp_remote_retrieve_body( $wp_request );
+
+		switch ( $code = wp_remote_retrieve_response_code( $wp_request ) ) {
+			case 200:
+			case 201:
+				break;
+			default:
+				$this->log_error(
+					sprintf( '%s %s: %d', $method, $url, $code ),
+					$response
+				);
+		}
+
+		if ( is_wp_error( $response ) ) {
+			$this->log_error( 'wp_remote_request', $response->get_error_message() );
+		}
+
+		return $response;
+	}
+
+	public function log_info( $text ) {
+		if ( $this->debug ) {
+			$this->logger->log( "INFO: {$text};" );
+		}
+	}
+
+	public function log_error( $error_text, $error_data = null ) {
+		$error_text = "ERROR: {$error_text};";
+
+		if ( $error_data ) {
+			$error_text .= ' ERROR DATA: ' . var_export( $error_data, true ) . ';';
+		}
+
+		$this->logger->log( $error_text );
+	}
 }
