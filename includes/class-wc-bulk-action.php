@@ -20,6 +20,10 @@ class Chip_Woocommerce_Bulk_Action {
 	public function add_filters() {
 		add_filter( 'bulk_actions-edit-' . $this->list_table_type, array( $this, 'define_bulk_actions' ) );
 		add_filter( 'handle_bulk_actions-edit-' . $this->list_table_type, array( $this, 'handle_bulk_actions' ), 10, 3 );
+
+		// HPOS compatibility
+		add_filter( 'bulk_actions-woocommerce_page_wc-orders', array( $this, 'define_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-woocommerce_page_wc-orders', array( $this, 'handle_bulk_actions_hpos' ), 10, 3 );
 	}
 
 	public function add_actions() {
@@ -68,6 +72,13 @@ class Chip_Woocommerce_Bulk_Action {
 		}
 
 		return esc_url_raw( $redirect_to );
+	}
+
+	public function handle_bulk_actions_hpos( $redirect_to, $action, $ids ) {
+		$bulk_action = $this->handle_bulk_actions( $redirect_to, $action, $ids );
+
+		// hpos didn't require post_type
+		return remove_query_arg( 'post_type', $bulk_action );
 	}
 
 	public function bulk_admin_notices() {
