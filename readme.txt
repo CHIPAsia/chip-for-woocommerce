@@ -2,9 +2,9 @@
 Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
-Tested up to: 6.6
-Stable tag: 1.6.6
-Requires PHP: 7.1
+Tested up to: 6.7
+Stable tag: 1.6.7
+Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -34,8 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.6.6 2025-01-03 =
-* Fixed - Fix payment fail when cart item exceed 100
+= 1.6.7 2025-02-14 =
+* Fixed - Fix issue with Requery Status for HPOS configuration.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
