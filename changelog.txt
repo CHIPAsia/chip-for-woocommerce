@@ -1,10 +1,17 @@
 == Changelog ==
 
+= 1.6.8 2025-03-11 =
+* Added - Auto remove whitespace in brand id and secret key field on save
+* Changed - Email fallback description and placeholder
+
+= 1.6.7 2025-02-14 =
+* Fixed - Fix issue with Requery Status for HPOS configuration.
+
 = 1.6.6 2025-01-03 =
 * Fixed - Fix payment fail when cart item exceed 100
 
 = 1.6.5 2024-10-02 =
-* Fixed - Fix Razer Checkout Block 
+* Fixed - Fix Razer Checkout Block
 
 = 1.6.4 2024-07-17 =
 * Fixed - Fix issue image class name for classic checkout
