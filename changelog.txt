@@ -1,6 +1,6 @@
 == Changelog ==
 
-= 1.6.8 2025-03-11 =
+= 1.6.8 2025-03-20 =
 * Added - Auto remove whitespace in brand id and secret key field on save
 * Changed - Email fallback description and placeholder
 

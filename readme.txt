@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip
 Requires at least: 4.7
 Tested up to: 6.7
-Stable tag: 1.6.7
+Stable tag: 1.6.8
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -33,6 +33,10 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.6.8 2025-03-20 =
+* Added - Auto remove whitespace in brand id and secret key field on save
+* Changed - Email fallback description and placeholder
 
 = 1.6.7 2025-02-14 =
 * Fixed - Fix issue with Requery Status for HPOS configuration.
