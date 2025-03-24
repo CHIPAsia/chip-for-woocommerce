@@ -36,6 +36,7 @@ The plugins do includes support for WooCommerce Subscription products.
 
 = 1.6.8 2025-03-20 =
 * Added - Auto remove whitespace in brand id and secret key field on save
+* Added - Site health check for CHIP's API connection
 * Changed - Email fallback description and placeholder
 
 = 1.6.7 2025-02-14 =
