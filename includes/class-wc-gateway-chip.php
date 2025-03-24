@@ -1,5 +1,7 @@
 <?php
 
+require_once plugin_dir_path(__FILE__) . '/class-wc-site-health.php';
+
 class WC_Gateway_Chip extends WC_Payment_Gateway {
 	public $id; // wc_gateway_chip
 	protected $secret_key;

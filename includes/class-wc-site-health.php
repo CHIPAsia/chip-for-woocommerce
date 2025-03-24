@@ -4,7 +4,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-class CHIP_Site_Health
+class CHIP_Woocommerce_Site_Health
 {
 
     public function __construct()
@@ -23,7 +23,7 @@ class CHIP_Site_Health
 
     public function CHIP_plugin_check_api_health()
     {
-        $purchase_API = WC_CHIP_ROOT_URL . '/purchases/';
+        $purchase_API = WC_CHIP_ROOT_URL . '/v1/purchases/';
         $response     = wp_remote_get($purchase_API);
 
         $status_code = wp_remote_retrieve_response_code($response);
@@ -73,6 +73,6 @@ class CHIP_Site_Health
     }
 }
 
-add_action('plugins_loaded', function () {
-    new CHIP_Site_Health();
+add_action('init', function () {
+    new CHIP_Woocommerce_Site_Health();
 });
