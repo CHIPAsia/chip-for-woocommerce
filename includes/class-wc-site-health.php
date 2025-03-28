@@ -22,8 +22,6 @@ class CHIP_Woocommerce_Site_Health {
 	public function CHIP_plugin_check_api_health() {
 		$purchase_API = WC_CHIP_ROOT_URL . '/v1/purchases/';
 		$response     = wp_remote_get( $purchase_API );
-    
-
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
