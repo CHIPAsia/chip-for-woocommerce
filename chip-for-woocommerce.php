@@ -125,7 +125,7 @@ class Chip_Woocommerce {
 	public function setting_link( $links ) {
 		$url_params = array(
 			'page' => 'wc-settings',
-			'tab' => 'checkout',
+			'tab'  => 'checkout',
 		);
 
 		if ( defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
@@ -135,7 +135,7 @@ class Chip_Woocommerce {
 		$url = add_query_arg( $url_params, admin_url( 'admin.php' ) );
 
 		$new_links = array(
-			'settings' => sprintf( '<a href="%1$s">%2$s</a>', $url, esc_html__( 'Settings', 'chip-for-woocommerce' ) )
+			'settings' => sprintf( '<a href="%1$s">%2$s</a>', $url, esc_html__( 'Settings', 'chip-for-woocommerce' ) ),
 		);
 
 		return array_merge( $new_links, $links );
@@ -155,13 +155,13 @@ class Chip_Woocommerce {
 			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/clone-wc-gateway-chip-blocks.php';
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
-				function (Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
-					$payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support );
-					$payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support );
-					$payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support );
-					$payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support );
-					$payment_method_registry->register( new WC_Gateway_Chip_5_Blocks_Support );
-					$payment_method_registry->register( new WC_Gateway_Chip_6_Blocks_Support );
+				function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
+					$payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support() );
+					$payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support() );
+					$payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support() );
+					$payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support() );
+					$payment_method_registry->register( new WC_Gateway_Chip_5_Blocks_Support() );
+					$payment_method_registry->register( new WC_Gateway_Chip_6_Blocks_Support() );
 				}
 			);
 		}

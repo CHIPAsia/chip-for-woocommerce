@@ -22,7 +22,7 @@ class Chip_Woocommerce_Receipt_Link {
 	}
 
 	public function invoice_button( $order ) {
-		$gateway_id = $order->get_payment_method();
+		$gateway_id      = $order->get_payment_method();
 		$wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
 		if ( $wc_gateway_chip and ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
@@ -39,7 +39,7 @@ class Chip_Woocommerce_Receipt_Link {
 			return;
 		}
 
-		$gateway_id = $order->get_payment_method();
+		$gateway_id      = $order->get_payment_method();
 		$wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
 		if ( $wc_gateway_chip and ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
@@ -55,7 +55,7 @@ class Chip_Woocommerce_Receipt_Link {
 	}
 
 	public function view_button( $order ) {
-		$gateway_id = $order->get_payment_method();
+		$gateway_id      = $order->get_payment_method();
 		$wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
 		if ( $wc_gateway_chip and ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
