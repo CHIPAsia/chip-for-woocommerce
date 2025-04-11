@@ -1,7 +1,5 @@
 <?php
 
-require_once plugin_dir_path(__FILE__) . '/class-wc-site-health.php';
-
 class WC_Gateway_Chip extends WC_Payment_Gateway {
 	public $id; // wc_gateway_chip
 	protected $secret_key;
@@ -489,7 +487,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'title' => __( 'Display Logo', 'chip-for-woocommerce' ),
 			'type' => 'select',
 			'class' => 'wc-enhanced-select',
-			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'bfw' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
+			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
 			'default' => 'logo',
 			'options' => array(
 					'logo' => 'CHIP Logo',
@@ -528,7 +526,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->form_fields['purchase_send_receipt'] = array(
 			'title' => __( 'Purchase Send Receipt', 'chip-for-woocommerce' ),
 			'type' => 'checkbox',
-			'description' => __( 'Tick to ask CHIP to send receipt upon successful payment. If activated, CHIP will send purchase receipt upon payment completion.', 'chip-for-woocommerce' ),
+			'description' => __( 'Tick to ask CHIP to send a receipt to the customer upon successful payment. If enabled, CHIP will send a purchase receipt once payment is completed. WooCommerce will always sends order processing and completed notifications to the customer.', 'chip-for-woocommerce' ),
 			'default' => 'no',
 		);
 

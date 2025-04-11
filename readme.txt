@@ -1,8 +1,8 @@
 === CHIP for WooCommerce ===
-Contributors: chipasia, wanzulnet
+Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
-Requires at least: 4.7
-Tested up to: 6.7
+Requires at least: 6.3
+Tested up to: 6.8
 Stable tag: 1.6.8
 Requires PHP: 7.4
 License: GPLv3
@@ -34,13 +34,12 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.6.8 2025-03-20 =
+= 1.6.8 2025-04-11 =
 * Added - Auto remove whitespace in brand id and secret key field on save
 * Added - Site health check for CHIP's API connection
 * Changed - Email fallback description and placeholder
-
-= 1.6.7 2025-02-14 =
-* Fixed - Fix issue with Requery Status for HPOS configuration.
+* Changed - Better explanation for Purchase Send Receipt description settings.
+* Changed - Bump tested up to WordPress 6.8
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

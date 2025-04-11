@@ -11,7 +11,7 @@
  * Requires at least: 4.7
  *
  * WC requires at least: 5.1
- * WC tested up to: 9.6
+ * WC tested up to: 9.8
  * Requires Plugins: woocommerce
  *
  * Copyright: © 2025 CHIP
@@ -58,7 +58,7 @@ class Chip_Woocommerce {
 	}
 
 	public function define() {
-		define( 'WC_CHIP_MODULE_VERSION', 'v1.6.7' );
+		define( 'WC_CHIP_MODULE_VERSION', 'v1.6.8' );
 		define( 'WC_CHIP_FILE', __FILE__ );
 		define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
 		define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
@@ -80,6 +80,7 @@ class Chip_Woocommerce {
 		if ( is_admin() ) {
 			include $includes_dir . 'class-wc-bulk-action.php';
 			include $includes_dir . 'class-wc-receipt-link.php';
+			include $includes_dir . 'class-wc-site-health.php';
 		}
 	}
 
