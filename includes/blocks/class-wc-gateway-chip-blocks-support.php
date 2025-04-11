@@ -1,20 +1,57 @@
 <?php
+/**
+ * Add CHIP block checkout support
+ *
+ * @package CHIP for WooCommerce
+ */
+
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 
+/**
+ * WC_Gateway_Chip_Blocks_Support
+ */
 class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 
+	/**
+	 * Payment gateway object
+	 *
+	 * @var string
+	 */
 	protected $gateway;
+
+	/**
+	 * Gateway id
+	 *
+	 * @var string
+	 */
 	protected $name = 'wc_gateway_chip';
 
+	/**
+	 * Initialize the class
+	 *
+	 * Assign value to the gateway property
+	 *
+	 * @return void
+	 */
 	public function initialize() {
 		$this->gateway  = Chip_Woocommerce::get_chip_gateway_class( $this->name );
 		$this->settings = $this->gateway->settings;
 	}
 
+	/**
+	 * Get the payment method type
+	 *
+	 * @return bool
+	 */
 	public function is_active() {
 		return $this->gateway->is_available();
 	}
 
+	/**
+	 * Get payment method script handles
+	 *
+	 * @return array
+	 */
 	public function get_payment_method_script_handles() {
 		$script_path       = 'assets/js/frontend/blocks_' . $this->name . '.js';
 		$script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_' . $this->name . '.asset.php';
@@ -44,15 +81,15 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 		$whitelisted_payment_method = $this->gateway->get_payment_method_whitelist();
 		$bypass_chip                = $this->gateway->get_bypass_chip();
 
-		// Exclude razer_atome
+		// Exclude razer_atome.
 		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
 
-		if ( is_array( $whitelisted_payment_method ) and $bypass_chip == 'yes' ) {
+		if ( is_array( $whitelisted_payment_method ) && 'yes' === $bypass_chip ) {
 			if ( count( $whitelisted_payment_method ) == 1 ) {
 				if ( $whitelisted_payment_method[0] == 'fpx' ) {
 					$localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
 					unset( $localize_variable['fpx_b2c'][''] );
-				} elseif ( $whitelisted_payment_method[0] == 'fpx_b2b1' ) {
+				} elseif ( 'fpx_b2b1' === $whitelisted_payment_method[0] ) {
 					$localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
 					unset( $localize_variable['fpx_b2b1'][''] );
 				} else {
