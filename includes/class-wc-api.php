@@ -11,14 +11,14 @@ class Chip_Woocommerce_API {
 
 	public function __construct( $secret_key, $brand_id, $logger, $debug ) {
 		$this->secret_key = $secret_key;
-		$this->brand_id = $brand_id;
-		$this->logger = $logger;
-		$this->debug = $debug;
+		$this->brand_id   = $brand_id;
+		$this->logger     = $logger;
+		$this->debug      = $debug;
 	}
 
 	public function set_key( $secret_key, $brand_id ) {
 		$this->secret_key = $secret_key;
-		$this->brand_id = $brand_id;
+		$this->brand_id   = $brand_id;
 	}
 
 	public function create_payment( $params ) {
@@ -52,7 +52,7 @@ class Chip_Woocommerce_API {
 		return $this->call( 'POST', "/purchases/$purchase_id/delete_recurring_token/" );
 	}
 
-	public function capture_payment( $payment_id, $params = [] ) {
+	public function capture_payment( $payment_id, $params = array() ) {
 		$this->log_info( "capture payment: {$payment_id}" );
 
 		return $this->call( 'POST', "/purchases/{$payment_id}/capture/", $params );
@@ -89,7 +89,7 @@ class Chip_Woocommerce_API {
 	}
 
 	public function get_payment( $payment_id ) {
-		$this->log_info( sprintf( "get payment: %s", $payment_id ) );
+		$this->log_info( sprintf( 'get payment: %s', $payment_id ) );
 
 		// time() is to force fresh instead cache
 		$result = $this->call( 'GET', "/purchases/{$payment_id}/?time=" . time() );
@@ -99,11 +99,11 @@ class Chip_Woocommerce_API {
 	}
 
 	public function refund_payment( $payment_id, $params ) {
-		$this->log_info( sprintf( "refunding payment: %s", $payment_id ) );
+		$this->log_info( sprintf( 'refunding payment: %s', $payment_id ) );
 
 		$result = $this->call( 'POST', "/purchases/{$payment_id}/refund/", $params );
 
-		$this->log_info( sprintf( "payment refund result: %s", var_export( $result, true ) ) );
+		$this->log_info( sprintf( 'payment refund result: %s', var_export( $result, true ) ) );
 
 		return $result;
 	}
@@ -134,7 +134,7 @@ class Chip_Woocommerce_API {
 		return $result;
 	}
 
-	private function call( $method, $route, $params = [] ) {
+	private function call( $method, $route, $params = array() ) {
 		$secret_key = $this->secret_key;
 		if ( ! empty( $params ) ) {
 			$params = json_encode( $params );
@@ -144,10 +144,10 @@ class Chip_Woocommerce_API {
 			$method,
 			sprintf( '%s/v1%s', WC_CHIP_ROOT_URL, $route ),
 			$params,
-			[ 
-				'Content-type' => 'application/json',
+			array(
+				'Content-type'  => 'application/json',
 				'Authorization' => "Bearer {$secret_key}",
-			]
+			)
 		);
 
 		$this->log_info( sprintf( 'received response: %s', $response ) );
@@ -167,22 +167,27 @@ class Chip_Woocommerce_API {
 		return $result;
 	}
 
-	private function request( $method, $url, $params = [], $headers = [] ) {
-		$this->log_info( sprintf(
-			'%s `%s`\n%s\n%s',
-			$method,
-			$url,
-			var_export( $params, true ),
-			var_export( $headers, true )
-		) );
+	private function request( $method, $url, $params = array(), $headers = array() ) {
+		$this->log_info(
+			sprintf(
+				'%s `%s`\n%s\n%s',
+				$method,
+				$url,
+				var_export( $params, true ),
+				var_export( $headers, true )
+			)
+		);
 
-		$wp_request = wp_remote_request( $url, array(
-			'method' => $method,
-			'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
-			'headers' => $headers,
-			'body' => $params,
-			'timeout' => 10, // charge card require longer timeout
-		) );
+		$wp_request = wp_remote_request(
+			$url,
+			array(
+				'method'    => $method,
+				'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
+				'headers'   => $headers,
+				'body'      => $params,
+				'timeout'   => 10, // charge card require longer timeout
+			)
+		);
 
 		$response = wp_remote_retrieve_body( $wp_request );
 

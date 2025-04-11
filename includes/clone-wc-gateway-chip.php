@@ -9,8 +9,8 @@ class WC_Gateway_Chip_2 extends WC_Gateway_Chip {
 
 	public function init_form_fields() {
 		parent::init_form_fields();
-		$this->form_fields['payment_method_whitelist']['default'] = [ 'fpx_b2b1' ];
-		$this->form_fields['description']['default'] = __( 'Pay with Corporate Online Banking (FPX)', 'chip-for-woocommerce' );
+		$this->form_fields['payment_method_whitelist']['default'] = array( 'fpx_b2b1' );
+		$this->form_fields['description']['default']              = __( 'Pay with Corporate Online Banking (FPX)', 'chip-for-woocommerce' );
 	}
 }
 class WC_Gateway_Chip_3 extends WC_Gateway_Chip {
@@ -22,8 +22,8 @@ class WC_Gateway_Chip_3 extends WC_Gateway_Chip {
 
 	public function init_form_fields() {
 		parent::init_form_fields();
-		$this->form_fields['payment_method_whitelist']['default'] = [ 'maestro', 'visa', 'mastercard' ];
-		$this->form_fields['description']['default'] = __( 'Pay with Visa / Mastercard', 'chip-for-woocommerce' );
+		$this->form_fields['payment_method_whitelist']['default'] = array( 'maestro', 'visa', 'mastercard' );
+		$this->form_fields['description']['default']              = __( 'Pay with Visa / Mastercard', 'chip-for-woocommerce' );
 	}
 }
 class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
@@ -35,8 +35,8 @@ class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
 
 	public function init_form_fields() {
 		parent::init_form_fields();
-		$this->form_fields['payment_method_whitelist']['default'] = [ 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' ];
-		$this->form_fields['description']['default'] = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
+		$this->form_fields['payment_method_whitelist']['default'] = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
+		$this->form_fields['description']['default']              = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
 	}
 }
 
@@ -45,7 +45,7 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 
 	public function __construct() {
 		parent::__construct();
-		$this->payment_met = [ 'razer_atome' ];
+		$this->payment_met = array( 'razer_atome' );
 	}
 
 	protected function init_title() {
@@ -53,21 +53,21 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 	}
 
 	protected function init_icon() {
-		$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', plugins_url( "assets/atome.svg", WC_CHIP_FILE ) );
+		$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', plugins_url( 'assets/atome.svg', WC_CHIP_FILE ) );
 	}
 
 	public function get_payment_method_list() {
-		return [ 'razer_atome' => 'Razer Atome' ];
+		return array( 'razer_atome' => 'Razer Atome' );
 	}
 
 	protected function init_one_time_gateway() {
-		$this->supports = [ 'products', 'refunds' ];
+		$this->supports = array( 'products', 'refunds' );
 	}
 
 	public function init_form_fields() {
 		parent::init_form_fields();
-		$this->form_fields['payment_method_whitelist']['default'] = [ 'razer_atome' ];
-		$this->form_fields['description']['default'] = __( 'Buy now pay later with Atome. <br>The bill will be split into three easy payments. <br>No hidden fees, 0% interest. <br><br><a href="https://www.atome.my">Terms & Conditions</a>', 'chip-for-woocommerce' );
+		$this->form_fields['payment_method_whitelist']['default'] = array( 'razer_atome' );
+		$this->form_fields['description']['default']              = __( 'Buy now pay later with Atome. <br>The bill will be split into three easy payments. <br>No hidden fees, 0% interest. <br><br><a href="https://www.atome.my">Terms & Conditions</a>', 'chip-for-woocommerce' );
 		unset( $this->form_fields['display_logo'] );
 		unset( $this->form_fields['disable_recurring_support'] );
 		unset( $this->form_fields['force_tokenization'] );
@@ -87,8 +87,8 @@ class WC_Gateway_Chip_6 extends WC_Gateway_Chip {
 
 	public function init_form_fields() {
 		parent::init_form_fields();
-		$this->form_fields['payment_method_whitelist']['default'] = [ 'duitnow_qr' ];
-		$this->form_fields['description']['default'] = __( 'Pay with Duitnow QR', 'chip-for-woocommerce' );
+		$this->form_fields['payment_method_whitelist']['default'] = array( 'duitnow_qr' );
+		$this->form_fields['description']['default']              = __( 'Pay with Duitnow QR', 'chip-for-woocommerce' );
 	}
 }
 

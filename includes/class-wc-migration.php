@@ -46,16 +46,16 @@ class Chip_Woocommerce_Migration {
 		}
 
 		$new_options = array(
-			'enabled' => $gateway['enabled'],
-			'title' => $gateway['label'],
+			'enabled'     => $gateway['enabled'],
+			'title'       => $gateway['label'],
 			'description' => $gateway['method_desc'],
-			'brand_id' => $gateway['brand-id'],
-			'secret_key' => $gateway['secret-key'],
-			'debug' => $gateway['debug'],
-			'public_key' => $gateway['public-key'],
+			'brand_id'    => $gateway['brand-id'],
+			'secret_key'  => $gateway['secret-key'],
+			'debug'       => $gateway['debug'],
+			'public_key'  => $gateway['public-key'],
 		);
 
-		$new_options['display_logo'] = 'logo';
+		$new_options['display_logo']              = 'logo';
 		$new_options['disable_recurring_support'] = 'yes';
 
 		$new_options_2 = $new_options;
@@ -70,9 +70,9 @@ class Chip_Woocommerce_Migration {
 			if ( ( $gateway_chip_card = get_option( 'woocommerce_chip-card_settings' ) ) ) {
 				if ( ! ( get_option( 'woocommerce_wc_gateway_chip_2_settings' ) ) ) {
 					$new_options_2['display_logo'] = 'card';
-					$new_options_2['enabled'] = $gateway_chip_card['enabled'];
-					$new_options_2['title'] = $gateway_chip_card['label'];
-					$new_options_2['description'] = $gateway_chip_card['method_desc'];
+					$new_options_2['enabled']      = $gateway_chip_card['enabled'];
+					$new_options_2['title']        = $gateway_chip_card['label'];
+					$new_options_2['description']  = $gateway_chip_card['method_desc'];
 
 					$new_options_2['payment_method_whitelist'] = array( 'visa', 'mastercard' );
 
@@ -86,9 +86,9 @@ class Chip_Woocommerce_Migration {
 			if ( ( $gateway_chip_b2b1 = get_option( 'woocommerce_chip-fpxb2b1_settings' ) ) ) {
 				if ( ! ( get_option( 'woocommerce_wc_gateway_chip_3_settings' ) ) ) {
 					$new_options_3['display_logo'] = 'fpx_b2b1';
-					$new_options_3['enabled'] = $gateway_chip_b2b1['enabled'];
-					$new_options_3['title'] = $gateway_chip_b2b1['label'];
-					$new_options_3['description'] = $gateway_chip_b2b1['method_desc'];
+					$new_options_3['enabled']      = $gateway_chip_b2b1['enabled'];
+					$new_options_3['title']        = $gateway_chip_b2b1['label'];
+					$new_options_3['description']  = $gateway_chip_b2b1['method_desc'];
 
 					$new_options_3['payment_method_whitelist'] = array( 'fpx_b2b1' );
 
