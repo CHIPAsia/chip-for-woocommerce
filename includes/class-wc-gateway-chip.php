@@ -459,12 +459,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'title' => __( 'Brand ID', 'chip-for-woocommerce' ),
 			'type' => 'text',
 			'description' => __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands', 'chip-for-woocommerce' ),
+            'sanitize_callback' => function($value) {
+                $value = trim($value);
+                $value = str_replace(' ', '', $value);
+                return $value;
+            }
 		);
 
 		$this->form_fields['secret_key'] = array(
 			'title' => __( 'Secret key', 'chip-for-woocommerce' ),
 			'type' => 'text',
 			'description' => __( 'Secret key can be obtained from CHIP Collect Dashboard >> Developers >> Keys', 'chip-for-woocommerce' ),
+            'sanitize_callback' => function($value) {
+                $value = trim($value);
+                $value = str_replace(' ', '', $value);
+                return $value;
+            }
 		);
 
 		$this->form_fields['miscellaneous'] = array(
@@ -477,7 +487,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'title' => __( 'Display Logo', 'chip-for-woocommerce' ),
 			'type' => 'select',
 			'class' => 'wc-enhanced-select',
-			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'bfw' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
+			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
 			'default' => 'logo',
 			'options' => array(
 					'logo' => 'CHIP Logo',
@@ -516,7 +526,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->form_fields['purchase_send_receipt'] = array(
 			'title' => __( 'Purchase Send Receipt', 'chip-for-woocommerce' ),
 			'type' => 'checkbox',
-			'description' => __( 'Tick to ask CHIP to send receipt upon successful payment. If activated, CHIP will send purchase receipt upon payment completion.', 'chip-for-woocommerce' ),
+			'description' => __( 'Tick to ask CHIP to send a receipt to the customer upon successful payment. If enabled, CHIP will send a purchase receipt once payment is completed. WooCommerce will always sends order processing and completed notifications to the customer.', 'chip-for-woocommerce' ),
 			'default' => 'no',
 		);
 
@@ -611,7 +621,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->form_fields['email_fallback'] = array(
 			'title' => __( 'Email fallback', 'chip-for-woocommerce' ),
 			'type' => 'email',
-			'description' => __( 'When email address is not requested to the customer, use this email address.', 'chip-for-woocommerce' ),
+            'description' => __( '<strong>Required</strong> if the merchant did not intend to request customer email address', 'chip-for-woocommerce' ),
+            'placeholder' => 'merchant@gmail.com',
 		);
 
 		$this->form_fields['metabox'] = array(
@@ -864,7 +875,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
-		$params = [ 
+		$params = [
 			'success_callback' => $callback_url,
 			'success_redirect' => $callback_url,
 			'failure_redirect' => $callback_url,
@@ -875,7 +886,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'reference' => $order->get_id(),
 			'platform' => 'woocommerce',
 			'due' => $this->get_due_timestamp(),
-			'purchase' => [ 
+			'purchase' => [
 				'total_override' => round( $order->get_total() * 100 ),
 				'due_strict' => $this->due_strict == 'yes',
 				'timezone' => $this->purchase_tz,
@@ -884,7 +895,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				'products' => [],
 			],
 			'brand_id' => $this->brand_id,
-			'client' => [ 
+			'client' => [
 				'email' => $order->get_billing_email(),
 				'phone' => substr( $order->get_billing_phone(), 0, 32 ),
 				'full_name' => $this->filter_customer_full_name( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
@@ -904,7 +915,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$items = $order->get_items();
 
 		if ( is_countable( $items ) and count( $items ) > 100 ) {
-			$params['purchase']['products'] = [ [ 
+			$params['purchase']['products'] = [ [
 				'name' => 'Order #' . $order->get_id(),
 				'price' => round( $order->get_total() * 100 ),
 			] ];
@@ -932,7 +943,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( empty( $params['purchase']['products'] ) ) {
 			$params['purchase']['products'] = array(
-				[ 
+				[
 					'name' => 'Product',
 					'price' => round( $order->get_total() * 100 ),
 				]
@@ -1259,7 +1270,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $renewal_order_id );
 		}
 
-		$params = [ 
+		$params = [
 			'success_callback' => $callback_url,
 			'send_receipt' => $this->purchase_sr == 'yes',
 			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
@@ -1268,7 +1279,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'due' => $this->get_due_timestamp(),
 			'brand_id' => $this->brand_id,
 			'client_id' => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
-			'purchase' => [ 
+			'purchase' => [
 				'timezone' => $this->purchase_tz,
 				'currency' => $renewal_order->get_currency(),
 				'language' => $this->get_language(),
@@ -1412,14 +1423,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'reference' => get_current_user_id(),
 			'brand_id' => $this->brand_id,
 			'skip_capture' => true,
-			'client' => [ 
+			'client' => [
 				'email' => wp_get_current_user()->user_email,
 				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() )
 			],
-			'purchase' => [ 
+			'purchase' => [
 				'currency' => 'MYR',
-				'products' => [ 
-					[ 
+				'products' => [
+					[
 						'name' => 'Add payment method',
 						'price' => 0
 					]
@@ -1704,7 +1715,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function list_razer_ewallets() {
-		$ewallet_list = [ 
+		$ewallet_list = [
 			'' => __( 'Choose your e-wallet', 'chip-for-woocommerce' ),
 		];
 
@@ -1797,14 +1808,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'reference' => $order_id,
 			'brand_id' => $this->brand_id,
 			'skip_capture' => true,
-			'client' => [ 
+			'client' => [
 				'email' => wp_get_current_user()->user_email,
 				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() )
 			],
-			'purchase' => [ 
+			'purchase' => [
 				'currency' => 'MYR',
-				'products' => [ 
-					[ 
+				'products' => [
+					[
 						'name' => 'Add payment method',
 						'price' => 0
 					]
@@ -2210,7 +2221,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		# TODO: Check if still require to minus total_pre_order_fee;
 		$total = absint( $order->get_total() ) - absint( $total_pre_order_fee );
 
-		$params = [ 
+		$params = [
 			'success_callback' => $callback_url,
 			'send_receipt' => $this->purchase_sr == 'yes',
 			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
@@ -2219,7 +2230,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'due' => $this->get_due_timestamp(),
 			'brand_id' => $this->brand_id,
 			'client_id' => get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
-			'purchase' => [ 
+			'purchase' => [
 				'timezone' => $this->purchase_tz,
 				'currency' => $order->get_currency(),
 				'language' => $this->get_language(),
@@ -2387,7 +2398,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				wp_localize_script(
 					$this->id . '_meta_box_script',
 					$this->id . '_meta_box_obj',
-					[ 
+					[
 						'url' => admin_url( 'admin-ajax.php' ),
 						'gateway_id' => $this->id,
 					]
@@ -2408,7 +2419,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( array_key_exists( 'gateway_id', $_POST ) ) {
 			if ( $_POST['gateway_id'] == $this->id ) {
-				$data = [ 
+				$data = [
 					'balance' => number_format( $this->chip_company_balance, 2 ),
 					'incoming_count' => number_format( $this->chip_incoming_count ),
 					'incoming_fee' => number_format( $this->chip_incoming_fee, 2 ),
