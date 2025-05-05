@@ -93,7 +93,7 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 					$localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
 					unset( $localize_variable['fpx_b2b1'][''] );
 				} else {
-					// Checker when whitelist one e-wallet only (razer)
+					// Checker when whitelist one e-wallet only (razer).
 					if ( ( count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0 ) ) {
 						$localize_variable['razer'] = $this->gateway->list_razer_ewallets();
 						unset( $localize_variable['razer'][''] );
@@ -110,16 +110,22 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 		return array( "wc-{$this->name}-blocks" );
 	}
 
+	/**
+	 * Get the payment method data.
+	 * This method is used to get the payment method data for the block checkout.
+	 *
+	 * @return array
+	 */
 	public function get_payment_method_data() {
 		$pm_whitelist = $this->get_setting( 'payment_method_whitelist' );
 		$bypass_chip  = $this->get_setting( 'bypass_chip' );
 		$js_display   = '';
 
-		if ( is_array( $pm_whitelist ) and count( $pm_whitelist ) == 1 and $pm_whitelist[0] == 'fpx' and $bypass_chip == 'yes' ) {
+		if ( is_array( $pm_whitelist ) && count( $pm_whitelist ) == 1 && $pm_whitelist[0] == 'fpx' && $bypass_chip == 'yes' ) {
 			$js_display = 'fpx';
-		} elseif ( is_array( $pm_whitelist ) and count( $pm_whitelist ) == 1 and $pm_whitelist[0] == 'fpx_b2b1' and $bypass_chip == 'yes' ) {
+		} elseif ( is_array( $pm_whitelist ) && count( $pm_whitelist ) == 1 && $pm_whitelist[0] == 'fpx_b2b1' && $bypass_chip == 'yes' ) {
 			$js_display = 'fpx_b2b1';
-		} elseif ( is_array( $pm_whitelist ) and $bypass_chip == 'yes' ) {
+		} elseif ( is_array( $pm_whitelist ) && $bypass_chip == 'yes' ) {
 			$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
 			if ( count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) == 0 ) {
 				$js_display = 'razer';

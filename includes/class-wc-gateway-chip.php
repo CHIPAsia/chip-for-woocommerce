@@ -1,7 +1,11 @@
 <?php
 
 class WC_Gateway_Chip extends WC_Payment_Gateway {
-	public $id; // wc_gateway_chip
+
+	const GATEWAY_ID     = 'wc_gateway_chip';
+	const PREFERRED_TYPE = 'Online Banking';
+
+	public $id;
 	protected $secret_key;
 	protected $brand_id;
 	protected $due_strict;
@@ -43,7 +47,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	protected $chip_outgoing_turnover = 0;
 	protected $chip_company_balance   = 0;
 	// end of metabox property
-	const PREFERRED_TYPE = 'Online Banking';
 
 	public function __construct() {
 		$this->init_id();
@@ -100,10 +103,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->add_filters();
 	}
 
+	/**
+	 * Initialize gateway ID.
+	 */
 	protected function init_id() {
-		$this->id = strtolower( get_class( $this ) );
+		$this->id = static::GATEWAY_ID;
 	}
 
+	/**
+	 * Initialize gateway icon.
+	 */
 	protected function init_icon() {
 		$logo = $this->get_option( 'display_logo', 'logo' );
 
@@ -486,7 +495,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'type'        => 'select',
 			'class'       => 'wc-enhanced-select',
 			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%1$s">Logo</a>. <a target="_blank" href="%2$s">FPX B2C</a>. <a target="_blank" href="%3$s">FPX B2B1</a>. <a target="_blank" href="%4$s">E-Wallet</a>. <a target="_blank" href="%5$s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
-			'default'     => 'logo',
+			'default'     => 'fpx_only',
 			'options'     => array(
 				'logo'                    => 'CHIP Logo',
 				'fpx'                     => 'FPX B2C',
@@ -786,6 +795,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Get the language code if WPML is installed.
+	 *
+	 * @return string
+	 */
 	public function get_language() {
 		if ( defined( 'ICL_LANGUAGE_CODE' ) ) {
 			$ln = ICL_LANGUAGE_CODE;
@@ -816,8 +830,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $ln;
 	}
 
+	/**
+	 * Validate checkout fields. If validation fails, an exception is thrown.
+	 * This method is called from the checkout process.
+	 * Only applicable when:
+	 *  - Payment method whitelist contains only one payment method.
+	 *  - Bypass CHIP payment page is enabled.
+	 *
+	 * @throws Exception When no payment method is selected.
+	 */
 	public function validate_fields() {
-		// Check and throw error if payment method not selected
 		if ( is_array( $this->payment_met ) and count( $this->payment_met ) == 1 and $this->bypass_chip == 'yes' ) {
 			if ( $this->payment_met[0] == 'fpx' and isset( $_POST['chip_fpx_bank'] ) and strlen( $_POST['chip_fpx_bank'] ) == 0 ) {
 				throw new Exception( __( '<strong>Internet Banking</strong> is a required field.', 'chip-for-woocommerce' ) );
@@ -826,11 +848,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		// Check for razer
+		// Check for razer.
 		$pattern  = '/^razer_/';
 		$is_razer = false;
 
-		// Check if payment_met empty
+		// Check if payment_met empty.
 		if ( is_array( $this->payment_met ) ) {
 			$output = preg_grep( $pattern, $this->payment_met );
 
@@ -840,20 +862,28 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		if ( is_array( $this->payment_met ) and $this->bypass_chip == 'yes' and $is_razer and isset( $_POST['chip_razer_ewallet'] ) and strlen( $_POST['chip_razer_ewallet'] ) == 0 ) {
-			throw new Exception( __( "<strong>E-Wallet</strong> is a required field. $this->payment_met", 'chip-for-woocommerce' ) );
+			throw new Exception(
+				wp_kses_post( __( '<strong>E-Wallet</strong> is a required field.', 'chip-for-woocommerce' ) )
+			);
 		}
 
 		return true;
 	}
 
+	/**
+	 * Process the payment and return the result.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return array
+	 */
 	public function process_payment( $order_id ) {
 		do_action( 'wc_' . $this->id . '_before_process_payment', $order_id, $this );
 
-		// Start of logic for subscription_payment_method_change_customer supports
+		// Start of logic for subscription_payment_method_change_customer supports.
 		if ( isset( $_GET['change_payment_method'] ) and $_GET['change_payment_method'] == $order_id ) {
 			return $this->process_payment_method_change( $order_id );
 		}
-		// End of logic for subscription_payment_method_change_customer supports
+		// End of logic for subscription_payment_method_change_customer supports.
 
 		$order   = new WC_Order( $order_id );
 		$user_id = $order->get_user_id();
