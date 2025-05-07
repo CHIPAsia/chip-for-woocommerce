@@ -45,7 +45,7 @@ class Chip_Woocommerce_Bulk_Action {
 			foreach ( $ids as $id ) {
 				$order = wc_get_order( $id );
 				if ( ! $order->is_paid() ) {
-					$gateway_id = $order->get_payment_method();
+					$gateway_id      = $order->get_payment_method();
 					$wc_gateway_chip = Chip_Woocommerce::get_chip_gateway_class( $gateway_id );
 
 					if ( $wc_gateway_chip and ( $purchase = $order->get_meta( '_' . $gateway_id . '_purchase', true ) ) ) {
@@ -53,7 +53,7 @@ class Chip_Woocommerce_Bulk_Action {
 
 						WC()->queue()->schedule_single( time(), 'wc_chip_check_order_status', array( $purchase['id'], $id, 8, $gateway_id ), "{$gateway_id}_bulk_requery" );
 						do_action( 'wc_chip_bulk_order_requery', $id );
-						$changed++;
+						++$changed;
 					}
 				}
 			}
@@ -62,10 +62,10 @@ class Chip_Woocommerce_Bulk_Action {
 		if ( $changed ) {
 			$redirect_to = add_query_arg(
 				array(
-					'post_type' => $this->list_table_type,
+					'post_type'   => $this->list_table_type,
 					'bulk_action' => $action,
-					'changed' => $changed,
-					'ids' => join( ',', $ids ),
+					'changed'     => $changed,
+					'ids'         => join( ',', $ids ),
 				),
 				$redirect_to
 			);
@@ -89,7 +89,7 @@ class Chip_Woocommerce_Bulk_Action {
 			return;
 		}
 
-		$number = isset( $_REQUEST['changed'] ) ? absint( $_REQUEST['changed'] ) : 0; // WPCS: input var ok, CSRF ok.
+		$number      = isset( $_REQUEST['changed'] ) ? absint( $_REQUEST['changed'] ) : 0; // WPCS: input var ok, CSRF ok.
 		$bulk_action = wc_clean( wp_unslash( $_REQUEST['bulk_action'] ) ); // WPCS: input var ok, CSRF ok.
 
 		if ( $bulk_action == 'chip_requery' ) {

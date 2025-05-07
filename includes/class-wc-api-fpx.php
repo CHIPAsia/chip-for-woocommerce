@@ -8,7 +8,7 @@ class Chip_Woocommerce_API_FPX {
 
 	public function __construct( $logger, $debug ) {
 		$this->logger = $logger;
-		$this->debug = $debug;
+		$this->debug  = $debug;
 	}
 
 	public function get_fpx() {
@@ -23,7 +23,7 @@ class Chip_Woocommerce_API_FPX {
 		return $this->call( 'GET', '/fpx_b2b1?time=' . time() );
 	}
 
-	private function call( $method, $route, $params = [] ) {
+	private function call( $method, $route, $params = array() ) {
 		if ( ! empty( $params ) ) {
 			$params = json_encode( $params );
 		}
@@ -32,9 +32,9 @@ class Chip_Woocommerce_API_FPX {
 			$method,
 			sprintf( '%s%s', WC_CHIP_FPX_ROOT_URL, $route ),
 			$params,
-			[ 
-				'Content-type' => 'application/json'
-			]
+			array(
+				'Content-type' => 'application/json',
+			)
 		);
 
 		$this->log_info( sprintf( 'received response: %s', $response ) );
@@ -54,22 +54,27 @@ class Chip_Woocommerce_API_FPX {
 		return $result;
 	}
 
-	private function request( $method, $url, $params = [], $headers = [] ) {
-		$this->log_info( sprintf(
-			'%s `%s`\n%s\n%s',
-			$method,
-			$url,
-			var_export( $params, true ),
-			var_export( $headers, true )
-		) );
+	private function request( $method, $url, $params = array(), $headers = array() ) {
+		$this->log_info(
+			sprintf(
+				'%s `%s`\n%s\n%s',
+				$method,
+				$url,
+				var_export( $params, true ),
+				var_export( $headers, true )
+			)
+		);
 
-		$wp_request = wp_remote_request( $url, array(
-			'method' => $method,
-			'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
-			'headers' => $headers,
-			'body' => $params,
-			'timeout' => 3
-		) );
+		$wp_request = wp_remote_request(
+			$url,
+			array(
+				'method'    => $method,
+				'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
+				'headers'   => $headers,
+				'body'      => $params,
+				'timeout'   => 3,
+			)
+		);
 
 		$response = wp_remote_retrieve_body( $wp_request );
 
