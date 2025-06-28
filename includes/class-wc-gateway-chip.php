@@ -1645,19 +1645,44 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'UOB0226' => __( 'UOB Bank', 'chip-for-woocommerce' ),
 		);
 
-		if ( false === ( $fpx = get_transient( 'chip_fpx_b2c_banks' ) ) ) {
-			// This to avoid mutiple request on very high traffic site
-			set_transient( 'chip_fpx_b2c_banks', 'temp', 5 ); // 5 seconds
-			$fpx_api = $this->fpx_api();
+		$data_chip_fpx_b2c_banks = $this->get_fpx_banks_data('chip_fpx_b2c_banks');
 
-			$fpx = $fpx_api->get_fpx();
-
-			set_transient( 'chip_fpx_b2c_banks', $fpx, 60 * 3 ); // 60 seconds * 3
-		}
+		$fpx = $data_chip_fpx_b2c_banks['fpx'];
 
 		$this->filter_non_available_fpx( $default_fpx, $fpx );
 
 		return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', $default_fpx );
+	}
+
+	protected function get_fpx_banks_data( $transient_key ) {
+		$expiration = 60 * 3; // 3 minutes
+
+		$data = get_transient( $transient_key );
+
+		if ( false === $data || $this->is_fpx_data_expired( $data ) ) {
+			$data = array(
+				'timestamp' => current_time('timestamp')
+			);
+
+			if ( $transient_key == 'chip_fpx_b2c_banks') {
+				$data['fpx'] = $this->fpx_api()->get_fpx();
+			} else {
+				$data['fpx'] = $this->fpx_api()->get_fpx_b2b1();
+			}
+
+			set_transient($transient_key, $data, $expiration);
+		}
+
+		return $data;
+	}
+
+	protected function is_fpx_data_expired( $data ) {
+		if ( ! is_array( $data ) || ! isset( $data[ 'timestamp' ] ) ) {
+			return true;
+		}
+
+		$expiration = 60 * 3; // 3 minutes
+		return ( current_time( 'timestamp' ) - $data[ 'timestamp' ] ) > $expiration;
 	}
 
 	public function list_fpx_b2b1_banks() {
@@ -1686,15 +1711,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'UOB0228' => __( 'UOB Regional', 'chip-for-woocommerce' ),
 		);
 
-		if ( false === ( $fpx = get_transient( 'chip_fpx_b2b1_banks' ) ) ) {
-			// This to avoid mutiple request on very high traffic site
-			set_transient( 'chip_fpx_b2b1_banks', 'temp', 5 ); // 5 seconds
-			$fpx_api = $this->fpx_api();
+		$data_chip_fpx_b2b1_banks = $this->get_fpx_banks_data('chip_fpx_b2b1_banks');
 
-			$fpx = $fpx_api->get_fpx_b2b1();
-
-			set_transient( 'chip_fpx_b2b1_banks', $fpx, 60 * 3 ); // 60 seconds * 3
-		}
+		$fpx = $data_chip_fpx_b2b1_banks['fpx'];
 
 		$this->filter_non_available_fpx( $default_fpx, $fpx );
 

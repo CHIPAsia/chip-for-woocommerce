@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 1.6.9 2025-06-28 =
+* Fixed - FPX dropdown banks not showing some banks
+
 = 1.6.8 2025-03-20 =
 * Added - Auto remove whitespace in brand id and secret key field on save
 * Added - Site health check for CHIP's API connection
