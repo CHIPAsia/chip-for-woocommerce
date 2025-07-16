@@ -6,7 +6,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	protected $brand_id;
 	protected $due_strict;
 	protected $due_str_t;
-	protected $purchase_sr;
+
 	protected $purchase_tz;
 	protected $update_clie;
 	protected $system_url_;
@@ -59,7 +59,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->brand_id = $this->get_option( 'brand_id' );
 		$this->due_strict = $this->get_option( 'due_strict', 'yes' );
 		$this->due_str_t = $this->get_option( 'due_strict_timing', 60 );
-		$this->purchase_sr = $this->get_option( 'purchase_send_receipt', 'yes' );
+
 		$this->purchase_tz = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
 		$this->update_clie = $this->get_option( 'update_client_information' );
 		$this->system_url_ = $this->get_option( 'system_url_scheme', 'https' );
@@ -480,7 +480,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->form_fields['miscellaneous'] = array(
 			'title' => __( 'Miscellaneous', 'chip-for-woocommerce' ),
 			'type' => 'title',
-			'description' => __( 'Options to set display logo, due strict, send receipt, time zone, tokenization and payment method whitelist.', 'chip-for-woocommerce' ),
+			'description' => __( 'Options to set display logo, due strict, time zone, tokenization and payment method whitelist.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['display_logo'] = array(
@@ -523,12 +523,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'default' => get_option( 'woocommerce_hold_stock_minutes', '60' ),
 		);
 
-		$this->form_fields['purchase_send_receipt'] = array(
-			'title' => __( 'Purchase Send Receipt', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
-			'description' => __( 'Tick to ask CHIP to send a receipt to the customer upon successful payment. If enabled, CHIP will send a purchase receipt once payment is completed. WooCommerce will always sends order processing and completed notifications to the customer.', 'chip-for-woocommerce' ),
-			'default' => 'no',
-		);
+
 
 		$this->form_fields['purchase_time_zone'] = array(
 			'title' => __( 'Purchase Time Zone', 'chip-for-woocommerce' ),
@@ -881,7 +876,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'failure_redirect' => $callback_url,
 			'cancel_redirect' => $callback_url,
 			'force_recurring' => $this->force_token == 'yes',
-			'send_receipt' => $this->purchase_sr == 'yes',
+			'send_receipt' => false,
 			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
 			'reference' => $order->get_id(),
 			'platform' => 'woocommerce',
@@ -1272,7 +1267,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$params = [
 			'success_callback' => $callback_url,
-			'send_receipt' => $this->purchase_sr == 'yes',
+			'send_receipt' => false,
 			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
 			'reference' => $renewal_order_id,
 			'platform' => 'woocommerce_subscriptions',
@@ -2242,7 +2237,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$params = [
 			'success_callback' => $callback_url,
-			'send_receipt' => $this->purchase_sr == 'yes',
+			'send_receipt' => false,
 			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
 			'reference' => $order->get_id(),
 			'platform' => 'woocommerce',

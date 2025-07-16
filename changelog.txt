@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 1.7.0 2025-07-16 =
+* Removed - Send receipt option from admin settings
+* Changed - Hardcoded send_receipt parameter to false for all payment methods
+* Removed - Unused purchase_sr variable
+
 = 1.6.9 2025-06-28 =
 * Fixed - FPX dropdown banks not showing some banks
 
