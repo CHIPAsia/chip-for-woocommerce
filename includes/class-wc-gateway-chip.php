@@ -480,7 +480,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->form_fields['miscellaneous'] = array(
 			'title' => __( 'Miscellaneous', 'chip-for-woocommerce' ),
 			'type' => 'title',
-			'description' => __( 'Options to set display logo, due strict, send receipt, time zone, tokenization and payment method whitelist.', 'chip-for-woocommerce' ),
+			'description' => __( 'Options to set display logo, due strict, time zone, tokenization and payment method whitelist.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['display_logo'] = array(
