@@ -92,12 +92,16 @@ class Chip_Woocommerce_API_FPX {
 	}
 
 	public function log_info( $text ) {
-		if ( $this->debug ) {
+		if ( $this->debug === 'yes' ) {
 			$this->logger->log( "INFO: {$text};" );
 		}
 	}
 
 	public function log_error( $error_text, $error_data = null ) {
+		if ( $this->debug !== 'yes' ) {
+			return;
+		}
+
 		$error_text = "ERROR: {$error_text};";
 
 		if ( $error_data ) {
