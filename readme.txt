@@ -35,7 +35,6 @@ The plugins do includes support for WooCommerce Subscription products.
 == Changelog ==
 
 = 1.8.0 2025-07-18 =
-* Changed - Updated minimum WooCommerce requirement to 9.3.0
 * Changed - Enhanced logger implementation with multiple log levels (info, error, debug)
 * Changed - Improved error handling in logger with fallback to WordPress error_log
 * Changed - Bumped WooCommerce tested version to 10.0

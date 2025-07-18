@@ -10,7 +10,7 @@
  * Requires PHP: 7.4
  * Requires at least: 6.3
  *
- * WC requires at least: 9.3.0
+ * WC requires at least: 5.1
  * WC tested up to: 10.0
  * Requires Plugins: woocommerce
  *
@@ -143,20 +143,6 @@ class Chip_Woocommerce {
 
 	public static function load() {
 		if ( ! class_exists( 'WooCommerce' ) or ! class_exists( 'WC_Payment_Gateway' ) ) {
-			return;
-		}
-
-		// Check if WooCommerce version is at least 9.3.0
-		if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '9.3.0', '<' ) ) {
-			add_action( 'admin_notices', function() {
-				echo '<div class="notice notice-error"><p>';
-				printf(
-					__( 'CHIP for WooCommerce requires WooCommerce 9.3.0 or higher. You are currently running WooCommerce %s. Please <a href="%s">update WooCommerce</a> to continue using CHIP for WooCommerce.', 'chip-for-woocommerce' ),
-					WC_VERSION,
-					admin_url( 'plugins.php' )
-				);
-				echo '</p></div>';
-			} );
 			return;
 		}
 
