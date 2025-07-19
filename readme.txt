@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 6.8
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,11 +34,10 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.7.0 2025-07-16 =
-* Removed - Send receipt option from admin settings
-* Changed - Hardcoded send_receipt parameter to false for all payment methods
-* Removed - Unused purchase_sr variable
-
+= 1.8.0 2025-07-18 =
+* Changed - Enhanced logger implementation with multiple log levels (info, error, debug)
+* Changed - Improved error handling in logger with fallback to WordPress error_log
+* Changed - Bumped WooCommerce tested version to 10.0
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

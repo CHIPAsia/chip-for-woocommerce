@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 1.8.0 2025-07-18 =
+* Changed - Enhanced logger implementation with multiple log levels (info, error, debug)
+* Changed - Improved error handling in logger with fallback to WordPress error_log
+* Changed - Bumped WooCommerce tested version to 10.0
+
 = 1.7.0 2025-07-16 =
 * Removed - Send receipt option from admin settings
 * Changed - Hardcoded send_receipt parameter to false for all payment methods
