@@ -4,14 +4,14 @@
  * Plugin Name: CHIP for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/chip-for-woocommerce/
  * Description: CHIP - Digital Finance Platform
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: Chip In Sdn Bhd
  * Author URI: https://chip-in.asia
  * Requires PHP: 7.4
  * Requires at least: 6.3
  *
  * WC requires at least: 5.1
- * WC tested up to: 10.0
+ * WC tested up to: 10.1
  * Requires Plugins: woocommerce
  *
  * Copyright: © 2025 CHIP
@@ -58,7 +58,7 @@ class Chip_Woocommerce {
 	}
 
 	public function define() {
-		define( 'WC_CHIP_MODULE_VERSION', 'v1.8.0' );
+		define( 'WC_CHIP_MODULE_VERSION', 'v1.8.1' );
 		define( 'WC_CHIP_FILE', __FILE__ );
 		define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
 		define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
