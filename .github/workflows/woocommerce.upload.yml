@@ -25,9 +25,7 @@ jobs:
         run: |
           VERSION="${{ steps.vars.outputs.version }}"
           mkdir "$VERSION"
-          shopt -s extglob
-          EXCLUDE_PATTERN="!(${VERSION}|composer.json|README.md|package.json|.*)"
-          eval mv $EXCLUDE_PATTERN "$VERSION"
+          git archive HEAD | tar -x -C "$VERSION"
 
       - name: Install SVN
         run: sudo apt-get install -y subversion
