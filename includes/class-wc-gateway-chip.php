@@ -1131,7 +1131,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return array(
 			'result' => 'success',
 			'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
-			'messages' => '<div class="woocommerce-info">' . __( 'Redirecting to CHIP', 'chip-for-woocommerce' ) . '</div>',
+			'messages' => '<div class="woocommerce-info"><a href="' . esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ) . '">' . __( 'Click here to pay', 'chip-for-woocommerce' ) . '</a></div>',
 		);
 	}
 
