@@ -10,6 +10,7 @@
 node_modules/ export-ignore
 vendor/ export-ignore
 composer.lock export-ignore
+composer.json export-ignore
 package-lock.json export-ignore
 package.json export-ignore
 .gitignore export-ignore
