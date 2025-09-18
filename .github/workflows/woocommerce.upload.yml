@@ -1,0 +1,75 @@
+name: WooCommerce - Upload Files
+
+on:
+  push:
+    tags:
+      - 'woocommerce-upload-v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  deploy:
+    name: Upload files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git repo
+        uses: actions/checkout@v3
+
+      - name: Extract version from tag
+        id: vars
+        run: |
+          TAG=${GITHUB_REF##*/}
+          VERSION=${TAG#woocommerce-upload-v}
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create new version folder
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          mkdir "$VERSION"
+          shopt -s extglob
+          EXCLUDE_PATTERN="!(${VERSION}|composer.json|README.md|package.json|.*)"
+          eval mv $EXCLUDE_PATTERN "$VERSION"
+
+      - name: Install SVN
+        run: sudo apt-get install -y subversion
+
+      - name: Checkout SVN
+        run: |
+          svn checkout --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/chip-for-woocommerce/ svn-tags
+
+      - name: Check for version conflict
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          if [ -d "svn-tags/tags/$VERSION" ]; then
+            echo "❌ The tag '$VERSION' already exists in SVN. Aborting."
+            exit 1
+          fi
+
+      - name: Copy new version folder into tags folder
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          cp -R "$VERSION" "svn-tags/tags"
+
+      - name: Track new version folder
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          cd svn-tags/tags
+          svn add "$VERSION"
+
+      - name: List file changes
+        run: |
+          cd svn-tags
+          echo "SVN status:"
+          svn status
+
+      - name: Commit changes to SVN
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+
+          cd svn-tags
+          svn commit -m "$COMMIT_MSG" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive --trust-server-cert

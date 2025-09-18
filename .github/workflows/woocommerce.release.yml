@@ -1,0 +1,56 @@
+name: WooCommerce - Stable Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Tag version as stable
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git repo
+        uses: actions/checkout@v3
+
+      - name: Install SVN
+        run: sudo apt-get install -y subversion
+
+      - name: Checkout SVN /tags folder
+        run: |
+          svn checkout --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/chip-for-woocommerce/ svn-tags
+
+      - name: Copy readme.txt from the latest version in /tags
+        id: copy-readme
+        run: |
+          cd svn-tags
+
+          latest_tag=$(ls -v tags | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1)
+
+          if [ -z "$latest_tag" ]; then
+            echo "❌ No versioned tags found in /tags."
+            exit 1
+          fi
+
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+          cp "tags/$latest_tag/readme.txt" trunk/readme.txt
+
+          echo "🔍 Checking SVN status:"
+          if svn status | grep -q '^M.*trunk/readme.txt'; then
+            echo "✅ readme.txt was updated."
+          else
+            echo "ℹ️ No change detected in readme.txt. Nothing to commit."
+            exit 0
+          fi
+
+      - name: Commit updated readme.txt to SVN
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          cd svn-tags
+
+          svn commit trunk/readme.txt -m "Tag version ${{ steps.copy-readme.outputs.latest_tag }} as stable" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive --trust-server-cert
