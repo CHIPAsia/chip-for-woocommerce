@@ -2321,6 +2321,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return;
 		}
 
+		if ( ! function_exists( 'add_meta_box' ) ) {
+			return;
+		}
+
 		add_meta_box(
 			$this->id . '_box',
 			'CHIP - ' . $this->title,
