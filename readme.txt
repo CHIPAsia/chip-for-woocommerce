@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 6.8
-Stable tag: 1.8.2
+Stable tag: 1.8.3
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -34,8 +34,8 @@ The plugins do includes support for WooCommerce Subscription products.
 
 == Changelog ==
 
-= 1.8.2 2025-11-04 =
-* Fixed - Issue with add_meta_box when function is unavailable
+= 1.8.3 2025-11-17 =
+* Added - Support for Google Pay
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
