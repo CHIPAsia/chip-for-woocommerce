@@ -2101,7 +2101,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function get_payment_method_list() {
-		return [ 'fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR' ];
+		return [ 'fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'mpgs_google_pay' => 'MPGS Google Pay', 'mpgs_apple_pay' => 'MPGS Apple Pay', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR' ];
 	}
 
 	public function add_item_order_fee( &$order ) {
