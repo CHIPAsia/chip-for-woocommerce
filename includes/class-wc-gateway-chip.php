@@ -1117,7 +1117,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( is_array( $payment['payment_method_whitelist'] ) and ! empty( $payment['payment_method_whitelist'] ) ) {
 			foreach ( $payment['payment_method_whitelist'] as $pm ) {
-				if ( ! in_array( $pm, [ 'visa', 'mastercard', 'maestro' ] ) ) {
+				if ( ! in_array( $pm, [ 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' ] ) ) {
 					$redirect_url = $payment['checkout_url'];
 					break;
 				}
