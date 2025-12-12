@@ -671,10 +671,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function handle_callback_order() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		if ( ! isset( $_GET['id'] ) ) {
 			exit( 'Missing order ID' );
 		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		$order_id = intval( $_GET['id'] );
 
 		$this->api()->log_info( 'received callback for order id: ' . $order_id );
@@ -685,19 +685,18 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->log_order_info( 'received success callback', $order );
 
-		// $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
-
 		$payment    = $order->get_meta( '_' . $this->id . '_purchase', true );
 		$payment_id = $payment['id'];
 
-		// if ( !$payment_id AND isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 		if ( isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 			$content = file_get_contents( 'php://input' );
 
-			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
+			$signature = isset( $_SERVER['HTTP_X_SIGNATURE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_SIGNATURE'] ) ) : '';
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Required to decode RSA signature from payment gateway for verification.
+			if ( openssl_verify( $content, base64_decode( $signature ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
 				$this->log_order_info( $message, $order );
-				exit( $message );
+				exit( esc_html( $message ) );
 			}
 
 			$payment    = json_decode( $content, true );
@@ -705,7 +704,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
-			exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
+			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
 		if ( has_action( 'wc_' . $this->id . '_before_handle_callback_order' ) ) {
@@ -714,7 +713,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$payment = $this->api()->get_payment( $payment_id );
 		}
 
-		if ( ( 'paid' === $payment['status'] ) || ( 'preauthorized' === $payment['status'] ) && 0 === $payment['purchase']['total_override'] ) {
+		if ( ( 'paid' === $payment['status'] ) || ( ( 'preauthorized' === $payment['status'] ) && 0 === $payment['purchase']['total_override'] ) ) {
 			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 				if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 					if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
