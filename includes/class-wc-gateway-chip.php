@@ -661,7 +661,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		exit;
 	}
 
+	/**
+	 * Handle order callback from CHIP.
+	 *
+	 * @return void
+	 */
 	public function handle_callback_order() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$order_id = intval( $_GET['id'] );
 
 		$this->api()->log_info( 'received callback for order id: ' . $order_id );
@@ -754,6 +760,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		exit;
 	}
 
+	/**
+	 * Initialize form fields for gateway settings.
+	 *
+	 * @return void
+	 */
 	public function init_form_fields() {
 		$this->form_fields['enabled'] = array(
 			'title'   => __( 'Enable/Disable', 'chip-for-woocommerce' ),
@@ -926,7 +937,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'type'        => 'multiselect',
 			'class'       => 'wc-enhanced-select',
 			'description' => __( 'Choose payment method to enforce payment method whitelisting if possible.', 'chip-for-woocommerce' ),
-			'default'     => [ 'fpx' ],
+			'default'     => array( 'fpx' ),
 			'options'     => $this->a_payment_m,
 			'disabled'    => empty( $this->a_payment_m ),
 		);
@@ -970,7 +981,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'description' => sprintf( __( 'Option to set public key. The supported event is <code>%1$s</code>', 'chip-for-woocommerce' ), 'Purchase Recurring Token Deleted' ),
 		);
 
-		$callback_url = preg_replace( '/^http:/i', 'https:', add_query_arg( [ 'callback_flag' => 'yes' ], WC()->api_request_url( $this->id ) ) );
+		$callback_url = preg_replace( '/^http:/i', 'https:', add_query_arg( array( 'callback_flag' => 'yes' ), WC()->api_request_url( $this->id ) ) );
 
 		$this->form_fields['webhook_public_key'] = array(
 			'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
@@ -1032,6 +1043,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		);
 	}
 
+	/**
+	 * Get list of timezones.
+	 *
+	 * @return array
+	 */
 	private function get_timezone_list() {
 		$list_time_zones = DateTimeZone::listIdentifiers( DateTimeZone::ALL );
 
@@ -1043,6 +1059,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $formatted_time_zones;
 	}
 
+	/**
+	 * Output payment fields on checkout.
+	 *
+	 * @return void
+	 */
 	public function payment_fields() {
 		if ( has_action( 'wc_' . $this->id . '_payment_fields' ) ) {
 			do_action( 'wc_' . $this->id . '_payment_fields', $this );
@@ -1115,6 +1136,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Get current language code.
+	 *
+	 * @return string
+	 */
 	public function get_language() {
 		if ( defined( 'ICL_LANGUAGE_CODE' ) ) {
 			$ln = ICL_LANGUAGE_CODE;
@@ -1183,6 +1209,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return true;
 	}
 
+	/**
+	 * Process the payment for an order.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return array
+	 */
 	public function process_payment( $order_id ) {
 		do_action( 'wc_' . $this->id . '_before_process_payment', $order_id, $this );
 
@@ -1214,12 +1246,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$this->add_item_order_fee( $order );
 		}
 
-		$callback_url = add_query_arg( [ 'id' => $order_id ], WC()->api_request_url( $this->id ) );
+		$callback_url = add_query_arg( array( 'id' => $order_id ), WC()->api_request_url( $this->id ) );
 		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
-		$params = [
+		$params = array(
 			'success_callback' => $callback_url,
 			'success_redirect' => $callback_url,
 			'failure_redirect' => $callback_url,
@@ -1230,16 +1262,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'reference'        => $order->get_id(),
 			'platform'         => 'woocommerce',
 			'due'              => $this->get_due_timestamp(),
-			'purchase'         => [
+			'purchase'         => array(
 				'total_override' => round( $order->get_total() * 100 ),
 				'due_strict'     => 'yes' === $this->due_strict,
 				'timezone'       => $this->purchase_tz,
 				'currency'       => $order->get_currency(),
 				'language'       => $this->get_language(),
-				'products'       => [],
-			],
+				'products'       => array(),
+			),
 			'brand_id'         => $this->brand_id,
-			'client'           => [
+			'client'           => array(
 				'email'                   => $order->get_billing_email(),
 				'phone'                   => substr( $order->get_billing_phone(), 0, 32 ),
 				'full_name'               => $this->filter_customer_full_name( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
@@ -1253,18 +1285,18 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				'shipping_city'           => substr( $order->get_shipping_city(), 0, 128 ),
 				'shipping_zip_code'       => substr( $order->get_shipping_postcode(), 0, 32 ),
 				'shipping_state'          => substr( $order->get_shipping_state(), 0, 128 ),
-			],
-		];
+			),
+		);
 
 		$items = $order->get_items();
 
 		if ( is_countable( $items ) && count( $items ) > 100 ) {
-			$params['purchase']['products'] = [
-				[
+			$params['purchase']['products'] = array(
+				array(
 					'name'  => 'Order #' . $order->get_id(),
 					'price' => round( $order->get_total() * 100 ),
-				],
-			];
+				),
+			);
 		} else {
 			foreach ( $items as $item ) {
 				/**
@@ -1291,10 +1323,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( empty( $params['purchase']['products'] ) ) {
 			$params['purchase']['products'] = array(
-				[
+				array(
 					'name'  => 'Product',
 					'price' => round( $order->get_total() * 100 ),
-				],
+				),
 			);
 		}
 
@@ -1489,6 +1521,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		);
 	}
 
+	/**
+	 * Get due timestamp for payment.
+	 *
+	 * @return int
+	 */
 	public function get_due_timestamp() {
 		$due_strict_timing = $this->due_str_t;
 		if ( empty( $this->due_str_t ) ) {
@@ -1497,6 +1534,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return time() + ( absint( $due_strict_timing ) * 60 );
 	}
 
+	/**
+	 * Check if order can be refunded.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
 	public function can_refund_order( $order ) {
 		$has_api_creds    = $this->enabled && $this->secret_key && $this->brand_id;
 		$can_refund_order = $order && $order->get_transaction_id() && $has_api_creds;
@@ -1505,6 +1548,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Process a refund.
+	 *
+	 * @param int    $order_id Order ID.
+	 * @param float  $amount   Refund amount.
+	 * @param string $reason   Refund reason.
 	 * @return bool|WP_Error
 	 */
 	public function process_refund( $order_id, $amount = null, $reason = '' ) {
@@ -1516,7 +1564,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		$chip   = $this->api();
-		$params = [ 'amount' => round( $amount * 100 ) ];
+		$params = array( 'amount' => round( $amount * 100 ) );
 
 		$result = $chip->refund_payment( $order->get_transaction_id(), $params );
 
@@ -1538,6 +1586,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return true;
 	}
 
+	/**
+	 * Get the public key from CHIP API.
+	 *
+	 * @return string
+	 */
 	public function get_public_key() {
 		if ( empty( $this->public_key ) ) {
 			$this->public_key = str_replace( '\n', "\n", $this->api()->public_key() );
@@ -1547,6 +1600,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $this->public_key;
 	}
 
+	/**
+	 * Process admin options and validate settings.
+	 *
+	 * @return bool
+	 */
 	public function process_admin_options() {
 		parent::process_admin_options();
 		$post = $this->get_post_data();
@@ -1601,6 +1659,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return true;
 	}
 
+	/**
+	 * Auto charge for subscription renewals.
+	 *
+	 * @param float    $total_amount  Total amount to charge.
+	 * @param WC_Order $renewal_order Renewal order object.
+	 * @return void
+	 */
 	public function auto_charge( $total_amount, $renewal_order ) {
 
 		if ( 'yes' === $this->add_charges ) {
@@ -1614,12 +1679,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return;
 		}
 
-		$callback_url = add_query_arg( [ 'id' => $renewal_order_id ], WC()->api_request_url( $this->id ) );
+		$callback_url = add_query_arg( array( 'id' => $renewal_order_id ), WC()->api_request_url( $this->id ) );
 		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $renewal_order_id );
 		}
 
-		$params = [
+		$params = array(
 			'success_callback' => $callback_url,
 			'send_receipt'     => false,
 			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
@@ -1628,15 +1693,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'due'              => $this->get_due_timestamp(),
 			'brand_id'         => $this->brand_id,
 			'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
-			'purchase'         => [
+			'purchase'         => array(
 				'timezone'       => $this->purchase_tz,
 				'currency'       => $renewal_order->get_currency(),
 				'language'       => $this->get_language(),
 				'due_strict'     => 'yes' === $this->due_strict,
 				'total_override' => round( $total_amount * 100 ),
-				'products'       => [],
-			],
-		];
+				'products'       => array(),
+			),
+		);
 
 		$items = $renewal_order->get_items();
 
@@ -1698,14 +1763,33 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->release_lock( $renewal_order_id );
 	}
 
+	/**
+	 * Get database lock for order processing.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return void
+	 */
 	public function get_lock( $order_id ) {
 		$GLOBALS['wpdb']->get_results( "SELECT GET_LOCK('chip_payment_$order_id', 15);" );
 	}
 
+	/**
+	 * Release database lock for order processing.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return void
+	 */
 	public function release_lock( $order_id ) {
 		$GLOBALS['wpdb']->get_results( "SELECT RELEASE_LOCK('chip_payment_$order_id');" );
 	}
 
+	/**
+	 * Store recurring token for user.
+	 *
+	 * @param array $payment Payment data from CHIP.
+	 * @param int   $user_id User ID.
+	 * @return WC_Payment_Token_CC|false
+	 */
 	public function store_recurring_token( $payment, $user_id ) {
 		if ( ! get_user_by( 'id', $user_id ) ) {
 			return false;
@@ -1756,6 +1840,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return false;
 	}
 
+	/**
+	 * Add a new payment method for the customer.
+	 *
+	 * @return array
+	 */
 	public function add_payment_method() {
 		$customer = new WC_Customer( get_current_user_id() );
 
@@ -1776,19 +1865,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'reference'                => get_current_user_id(),
 			'brand_id'                 => $this->brand_id,
 			'skip_capture'             => true,
-			'client'                   => [
+			'client'                   => array(
 				'email'     => wp_get_current_user()->user_email,
 				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() ),
-			],
-			'purchase'                 => [
+			),
+			'purchase'                 => array(
 				'currency' => 'MYR',
-				'products' => [
-					[
+				'products' => array(
+					array(
 						'name'  => 'Add payment method',
 						'price' => 0,
-					],
-				],
-			],
+					),
+				),
+			),
 		);
 
 		$chip = $this->api();
@@ -1832,6 +1921,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		);
 	}
 
+	/**
+	 * Add payment token to order.
+	 *
+	 * @param int                  $order_id Order ID.
+	 * @param WC_Payment_Token_CC $token    Payment token.
+	 * @return void
+	 */
 	public function add_payment_token( $order_id, $token ) {
 		$data_store = WC_Data_Store::load( 'order' );
 
@@ -1854,6 +1950,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Change failing payment method for subscription.
+	 *
+	 * @param WC_Subscription $subscription  Subscription object.
+	 * @param WC_Order        $renewal_order Renewal order object.
+	 * @return void
+	 */
 	public function change_failing_payment_method( $subscription, $renewal_order ) {
 		$token_ids = $renewal_order->get_payment_tokens();
 
@@ -1872,6 +1975,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$subscription->add_payment_token( $token );
 	}
 
+	/**
+	 * Complete payment and store token if applicable.
+	 *
+	 * @param WC_Order $order   Order object.
+	 * @param array    $payment Payment data from CHIP.
+	 * @return void
+	 */
 	public function payment_complete( $order, $payment ) {
 		if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 			if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
@@ -1890,10 +2000,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Schedule a requery for order status.
+	 *
+	 * @param string $purchase_id Purchase ID.
+	 * @param int    $order_id    Order ID.
+	 * @param int    $attempt     Attempt number.
+	 * @return void
+	 */
 	public function schedule_requery( $purchase_id, $order_id, $attempt = 1 ) {
 		WC()->queue()->schedule_single( time() + $attempt * HOUR_IN_SECONDS, 'wc_chip_check_order_status', array( $purchase_id, $order_id, $attempt, $this->id ), "{$this->id}_single_requery" );
 	}
 
+	/**
+	 * Handle payment token deletion.
+	 *
+	 * @param int              $token_id Token ID.
+	 * @param WC_Payment_Token $token    Payment token object.
+	 * @return void
+	 */
 	public function payment_token_deleted( $token_id, $token ) {
 		$user_id    = $token->get_user_id();
 		$token_id   = $token->get_id();
@@ -1916,10 +2041,24 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		WC()->queue()->schedule_single( time(), 'wc_chip_delete_payment_token', array( $token->get_token(), $this->id ), "{$this->id}_delete_token" );
 	}
 
+	/**
+	 * Delete payment token from CHIP.
+	 *
+	 * @param string $purchase_id Purchase ID.
+	 * @return void
+	 */
 	public function delete_payment_token( $purchase_id ) {
 		$this->api()->delete_token( $purchase_id );
 	}
 
+	/**
+	 * Check order status from CHIP.
+	 *
+	 * @param string $purchase_id Purchase ID.
+	 * @param int    $order_id    Order ID.
+	 * @param int    $attempt     Attempt number.
+	 * @return void
+	 */
 	public function check_order_status( $purchase_id, $order_id, $attempt ) {
 		$this->get_lock( $order_id );
 
@@ -1964,6 +2103,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Display admin notices for errors.
+	 *
+	 * @return void
+	 */
 	public function admin_notices() {
 		foreach ( $this->errors as $error ) {
 			?>
@@ -1974,6 +2118,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Get list of FPX banks.
+	 *
+	 * @return array
+	 */
 	public function list_fpx_banks() {
 		$default_fpx = array(
 			''         => __( 'Choose your bank', 'chip-for-woocommerce' ),
@@ -2008,6 +2157,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', $default_fpx );
 	}
 
+	/**
+	 * Get FPX banks data from transient or API.
+	 *
+	 * @param string $transient_key Transient key.
+	 * @return array
+	 */
 	protected function get_fpx_banks_data( $transient_key ) {
 		$expiration = 60 * 3; // 3 minutes
 
@@ -2030,6 +2185,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $data;
 	}
 
+	/**
+	 * Check if FPX data is expired.
+	 *
+	 * @param array $data FPX data.
+	 * @return bool
+	 */
 	protected function is_fpx_data_expired( $data ) {
 		if ( ! is_array( $data ) || ! isset( $data['timestamp'] ) ) {
 			return true;
@@ -2039,6 +2200,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return ( current_time( 'timestamp' ) - $data['timestamp'] ) > $expiration;
 	}
 
+	/**
+	 * Get list of FPX B2B1 banks.
+	 *
+	 * @return array
+	 */
 	public function list_fpx_b2b1_banks() {
 		$default_fpx = array(
 			''         => __( 'Choose your bank', 'chip-for-woocommerce' ),
@@ -2074,6 +2240,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', $default_fpx );
 	}
 
+	/**
+	 * Filter out non-available FPX banks.
+	 *
+	 * @param array $default_fpx Default FPX banks array.
+	 * @param array $fpx         FPX banks data from API.
+	 * @return void
+	 */
 	public function filter_non_available_fpx( &$default_fpx, $fpx ) {
 		if ( is_array( $fpx ) ) {
 			foreach ( $default_fpx as $key => $value ) {
@@ -2123,6 +2296,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', $ewallet_list );
 	}
 
+	/**
+	 * Bypass CHIP payment page if configured.
+	 *
+	 * @param string $url     Checkout URL.
+	 * @param array  $payment Payment data from CHIP.
+	 * @return string
+	 */
 	public function bypass_chip( $url, $payment ) {
 		if ( 'yes' === $this->bypass_chip && ! $payment['is_test'] ) {
 			if ( isset( $_POST['chip_fpx_bank'] ) && ! empty( $_POST['chip_fpx_bank'] ) ) {
@@ -2161,6 +2341,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $url;
 	}
 
+	/**
+	 * Process payment method change for subscriptions.
+	 *
+	 * @param int $order_id Order ID.
+	 * @return array
+	 */
 	public function process_payment_method_change( $order_id ) {
 		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			return array(
@@ -2172,10 +2358,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$customer = new WC_Customer( get_current_user_id() );
 
 		$url = add_query_arg(
-			[
+			array(
 				'id'                            => $order_id,
 				'process_payment_method_change' => 'yes',
-			],
+			),
 			WC()->api_request_url( $this->id )
 		);
 		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
@@ -2192,19 +2378,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'reference'                => $order_id,
 			'brand_id'                 => $this->brand_id,
 			'skip_capture'             => true,
-			'client'                   => [
+			'client'                   => array(
 				'email'     => wp_get_current_user()->user_email,
 				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() ),
-			],
-			'purchase'                 => [
+			),
+			'purchase'                 => array(
 				'currency' => 'MYR',
-				'products' => [
-					[
+				'products' => array(
+					array(
 						'name'  => 'Add payment method',
 						'price' => 0,
-					],
-				],
-			],
+					),
+				),
+			),
 		);
 
 		$chip = $this->api();
@@ -2259,6 +2445,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		);
 	}
 
+	/**
+	 * Maybe don't update payment method for subscription.
+	 *
+	 * @param bool            $update             Whether to update.
+	 * @param string          $new_payment_method New payment method.
+	 * @param WC_Subscription $subscription       Subscription object.
+	 * @return bool
+	 */
 	public function maybe_dont_update_payment_method( $update, $new_payment_method, $subscription ) {
 		if ( $this->id !== $new_payment_method ) {
 			return $update;
@@ -2285,7 +2479,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $update;
 	}
 
+	/**
+	 * Handle payment method change callback.
+	 *
+	 * @return void
+	 */
 	public function handle_payment_method_change() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$subscription_id = intval( $_GET['id'] );
 		$payment_id      = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
 
@@ -2358,6 +2558,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		exit;
 	}
 
+	/**
+	 * Handle change payment method from shortcode.
+	 *
+	 * @param WC_Subscription $subscription Subscription object.
+	 * @return void
+	 */
 	public function handle_change_payment_method_shortcode( $subscription ) {
 		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			$token_id = wc_clean( $_POST[ "wc-{$this->id}-payment-token" ] );
@@ -2389,6 +2595,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Maybe hide add new payment method option.
+	 *
+	 * @param string             $html    HTML content.
+	 * @param WC_Payment_Gateway $gateway Payment gateway.
+	 * @return string
+	 */
 	public function maybe_hide_add_new_payment_method( $html, $gateway ) {
 		if ( count( $gateway->get_tokens() ) === 0 ) {
 			return '';
@@ -2397,14 +2610,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $html;
 	}
 
+	/**
+	 * Filter customer full name to valid characters.
+	 *
+	 * @param string $name Customer name.
+	 * @return string
+	 */
 	public function filter_customer_full_name( $name ) {
-		$name = str_replace( '’', '\'', $name );
+		$name = str_replace( ''', '\'', $name );
 
 		$name = preg_replace( '/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']\ /', '', $name );
 
 		return substr( $name, 0, 128 );
 	}
 
+	/**
+	 * Register frontend scripts.
+	 *
+	 * @return void
+	 */
 	public function register_script() {
 		wp_register_script(
 			"wc-{$this->id}-direct-post",
@@ -2414,9 +2638,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			true
 		);
 
-		wp_localize_script( "wc-{$this->id}-direct-post", 'gateway_option', [ 'id' => $this->id ] );
+		wp_localize_script( "wc-{$this->id}-direct-post", 'gateway_option', array( 'id' => $this->id ) );
 	}
 
+	/**
+	 * Output the payment form fields.
+	 *
+	 * @return void
+	 */
 	public function form() {
 		wp_enqueue_script( 'wc-credit-card-form' );
 
@@ -2496,8 +2725,13 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Get list of available payment methods.
+	 *
+	 * @return array
+	 */
 	public function get_payment_method_list() {
-		return [
+		return array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
 			'mastercard'      => 'Mastercard',
@@ -2511,9 +2745,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'razer_shopeepay' => 'Razer Shopeepay',
 			'razer_tng'       => 'Razer Tng',
 			'duitnow_qr'      => 'Duitnow QR',
-		];
+		);
 	}
 
+	/**
+	 * Add processing fee items to order.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return void
+	 */
 	public function add_item_order_fee( &$order ) {
 		foreach ( $order->get_items( 'fee' ) as $item_id => $item_value ) {
 			if ( in_array( $item_value->get_name( 'chip_view' ), array( 'Fixed Processing Fee', 'Variable Processing Fee' ), true ) ) {
@@ -2578,21 +2818,39 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $this->payment_met;
 	}
 
+	/**
+	 * Get bypass chip setting.
+	 *
+	 * @return string
+	 */
 	public function get_bypass_chip() {
 		return $this->bypass_chip;
 	}
 
+	/**
+	 * Get payment method for recurring payments.
+	 *
+	 * @return array|null
+	 */
 	public function get_payment_method_for_recurring() {
 
-		if ( is_countable( $pmw = $this->get_payment_method_whitelist() ) && count( $pmw ) >= 1 ) {
+		$pmw = $this->get_payment_method_whitelist();
+		if ( is_countable( $pmw ) && count( $pmw ) >= 1 ) {
 			return $pmw;
 		} elseif ( $this->supports( 'tokenization' ) ) {
-			return [ 'visa', 'mastercard' ]; // return the most generic card payment method
+			return array( 'visa', 'mastercard' ); // Return the most generic card payment method.
 		}
 
 		return null;
 	}
 
+	/**
+	 * Maybe delete payment token if invalid.
+	 *
+	 * @param array $charge_payment Charge payment response.
+	 * @param int   $token_id       Token ID.
+	 * @return void
+	 */
 	public function maybe_delete_payment_token( $charge_payment, $token_id ) {
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			if ( is_array( $charge_payment['__all__'] ) ) {
@@ -2605,6 +2863,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Check if order contains pre-order.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
 	public function order_contains_pre_order( $order ) {
 		if ( class_exists( 'WC_Pre_Orders_Order' ) ) {
 			if ( WC_Pre_Orders_Order::order_contains_pre_order( $order ) ) {
@@ -2615,6 +2879,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return false;
 	}
 
+	/**
+	 * Check if order requires payment tokenization.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
 	public function order_requires_payment_tokenization( $order ) {
 		if ( class_exists( 'WC_Pre_Orders_Order' ) ) {
 			if ( WC_Pre_Orders_Order::order_requires_payment_tokenization( $order ) ) {
@@ -2625,6 +2895,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return false;
 	}
 
+	/**
+	 * Process pre-order payments.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return void
+	 */
 	public function process_pre_order_payments( $order ) {
 		if ( empty( $tokens = WC_Payment_Tokens::get_order_tokens( $order->get_id() ) ) ) {
 			$order->update_status( 'failed' );
@@ -2632,7 +2908,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return;
 		}
 
-		$callback_url = add_query_arg( [ 'id' => $order->get_id() ], WC()->api_request_url( $this->id ) );
+		$callback_url = add_query_arg( array( 'id' => $order->get_id() ), WC()->api_request_url( $this->id ) );
 		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order->get_id() );
 		}
@@ -2645,7 +2921,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		// TODO: Check if still require to minus total_pre_order_fee;
 		$total = absint( $order->get_total() ) - absint( $total_pre_order_fee );
 
-		$params = [
+		$params = array(
 			'success_callback' => $callback_url,
 			'send_receipt'     => false,
 			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
@@ -2654,15 +2930,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'due'              => $this->get_due_timestamp(),
 			'brand_id'         => $this->brand_id,
 			'client_id'        => get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
-			'purchase'         => [
+			'purchase'         => array(
 				'timezone'       => $this->purchase_tz,
 				'currency'       => $order->get_currency(),
 				'language'       => $this->get_language(),
 				'due_strict'     => 'yes' === $this->due_strict,
 				'total_override' => round( $total * 100 ),
-				'products'       => [],
-			],
-		];
+				'products'       => array(),
+			),
+		);
 
 		$items = $order->get_items();
 
@@ -2752,6 +3028,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		);
 	}
 
+	/**
+	 * Output metabox HTML content.
+	 *
+	 * @return void
+	 */
 	public function metabox_html() {
 		$this->load_metabox_info();
 		?>
@@ -2785,9 +3066,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		<?php
 	}
 
+	/**
+	 * Load metabox information from API.
+	 *
+	 * @return void
+	 */
 	public function load_metabox_info() {
-
-		if ( false === ( $turnover = get_transient( 'chip_' . $this->id . '_turnover' ) ) ) {
+		$turnover = get_transient( 'chip_' . $this->id . '_turnover' );
+		if ( false === $turnover ) {
 			$turnover = $this->api()->turnover();
 			set_transient( 'chip_' . $this->id . '_turnover', $turnover, HOUR_IN_SECONDS );
 		}
@@ -2796,7 +3082,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return;
 		}
 
-		if ( false === ( $balance = get_transient( 'chip_' . $this->id . '_balance' ) ) ) {
+		$balance = get_transient( 'chip_' . $this->id . '_balance' );
+		if ( false === $balance ) {
 			$balance = $this->api()->balance();
 			set_transient( 'chip_' . $this->id . '_balance', $balance, HOUR_IN_SECONDS );
 		}

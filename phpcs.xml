@@ -13,8 +13,6 @@
 
 	<!-- Use WordPress coding standards -->
 	<rule ref="WordPress">
-		<!-- Allow short array syntax -->
-		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
 	</rule>
 
 	<!-- Allow file names that don't match class names for main plugin file -->
