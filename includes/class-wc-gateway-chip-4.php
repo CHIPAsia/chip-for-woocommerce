@@ -37,4 +37,3 @@ class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
 		$this->form_fields['description']['default']              = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
 	}
 }
-

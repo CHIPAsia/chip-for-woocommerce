@@ -37,4 +37,3 @@ class WC_Gateway_Chip_2 extends WC_Gateway_Chip {
 		$this->form_fields['description']['default']              = __( 'Pay with Corporate Online Banking (FPX)', 'chip-for-woocommerce' );
 	}
 }
-

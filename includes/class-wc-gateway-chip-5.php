@@ -79,4 +79,3 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 		unset( $this->form_fields['webhook_public_key'] );
 	}
 }
-

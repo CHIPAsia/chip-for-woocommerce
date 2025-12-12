@@ -37,4 +37,3 @@ class WC_Gateway_Chip_3 extends WC_Gateway_Chip {
 		$this->form_fields['description']['default']              = __( 'Pay with Visa / Mastercard', 'chip-for-woocommerce' );
 	}
 }
-

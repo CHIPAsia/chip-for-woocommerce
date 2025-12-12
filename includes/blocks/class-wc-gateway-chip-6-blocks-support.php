@@ -19,4 +19,3 @@ class WC_Gateway_Chip_6_Blocks_Support extends WC_Gateway_Chip_Blocks_Support {
 	 */
 	protected $name = 'wc_gateway_chip_6';
 }
-

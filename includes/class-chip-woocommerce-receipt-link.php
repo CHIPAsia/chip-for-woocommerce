@@ -120,4 +120,3 @@ class Chip_Woocommerce_Receipt_Link {
 }
 
 Chip_Woocommerce_Receipt_Link::get_instance();
-

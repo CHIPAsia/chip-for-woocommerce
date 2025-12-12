@@ -409,4 +409,3 @@ class Chip_Woocommerce_API {
 		$this->logger->log( $error_text );
 	}
 }
-

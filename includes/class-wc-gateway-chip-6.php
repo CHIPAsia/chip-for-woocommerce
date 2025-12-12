@@ -37,4 +37,3 @@ class WC_Gateway_Chip_6 extends WC_Gateway_Chip {
 		$this->form_fields['description']['default']              = __( 'Pay with Duitnow QR', 'chip-for-woocommerce' );
 	}
 }
-

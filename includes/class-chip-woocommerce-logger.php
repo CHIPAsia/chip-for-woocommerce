@@ -95,4 +95,3 @@ class Chip_Woocommerce_Logger {
 		}
 	}
 }
-

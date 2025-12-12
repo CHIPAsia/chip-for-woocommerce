@@ -187,4 +187,3 @@ class Chip_Woocommerce_API_FPX {
 		$this->logger->log( $error_text );
 	}
 }
-

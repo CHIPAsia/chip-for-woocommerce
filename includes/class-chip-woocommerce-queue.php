@@ -87,4 +87,3 @@ class Chip_Woocommerce_Queue {
 }
 
 Chip_Woocommerce_Queue::get_instance();
-

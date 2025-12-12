@@ -161,4 +161,3 @@ class Chip_Woocommerce_Migration {
 }
 
 Chip_Woocommerce_Migration::get_instance();
-

@@ -107,4 +107,3 @@ add_action(
 		new Chip_Woocommerce_Site_Health();
 	}
 );
-

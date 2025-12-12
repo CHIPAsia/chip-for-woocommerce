@@ -172,4 +172,3 @@ class Chip_Woocommerce_Bulk_Action {
 }
 
 Chip_Woocommerce_Bulk_Action::get_instance();
-
