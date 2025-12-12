@@ -2979,8 +2979,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
 
-		/* translators: %1$s: CHIP Purchase ID */
 		$order->add_order_note(
+			/* translators: %1$s: CHIP Purchase ID */
 			sprintf( __( 'Payment attempt with CHIP. Purchase ID: %1$s', 'chip-for-woocommerce' ), $payment['id'] )
 		);
 
