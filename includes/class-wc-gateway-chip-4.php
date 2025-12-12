@@ -1,0 +1,40 @@
+<?php
+/**
+ * CHIP for WooCommerce Gateway - E-Wallet
+ *
+ * WooCommerce payment gateway class for E-Wallet payments.
+ *
+ * @package CHIP for WooCommerce
+ */
+
+/**
+ * WC_Gateway_Chip_4 class for E-Wallet payments.
+ */
+class WC_Gateway_Chip_4 extends WC_Gateway_Chip {
+
+	/**
+	 * Preferred payment type.
+	 */
+	const PREFERRED_TYPE = 'E-Wallet';
+
+	/**
+	 * Initialize the gateway title.
+	 *
+	 * @return void
+	 */
+	protected function init_title() {
+		$this->title = __( 'Grabpay, TnG, Shopeepay, MB2QR', 'chip-for-woocommerce' );
+	}
+
+	/**
+	 * Initialize form fields.
+	 *
+	 * @return void
+	 */
+	public function init_form_fields() {
+		parent::init_form_fields();
+		$this->form_fields['payment_method_whitelist']['default'] = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
+		$this->form_fields['description']['default']              = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
+	}
+}
+

@@ -1,27 +1,50 @@
 <?php
+/**
+ * CHIP for WooCommerce Site Health
+ *
+ * Adds CHIP API health check to WordPress Site Health.
+ *
+ * @package CHIP for WooCommerce
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class CHIP_Woocommerce_Site_Health {
+/**
+ * CHIP Site Health class.
+ */
+class Chip_Woocommerce_Site_Health {
 
-
+	/**
+	 * Constructor.
+	 */
 	public function __construct() {
-		add_filter( 'site_status_tests', array( $this, 'CHIP_plugin_register_site_health_tests' ) );
+		add_filter( 'site_status_tests', array( $this, 'chip_plugin_register_site_health_tests' ) );
 	}
 
-	public function CHIP_plugin_register_site_health_tests( $tests ) {
+	/**
+	 * Register CHIP site health tests.
+	 *
+	 * @param array $tests Site health tests.
+	 * @return array
+	 */
+	public function chip_plugin_register_site_health_tests( $tests ) {
 		$tests['direct']['CHIP_plugin_api_status'] = array(
-			'test'  => array( $this, 'CHIP_plugin_check_api_health' ),
+			'test'  => array( $this, 'chip_plugin_check_api_health' ),
 			'label' => 'CHIP Plugin Connection Status',
 		);
 		return $tests;
 	}
 
-	public function CHIP_plugin_check_api_health() {
-		$purchase_API = WC_CHIP_ROOT_URL . '/v1/purchases/';
-		$response     = wp_remote_get( $purchase_API );
+	/**
+	 * Check CHIP API health.
+	 *
+	 * @return array
+	 */
+	public function chip_plugin_check_api_health() {
+		$purchase_api = WC_CHIP_ROOT_URL . '/v1/purchases/';
+		$response     = wp_remote_get( $purchase_api );
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
@@ -33,6 +56,11 @@ class CHIP_Woocommerce_Site_Health {
 		}
 	}
 
+	/**
+	 * Return success response.
+	 *
+	 * @return array
+	 */
 	public function response_success() {
 		return array(
 			'label'       => 'CHIP API is working',
@@ -50,6 +78,11 @@ class CHIP_Woocommerce_Site_Health {
 		);
 	}
 
+	/**
+	 * Return fail response.
+	 *
+	 * @return array
+	 */
 	public function response_fail() {
 		return array(
 			'label'       => 'API Issue Detected',
@@ -71,6 +104,7 @@ class CHIP_Woocommerce_Site_Health {
 add_action(
 	'init',
 	function () {
-		new CHIP_Woocommerce_Site_Health();
+		new Chip_Woocommerce_Site_Health();
 	}
 );
+
