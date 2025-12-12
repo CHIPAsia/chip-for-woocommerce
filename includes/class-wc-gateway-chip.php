@@ -2138,7 +2138,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		foreach ( $this->errors as $error ) {
 			?>
 			<div class="notice notice-error">
-				<p><?php echo esc_html_e( $error ); ?></p>
+				<p><?php echo esc_html( $error ); ?></p>
 			</div>
 			<?php
 		}
@@ -2196,7 +2196,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( false === $data || $this->is_fpx_data_expired( $data ) ) {
 			$data = array(
-				'timestamp' => current_time( 'timestamp' ),
+				'timestamp' => time(),
 			);
 
 			if ( 'chip_fpx_b2c_banks' === $transient_key ) {
@@ -2222,8 +2222,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return true;
 		}
 
-		$expiration = 60 * 3; // 3 minutes
-		return ( current_time( 'timestamp' ) - $data['timestamp'] ) > $expiration;
+		$expiration = 60 * 3; // 3 minutes.
+		return ( time() - $data['timestamp'] ) > $expiration;
 	}
 
 	/**
@@ -2330,14 +2330,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function bypass_chip( $url, $payment ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
 		if ( 'yes' === $this->bypass_chip && ! $payment['is_test'] ) {
 			if ( isset( $_POST['chip_fpx_bank'] ) && ! empty( $_POST['chip_fpx_bank'] ) ) {
-				$url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_bank'] );
+				$url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_bank'] ) );
 			} elseif ( isset( $_POST['chip_fpx_b2b1_bank'] ) && ! empty( $_POST['chip_fpx_b2b1_bank'] ) ) {
-				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
+				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) );
 			} elseif ( isset( $_POST['chip_razer_ewallet'] ) && ! empty( $_POST['chip_razer_ewallet'] ) ) {
-				switch ( $_POST['chip_razer_ewallet'] ) {
+				$razer_ewallet = sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
+				switch ( $razer_ewallet ) {
 					case 'Atome':
 						$preferred = 'razer_atome';
 						break;
@@ -2358,13 +2359,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 						break;
 				}
 
-				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
+				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
 			} elseif ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'duitnow_qr' === $this->payment_met[0] ) {
 				$url .= '?preferred=duitnow_qr';
 			}
 		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
 			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $url;
 	}
 
@@ -2515,6 +2517,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function handle_payment_method_change() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		if ( ! isset( $_GET['id'] ) ) {
 			exit( 'Missing subscription ID' );
 		}
