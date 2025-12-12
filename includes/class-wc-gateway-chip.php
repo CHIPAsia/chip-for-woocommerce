@@ -2330,6 +2330,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function bypass_chip( $url, $payment ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
 		if ( 'yes' === $this->bypass_chip && ! $payment['is_test'] ) {
 			if ( isset( $_POST['chip_fpx_bank'] ) && ! empty( $_POST['chip_fpx_bank'] ) ) {
 				$url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_bank'] );
@@ -2357,7 +2358,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 						break;
 				}
 
-				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
+				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
 			} elseif ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'duitnow_qr' === $this->payment_met[0] ) {
 				$url .= '?preferred=duitnow_qr';
 			}
@@ -2375,6 +2376,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @throws Exception If failed to get client.
 	 */
 	public function process_payment_method_change( $order_id ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce.
 		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			return array(
 				'result'   => 'success',
@@ -2493,21 +2495,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$payment_token_key   = "wc-{$this->id}-payment-token";
 		$payment_token_value = isset( $_POST[ $payment_token_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $payment_token_key ] ) ) : '';
 
-		if ( ! empty( $payment_token_value ) && 'new' !== $payment_token_value ) {
-			/**
-			 * This means the customer choose to use existing card token where it should:
-			 *   - Immediately call update_payment method
-			 *   - Do not flag with _delayed_update_payment_method_all if any
-			 *   - Immediately call to update_payment method for all subscriptions
-			 */
-
-		} else {
-			/**
-			 * This means the customer choose to create new card token where it should:
-			 *   - Do not immediately call ::update_payment_method
-			 *   - Do flag _delayed_update_payment_method_all if any
-			 */
-
+		/**
+		 * If customer chooses to create new card token:
+		 *   - Do not immediately call ::update_payment_method
+		 *   - Do flag _delayed_update_payment_method_all if any
+		 *
+		 * If customer chooses existing card token, the default $update value is used.
+		 */
+		if ( empty( $payment_token_value ) || 'new' === $payment_token_value ) {
 			$update = false;
 		}
 
@@ -2520,10 +2515,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function handle_payment_method_change() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		if ( ! isset( $_GET['id'] ) ) {
 			exit( 'Missing subscription ID' );
 		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		$subscription_id = intval( $_GET['id'] );
 		$payment_id      = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
 
