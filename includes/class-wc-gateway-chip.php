@@ -1,50 +1,285 @@
 <?php
+/**
+ * CHIP for WooCommerce Gateway
+ *
+ * Main payment gateway class for CHIP.
+ *
+ * @package CHIP for WooCommerce
+ */
 
+/**
+ * WooCommerce Payment Gateway for CHIP.
+ */
 class WC_Gateway_Chip extends WC_Payment_Gateway {
-	public $id; // wc_gateway_chip
+
+
+	/**
+	 * Gateway ID (wc_gateway_chip).
+	 *
+	 * @var string
+	 */
+	public $id;
+
+	/**
+	 * Secret key for API authentication.
+	 *
+	 * @var string
+	 */
 	protected $secret_key;
+
+	/**
+	 * Brand ID for CHIP.
+	 *
+	 * @var string
+	 */
 	protected $brand_id;
+
+	/**
+	 * Due strict setting.
+	 *
+	 * @var string
+	 */
 	protected $due_strict;
+
+	/**
+	 * Due strict timing.
+	 *
+	 * @var int
+	 */
 	protected $due_str_t;
 
+	/**
+	 * Purchase timezone.
+	 *
+	 * @var string
+	 */
 	protected $purchase_tz;
+
+	/**
+	 * Update client information setting.
+	 *
+	 * @var string
+	 */
 	protected $update_clie;
+
+	/**
+	 * System URL scheme.
+	 *
+	 * @var string
+	 */
 	protected $system_url_;
+
+	/**
+	 * Force tokenization setting.
+	 *
+	 * @var string
+	 */
 	protected $force_token;
+
+	/**
+	 * Disable recurring support setting.
+	 *
+	 * @var string
+	 */
 	protected $disable_rec;
+
+	/**
+	 * Disable clients API setting.
+	 *
+	 * @var string
+	 */
 	protected $disable_cli;
+
+	/**
+	 * Payment method whitelist.
+	 *
+	 * @var array
+	 */
 	protected $payment_met;
+
+	/**
+	 * Disable redirect setting.
+	 *
+	 * @var string
+	 */
 	protected $disable_red;
+
+	/**
+	 * Disable callback setting.
+	 *
+	 * @var string
+	 */
 	protected $disable_cal;
+
+	/**
+	 * Enable auto clear cart setting.
+	 *
+	 * @var string
+	 */
 	protected $enable_auto;
+
+	/**
+	 * Public key for verification.
+	 *
+	 * @var string
+	 */
 	protected $public_key;
+
+	/**
+	 * Available recurring payment method.
+	 *
+	 * @var string
+	 */
 	protected $arecuring_p;
+
+	/**
+	 * Payment method list.
+	 *
+	 * @var array
+	 */
 	protected $a_payment_m;
+
+	/**
+	 * Webhook public key.
+	 *
+	 * @var string
+	 */
 	protected $webhook_pub;
+
+	/**
+	 * Bypass CHIP payment page setting.
+	 *
+	 * @var string
+	 */
 	protected $bypass_chip;
+
+	/**
+	 * Debug mode setting.
+	 *
+	 * @var string
+	 */
 	protected $debug;
+
+	/**
+	 * Enable additional charges setting.
+	 *
+	 * @var string
+	 */
 	protected $add_charges;
+
+	/**
+	 * Fixed charges amount.
+	 *
+	 * @var int
+	 */
 	protected $fix_charges;
+
+	/**
+	 * Percent charges amount.
+	 *
+	 * @var float
+	 */
 	protected $per_charges;
+
+	/**
+	 * Cancel order flow setting.
+	 *
+	 * @var string
+	 */
 	protected $cancel_order_flow;
+
+	/**
+	 * Email fallback setting.
+	 *
+	 * @var string
+	 */
 	protected $email_fallback;
+
+	/**
+	 * Enable metabox setting.
+	 *
+	 * @var string
+	 */
 	protected $enable_metabox;
 
+	/**
+	 * Cached API instance.
+	 *
+	 * @var Chip_Woocommerce_API
+	 */
 	protected $cached_api;
+
+	/**
+	 * Cached FPX API instance.
+	 *
+	 * @var Chip_Woocommerce_API_FPX
+	 */
 	protected $cached_fpx_api;
+
+	/**
+	 * Cached payment method.
+	 *
+	 * @var array
+	 */
 	protected $cached_payment_method;
 
-	// metabox property
+	/**
+	 * Metabox incoming count.
+	 *
+	 * @var int
+	 */
 	protected $chip_incoming_count = 0;
+
+	/**
+	 * Metabox incoming fee.
+	 *
+	 * @var int
+	 */
 	protected $chip_incoming_fee = 0;
+
+	/**
+	 * Metabox incoming turnover.
+	 *
+	 * @var int
+	 */
 	protected $chip_incoming_turnover = 0;
+
+	/**
+	 * Metabox outgoing count.
+	 *
+	 * @var int
+	 */
 	protected $chip_outgoing_count = 0;
+
+	/**
+	 * Metabox outgoing fee.
+	 *
+	 * @var int
+	 */
 	protected $chip_outgoing_fee = 0;
+
+	/**
+	 * Metabox outgoing turnover.
+	 *
+	 * @var int
+	 */
 	protected $chip_outgoing_turnover = 0;
+
+	/**
+	 * Metabox company balance.
+	 *
+	 * @var int
+	 */
 	protected $chip_company_balance = 0;
-	// end of metabox property
+
+	/**
+	 * Preferred payment type.
+	 */
 	const PREFERRED_TYPE = 'Online Banking';
 
+	/**
+	 * Constructor.
+	 */
 	public function __construct() {
 		$this->init_id();
 		$this->init_icon();
@@ -56,33 +291,33 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->init_has_fields();
 
 		$this->secret_key = $this->get_option( 'secret_key' );
-		$this->brand_id = $this->get_option( 'brand_id' );
+		$this->brand_id   = $this->get_option( 'brand_id' );
 		$this->due_strict = $this->get_option( 'due_strict', 'yes' );
-		$this->due_str_t = $this->get_option( 'due_strict_timing', 60 );
+		$this->due_str_t  = $this->get_option( 'due_strict_timing', 60 );
 
-		$this->purchase_tz = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
-		$this->update_clie = $this->get_option( 'update_client_information' );
-		$this->system_url_ = $this->get_option( 'system_url_scheme', 'https' );
-		$this->force_token = $this->get_option( 'force_tokenization' );
-		$this->disable_rec = $this->get_option( 'disable_recurring_support' );
-		$this->disable_cli = $this->get_option( 'disable_clients_api' );
-		$this->payment_met = $this->get_option( 'payment_method_whitelist' );
-		$this->disable_red = $this->get_option( 'disable_redirect' );
-		$this->disable_cal = $this->get_option( 'disable_callback' );
-		$this->enable_auto = $this->get_option( 'enable_auto_clear_cart' );
-		$this->debug = $this->get_option( 'debug' );
-		$this->public_key = $this->get_option( 'public_key' );
-		$this->arecuring_p = $this->get_option( 'available_recurring_payment_method' );
-		$this->a_payment_m = $this->get_payment_method_list();
-		$this->description = $this->get_option( 'description' );
-		$this->webhook_pub = $this->get_option( 'webhook_public_key' );
-		$this->bypass_chip = $this->get_option( 'bypass_chip' );
-		$this->add_charges = $this->get_option( 'enable_additional_charges' );
-		$this->fix_charges = $this->get_option( 'fixed_charges', 100 );
-		$this->per_charges = $this->get_option( 'percent_charges', 0 );
+		$this->purchase_tz       = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
+		$this->update_clie       = $this->get_option( 'update_client_information' );
+		$this->system_url_       = $this->get_option( 'system_url_scheme', 'https' );
+		$this->force_token       = $this->get_option( 'force_tokenization' );
+		$this->disable_rec       = $this->get_option( 'disable_recurring_support' );
+		$this->disable_cli       = $this->get_option( 'disable_clients_api' );
+		$this->payment_met       = $this->get_option( 'payment_method_whitelist' );
+		$this->disable_red       = $this->get_option( 'disable_redirect' );
+		$this->disable_cal       = $this->get_option( 'disable_callback' );
+		$this->enable_auto       = $this->get_option( 'enable_auto_clear_cart' );
+		$this->debug             = $this->get_option( 'debug' );
+		$this->public_key        = $this->get_option( 'public_key' );
+		$this->arecuring_p       = $this->get_option( 'available_recurring_payment_method' );
+		$this->a_payment_m       = $this->get_payment_method_list();
+		$this->description       = $this->get_option( 'description' );
+		$this->webhook_pub       = $this->get_option( 'webhook_public_key' );
+		$this->bypass_chip       = $this->get_option( 'bypass_chip' );
+		$this->add_charges       = $this->get_option( 'enable_additional_charges' );
+		$this->fix_charges       = $this->get_option( 'fixed_charges', 100 );
+		$this->per_charges       = $this->get_option( 'percent_charges', 0 );
 		$this->cancel_order_flow = $this->get_option( 'cancel_order_flow' );
-		$this->email_fallback = $this->get_option( 'email_fallback' );
-		$this->enable_metabox = $this->get_option( 'enable_metabox' );
+		$this->email_fallback    = $this->get_option( 'email_fallback' );
+		$this->enable_metabox    = $this->get_option( 'enable_metabox' );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -100,15 +335,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->add_filters();
 	}
 
+	/**
+	 * Initialize gateway ID.
+	 *
+	 * @return void
+	 */
 	protected function init_id() {
 		$this->id = strtolower( get_class( $this ) );
 	}
 
+	/**
+	 * Initialize gateway icon.
+	 *
+	 * @return void
+	 */
 	protected function init_icon() {
 		$logo = $this->get_option( 'display_logo', 'logo' );
 
 		$file_extension = 'png';
-		$file_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/' . $logo . '.png';
+		$file_path      = plugin_dir_path( WC_CHIP_FILE ) . 'assets/' . $logo . '.png';
 		if ( ! file_exists( $file_path ) ) {
 			$file_extension = 'svg';
 		}
@@ -116,18 +361,40 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', plugins_url( "assets/{$logo}.{$file_extension}", WC_CHIP_FILE ) );
 	}
 
+	/**
+	 * Initialize gateway title.
+	 *
+	 * @return void
+	 */
 	protected function init_title() {
 		$this->title = __( 'Online Banking (FPX)', 'chip-for-woocommerce' );
 	}
 
+	/**
+	 * Initialize method title.
+	 *
+	 * @return void
+	 */
 	protected function init_method_title() {
+		/* translators: %1$s: Payment type name */
 		$this->method_title = sprintf( __( 'CHIP %1$s', 'chip-for-woocommerce' ), static::PREFERRED_TYPE );
 	}
 
+	/**
+	 * Initialize method description.
+	 *
+	 * @return void
+	 */
 	protected function init_method_description() {
+		/* translators: %1$s: Gateway title */
 		$this->method_description = sprintf( __( 'CHIP %1$s', 'chip-for-woocommerce' ), $this->title );
 	}
 
+	/**
+	 * Initialize currency check.
+	 *
+	 * @return void
+	 */
 	protected function init_currency_check() {
 		$woocommerce_currency = get_woocommerce_currency();
 		$supported_currencies = apply_filters( 'wc_' . $this->id . '_supported_currencies', array( 'MYR' ), $this );
@@ -137,21 +404,36 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 	}
 
+	/**
+	 * Initialize gateway supports.
+	 *
+	 * @return void
+	 */
 	protected function init_supports() {
-		$supports = array( 'refunds', 'tokenization', 'subscriptions', 'subscription_cancellation', 'subscription_suspension', 'subscription_reactivation', 'subscription_amount_changes', 'subscription_date_changes', 'subscription_payment_method_change', 'subscription_payment_method_delayed_change', 'subscription_payment_method_change_customer', 'subscription_payment_method_change_admin', 'multiple_subscriptions', 'pre-orders' );
+		$supports       = array( 'refunds', 'tokenization', 'subscriptions', 'subscription_cancellation', 'subscription_suspension', 'subscription_reactivation', 'subscription_amount_changes', 'subscription_date_changes', 'subscription_payment_method_change', 'subscription_payment_method_delayed_change', 'subscription_payment_method_change_customer', 'subscription_payment_method_change_admin', 'multiple_subscriptions', 'pre-orders' );
 		$this->supports = array_merge( $this->supports, $supports );
 	}
 
+	/**
+	 * Initialize has fields.
+	 *
+	 * @return void
+	 */
 	protected function init_has_fields() {
 		$this->has_fields = true;
 	}
 
+	/**
+	 * Initialize one-time gateway settings.
+	 *
+	 * @return void
+	 */
 	protected function init_one_time_gateway() {
 		$one_time_gateway = false;
 
-		if ( is_array( $this->payment_met ) and ! empty( $this->payment_met ) ) {
-			foreach ( [ 'visa', 'mastercard', 'maestro' ] as $card_network ) {
-				if ( in_array( $card_network, $this->payment_met ) ) {
+		if ( is_array( $this->payment_met ) && ! empty( $this->payment_met ) ) {
+			foreach ( array( 'visa', 'mastercard', 'maestro' ) as $card_network ) {
+				if ( in_array( $card_network, $this->payment_met, true ) ) {
 					$one_time_gateway = false;
 					break;
 				}
@@ -159,11 +441,16 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( $one_time_gateway or $this->disable_rec == 'yes' ) {
-			$this->supports = [ 'products', 'refunds' ];
+		if ( $one_time_gateway || 'yes' === $this->disable_rec ) {
+			$this->supports = array( 'products', 'refunds' );
 		}
 	}
 
+	/**
+	 * Add action hooks.
+	 *
+	 * @return void
+	 */
 	public function add_actions() {
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'auto_charge' ), 10, 2 );
@@ -172,8 +459,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 		add_action( 'wc_pre_orders_process_pre_order_completion_payment_' . $this->id, array( $this, 'process_pre_order_payments' ) );
 
-		// TODO: Delete in future release
-		if ( $this->id == 'wc_gateway_chip' ) {
+		// TODO: Delete in future release.
+		if ( 'wc_gateway_chip' === $this->id ) {
 			add_action( 'woocommerce_api_wc_chip_gateway', array( $this, 'handle_callback' ) );
 		}
 
@@ -181,31 +468,46 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		add_action( 'init', array( $this, 'register_script' ) );
 
-		// Add metaboxes to dashboard
+		// Add metaboxes to dashboard.
 		add_action( 'current_screen', array( $this, 'register_metabox' ) );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'meta_box_scripts' ) );
 		add_action( 'wp_ajax_' . $this->id . '_metabox_refresh', array( $this, 'metabox_ajax_handler' ) );
 	}
 
+	/**
+	 * Add filter hooks.
+	 *
+	 * @return void
+	 */
 	public function add_filters() {
 		add_filter( 'woocommerce_subscriptions_update_payment_via_pay_shortcode', array( $this, 'maybe_dont_update_payment_method' ), 10, 3 );
 		add_filter( 'woocommerce_payment_gateway_get_new_payment_method_option_html', array( $this, 'maybe_hide_add_new_payment_method' ), 10, 2 );
 	}
 
+	/**
+	 * Get gateway icon HTML.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		$style = 'max-height: 25px; width: auto';
 
-		if ( in_array( $this->get_option( 'display_logo', 'logo' ), [ 'paywithchip_all', 'paywithchip_fpx' ] ) ) {
+		if ( in_array( $this->get_option( 'display_logo', 'logo' ), array( 'paywithchip_all', 'paywithchip_fpx' ), true ) ) {
 			$style = '';
 		}
 
 		$style = apply_filters( 'wc_' . $this->id . '_get_icon_style', $style, $this );
 
-		$icon = '<img class="chip-for-woocommerce-' . $this->id . '" src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
+		$icon = '<img class="chip-for-woocommerce-' . esc_attr( $this->id ) . '" src="' . esc_url( WC_HTTPS::force_https_url( $this->icon ) ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
 		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
 	}
 
+	/**
+	 * Get CHIP API instance.
+	 *
+	 * @return Chip_Woocommerce_API
+	 */
 	public function api() {
 		if ( ! $this->cached_api ) {
 			$this->cached_api = new Chip_Woocommerce_API(
@@ -219,6 +521,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $this->cached_api;
 	}
 
+	/**
+	 * Get FPX API instance.
+	 *
+	 * @return Chip_Woocommerce_API_FPX
+	 */
 	public function fpx_api() {
 		if ( ! $this->cached_fpx_api ) {
 			$this->cached_fpx_api = new Chip_Woocommerce_API_FPX(
@@ -230,42 +537,64 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $this->cached_fpx_api;
 	}
 
+	/**
+	 * Log order info message.
+	 *
+	 * @param string   $msg   Message to log.
+	 * @param WC_Order $order Order object.
+	 * @return void
+	 */
 	private function log_order_info( $msg, $order ) {
 		$this->api()->log_info( $msg . ': ' . $order->get_order_number() );
 	}
 
+	/**
+	 * Handle callback from CHIP.
+	 *
+	 * @return void
+	 */
 	public function handle_callback() {
-		if ( isset( $_GET['tokenization'] ) and $_GET['tokenization'] == 'yes' ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['tokenization'] ) && 'yes' === sanitize_text_field( wp_unslash( $_GET['tokenization'] ) ) ) {
 			$this->handle_callback_token();
-		} elseif ( isset( $_GET['callback_flag'] ) and $_GET['callback_flag'] == 'yes' ) {
+		} elseif ( isset( $_GET['callback_flag'] ) && 'yes' === sanitize_text_field( wp_unslash( $_GET['callback_flag'] ) ) ) {
 			$this->handle_callback_event();
-		} elseif ( isset( $_GET['process_payment_method_change'] ) and $_GET['process_payment_method_change'] == 'yes' ) {
+		} elseif ( isset( $_GET['process_payment_method_change'] ) && 'yes' === sanitize_text_field( wp_unslash( $_GET['process_payment_method_change'] ) ) ) {
 			$this->handle_payment_method_change();
 		} else {
 			$this->handle_callback_order();
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	}
 
+	/**
+	 * Handle tokenization callback.
+	 *
+	 * @return void
+	 */
 	public function handle_callback_token() {
 		$payment_id = WC()->session->get( 'chip_preauthorize' );
 
 		if ( ! $payment_id && isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
-			$content = file_get_contents( 'php://input' );
+			$content   = file_get_contents( 'php://input' );
+			$signature = isset( $_SERVER['HTTP_X_SIGNATURE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_SIGNATURE'] ) ) : '';
 
-			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1 ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			if ( 1 !== openssl_verify( $content, base64_decode( $signature ), $this->get_public_key(), 'sha256WithRSAEncryption' ) ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
-				exit( $message );
+				exit( esc_html( $message ) );
 			}
 
-			$payment = json_decode( $content, true );
+			$payment    = json_decode( $content, true );
 			$payment_id = array_key_exists( 'id', $payment ) ? sanitize_key( $payment['id'] ) : '';
-		} else if ( $payment_id ) {
+		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
-			exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
+			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
-		if ( $payment['status'] != 'preauthorized' ) {
+		if ( 'preauthorized' !== $payment['status'] ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 			wc_add_notice( sprintf( '%1$s %2$s', __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
 			wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
 			exit;
@@ -285,20 +614,27 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		exit;
 	}
 
+	/**
+	 * Handle callback event from webhook.
+	 *
+	 * @return void
+	 */
 	public function handle_callback_event() {
 		if ( ! isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 			exit;
 		}
 
-		$content = file_get_contents( 'php://input' );
+		$content   = file_get_contents( 'php://input' );
+		$signature = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_SIGNATURE'] ) );
 
-		if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->webhook_pub, 'sha256WithRSAEncryption' ) != 1 ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		if ( 1 !== openssl_verify( $content, base64_decode( $signature ), $this->webhook_pub, 'sha256WithRSAEncryption' ) ) {
 			exit;
 		}
 
 		$payment = json_decode( $content, true );
 
-		if ( ! in_array( $payment['event_type'], array( 'purchase.recurring_token_deleted' ) ) ) {
+		if ( ! in_array( $payment['event_type'], array( 'purchase.recurring_token_deleted' ), true ) ) {
 			exit;
 		}
 
@@ -308,7 +644,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			exit;
 		}
 
-		if ( $chip_client_id != $payment['client_id'] ) {
+		if ( $chip_client_id !== $payment['client_id'] ) {
 			exit;
 		}
 
@@ -338,22 +674,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		// $payment_id = WC()->session->get( 'chip_payment_id_' . $order_id );
 
-		$payment = $order->get_meta( '_' . $this->id . '_purchase', true );
+		$payment    = $order->get_meta( '_' . $this->id . '_purchase', true );
 		$payment_id = $payment['id'];
 
 		// if ( !$payment_id AND isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 		if ( isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 			$content = file_get_contents( 'php://input' );
 
-			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1 ) {
+			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
 				$this->log_order_info( $message, $order );
 				exit( $message );
 			}
 
-			$payment = json_decode( $content, true );
+			$payment    = json_decode( $content, true );
 			$payment_id = array_key_exists( 'id', $payment ) ? sanitize_key( $payment['id'] ) : '';
-		} else if ( $payment_id ) {
+		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
 			exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
@@ -365,9 +701,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$payment = $this->api()->get_payment( $payment_id );
 		}
 
-		if ( ( $payment['status'] == 'paid' ) or ( $payment['status'] == 'preauthorized' ) and $payment['purchase']['total_override'] == 0 ) {
-			if ( $this->order_contains_pre_order( $order ) and $this->order_requires_payment_tokenization( $order ) ) {
-				if ( $payment['is_recurring_token'] or ! empty( $payment['recurring_token'] ) ) {
+		if ( ( 'paid' === $payment['status'] ) || ( 'preauthorized' === $payment['status'] ) && 0 === $payment['purchase']['total_override'] ) {
+			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
+				if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 					if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
 						$this->add_payment_token( $order->get_id(), $token );
 					}
@@ -380,25 +716,23 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			WC()->cart->empty_cart();
 
 			$this->log_order_info( 'payment processed', $order );
-		} else {
-			if ( ! $order->is_paid() ) {
-				if ( ! empty( $payment['transaction_data']['attempts'] ) and ! empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
-					if ( isset( $payment_extra['payload'] ) and isset( $payment_extra['payload']['fpx_debitAuthCode'] ) ) {
-						$debit_auth_code = $payment_extra['payload']['fpx_debitAuthCode'][0];
-						$fpx_txn_id = $payment_extra['payload']['fpx_fpxTxnId'][0];
-						$fpx_seller_order_no = $payment_extra['payload']['fpx_sellerOrderNo'][0];
+		} elseif ( ! $order->is_paid() ) {
+			if ( ! empty( $payment['transaction_data']['attempts'] ) && ! empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
+				if ( isset( $payment_extra['payload'] ) && isset( $payment_extra['payload']['fpx_debitAuthCode'] ) ) {
+					$debit_auth_code     = $payment_extra['payload']['fpx_debitAuthCode'][0];
+					$fpx_txn_id          = $payment_extra['payload']['fpx_fpxTxnId'][0];
+					$fpx_seller_order_no = $payment_extra['payload']['fpx_sellerOrderNo'][0];
 
-						$order->add_order_note(
-							sprintf( __( 'FPX Debit Auth Code: %1$s. FPX Transaction ID: %2$s. FPX Seller Order Number: %3$s.', 'chip-for-woocommerce' ), $debit_auth_code, $fpx_txn_id, $fpx_seller_order_no )
-						);
-					}
+					$order->add_order_note(
+						sprintf( __( 'FPX Debit Auth Code: %1$s. FPX Transaction ID: %2$s. FPX Seller Order Number: %3$s.', 'chip-for-woocommerce' ), $debit_auth_code, $fpx_txn_id, $fpx_seller_order_no )
+					);
 				}
+			}
 
 				$order->update_status(
 					'wc-failed'
 				);
 				$this->log_order_info( 'payment not successful', $order );
-			}
 		}
 
 		$this->release_lock( $order_id );
@@ -409,7 +743,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$redirect_url = $this->get_return_url( $order );
 
-		if ( $this->cancel_order_flow == 'yes' and ! $order->is_paid() and $order->get_status() != 'pre-ordered' ) {
+		if ( 'yes' === $this->cancel_order_flow && ! $order->is_paid() && 'pre-ordered' !== $order->get_status() ) {
 			$redirect_url = esc_url_raw( $order->get_cancel_order_url_raw() );
 		}
 
@@ -422,281 +756,279 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 	public function init_form_fields() {
 		$this->form_fields['enabled'] = array(
-			'title' => __( 'Enable/Disable', 'chip-for-woocommerce' ),
-			'label' => sprintf( '%1$s %2$s', __( 'Enable', 'chip-for-woocommerce' ), $this->method_title ),
-			'type' => 'checkbox',
+			'title'   => __( 'Enable/Disable', 'chip-for-woocommerce' ),
+			'label'   => sprintf( '%1$s %2$s', __( 'Enable', 'chip-for-woocommerce' ), $this->method_title ),
+			'type'    => 'checkbox',
 			'default' => 'no',
 		);
 
 		$this->form_fields['title'] = array(
-			'title' => __( 'Title', 'chip-for-woocommerce' ),
-			'type' => 'text',
+			'title'       => __( 'Title', 'chip-for-woocommerce' ),
+			'type'        => 'text',
 			'description' => __( 'This controls the title which the user sees during checkout.', 'chip-for-woocommerce' ),
-			'default' => sprintf( __( '%s', 'chip-for-woocommerce' ), $this->title ),
+			'default'     => sprintf( __( '%s', 'chip-for-woocommerce' ), $this->title ),
 		);
 
 		$this->form_fields['method_title'] = array(
-			'title' => __( 'Method Title', 'chip-for-woocommerce' ),
-			'type' => 'text',
+			'title'       => __( 'Method Title', 'chip-for-woocommerce' ),
+			'type'        => 'text',
 			'description' => __( 'This controls the title in WooCommerce Admin.', 'chip-for-woocommerce' ),
-			'default' => $this->method_title,
+			'default'     => $this->method_title,
 		);
 
 		$this->form_fields['description'] = array(
-			'title' => __( 'Description', 'chip-for-woocommerce' ),
-			'type' => 'textarea',
+			'title'       => __( 'Description', 'chip-for-woocommerce' ),
+			'type'        => 'textarea',
 			'description' => __( 'This controls the description which the user sees during checkout.', 'chip-for-woocommerce' ),
-			'default' => __( 'Pay with Online Banking (FPX)', 'chip-for-woocommerce' ),
+			'default'     => __( 'Pay with Online Banking (FPX)', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['credentials'] = array(
-			'title' => __( 'Credentials', 'chip-for-woocommerce' ),
-			'type' => 'title',
-			'description' => __( 'Options to set Brand ID and Secret Key.', 'chip-for-woocommerce' ),
+			'title'       => __( 'Credentials', 'chip-for-woocommerce' ),
+			'type'        => 'title',
+			'description' => __( 'Options to set Brand ID && Secret Key.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['brand_id'] = array(
-			'title' => __( 'Brand ID', 'chip-for-woocommerce' ),
-			'type' => 'text',
-			'description' => __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands', 'chip-for-woocommerce' ),
-            'sanitize_callback' => function($value) {
-                $value = trim($value);
-                $value = str_replace(' ', '', $value);
-                return $value;
-            }
+			'title'             => __( 'Brand ID', 'chip-for-woocommerce' ),
+			'type'              => 'text',
+			'description'       => __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands', 'chip-for-woocommerce' ),
+			'sanitize_callback' => function ( $value ) {
+				$value = trim( $value );
+				$value = str_replace( ' ', '', $value );
+				return $value;
+			},
 		);
 
 		$this->form_fields['secret_key'] = array(
-			'title' => __( 'Secret key', 'chip-for-woocommerce' ),
-			'type' => 'text',
-			'description' => __( 'Secret key can be obtained from CHIP Collect Dashboard >> Developers >> Keys', 'chip-for-woocommerce' ),
-            'sanitize_callback' => function($value) {
-                $value = trim($value);
-                $value = str_replace(' ', '', $value);
-                return $value;
-            }
+			'title'             => __( 'Secret key', 'chip-for-woocommerce' ),
+			'type'              => 'text',
+			'description'       => __( 'Secret key can be obtained from CHIP Collect Dashboard >> Developers >> Keys', 'chip-for-woocommerce' ),
+			'sanitize_callback' => function ( $value ) {
+				$value = trim( $value );
+				$value = str_replace( ' ', '', $value );
+				return $value;
+			},
 		);
 
 		$this->form_fields['miscellaneous'] = array(
-			'title' => __( 'Miscellaneous', 'chip-for-woocommerce' ),
-			'type' => 'title',
-			'description' => __( 'Options to set display logo, due strict, time zone, tokenization and payment method whitelist.', 'chip-for-woocommerce' ),
+			'title'       => __( 'Miscellaneous', 'chip-for-woocommerce' ),
+			'type'        => 'title',
+			'description' => __( 'Options to set display logo, due strict, time zone, tokenization && payment method whitelist.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['display_logo'] = array(
-			'title' => __( 'Display Logo', 'chip-for-woocommerce' ),
-			'type' => 'select',
-			'class' => 'wc-enhanced-select',
-			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%s">Logo</a>. <a target="_blank" href="%s">FPX B2C</a>. <a target="_blank" href="%s">FPX B2B1</a>. <a target="_blank" href="%s">E-Wallet</a>. <a target="_blank" href="%s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
-			'default' => 'logo',
-			'options' => array(
-					'logo' => 'CHIP Logo',
-					'fpx' => 'FPX B2C',
-					'fpx_b2b1' => 'FPX B2B1',
-					'ewallet' => 'E-Wallet',
-					'card' => 'Card',
-					'fpx_only' => 'FPX Only',
-					'ewallet_only' => 'E-Wallet Only',
-					'card_only' => 'Card Only',
-					'card_international' => 'Card with Maestro',
-					'card_international_only' => 'Card with Maestro Only',
+			'title'       => __( 'Display Logo', 'chip-for-woocommerce' ),
+			'type'        => 'select',
+			'class'       => 'wc-enhanced-select',
+			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%1$s">Logo</a>. <a target="_blank" href="%2$s">FPX B2C</a>. <a target="_blank" href="%3$s">FPX B2B1</a>. <a target="_blank" href="%4$s">E-Wallet</a>. <a target="_blank" href="%5$s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
+			'default'     => 'logo',
+			'options'     => array(
+				'logo'                    => 'CHIP Logo',
+				'fpx'                     => 'FPX B2C',
+				'fpx_b2b1'                => 'FPX B2B1',
+				'ewallet'                 => 'E-Wallet',
+				'card'                    => 'Card',
+				'fpx_only'                => 'FPX Only',
+				'ewallet_only'            => 'E-Wallet Only',
+				'card_only'               => 'Card Only',
+				'card_international'      => 'Card with Maestro',
+				'card_international_only' => 'Card with Maestro Only',
 
-					'paywithchip_all' => 'Pay with CHIP (All)',
-					'paywithchip_fpx' => 'Pay with CHIP (FPX)',
+				'paywithchip_all'         => 'Pay with CHIP (All)',
+				'paywithchip_fpx'         => 'Pay with CHIP (FPX)',
 
-					'duitnow' => 'Duitnow QR',
-					'duitnow_only' => 'Duitnow QR Only',
-				),
+				'duitnow'                 => 'Duitnow QR',
+				'duitnow_only'            => 'Duitnow QR Only',
+			),
 		);
 
 		$this->form_fields['due_strict'] = array(
-			'title' => __( 'Due Strict', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Due Strict', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Enforce due strict payment timeframe to block payment after due strict timing is passed.', 'chip-for-woocommerce' ),
-			'default' => 'yes',
+			'default'     => 'yes',
 		);
 
 		$this->form_fields['due_strict_timing'] = array(
-			'title' => __( 'Due Strict Timing (minutes)', 'chip-for-woocommerce' ),
-			'type' => 'number',
+			'title'       => __( 'Due Strict Timing (minutes)', 'chip-for-woocommerce' ),
+			'type'        => 'number',
 			'description' => sprintf( __( 'Due strict timing in minutes. Default to hold stock minutes: <code>%1$s</code>. This will only be enforced if Due Strict option is activated.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ),
-			'default' => get_option( 'woocommerce_hold_stock_minutes', '60' ),
+			'default'     => get_option( 'woocommerce_hold_stock_minutes', '60' ),
 		);
 
-
-
 		$this->form_fields['purchase_time_zone'] = array(
-			'title' => __( 'Purchase Time Zone', 'chip-for-woocommerce' ),
-			'type' => 'select',
-			'class' => 'wc-enhanced-select',
+			'title'       => __( 'Purchase Time Zone', 'chip-for-woocommerce' ),
+			'type'        => 'select',
+			'class'       => 'wc-enhanced-select',
 			'description' => __( 'Time zone setting for receipt page.', 'chip-for-woocommerce' ),
-			'default' => 'Asia/Kuala_Lumpur',
-			'options' => $this->get_timezone_list()
+			'default'     => 'Asia/Kuala_Lumpur',
+			'options'     => $this->get_timezone_list(),
 		);
 
 		$this->form_fields['update_client_information'] = array(
-			'title' => __( 'Update client information', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Update client information', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Tick to update client information on purchase creation.', 'chip-for-woocommerce' ),
-			'default' => 'yes',
+			'default'     => 'yes',
 		);
 
 		$this->form_fields['system_url_scheme'] = array(
-			'title' => __( 'System URL Scheme', 'chip-for-woocommerce' ),
-			'type' => 'select',
-			'class' => 'wc-enhanced-select',
+			'title'       => __( 'System URL Scheme', 'chip-for-woocommerce' ),
+			'type'        => 'select',
+			'class'       => 'wc-enhanced-select',
 			'description' => __( 'Choose https if you are facing issue with payment status update due to http to https redirection', 'chip-for-woocommerce' ),
-			'default' => 'https',
-			'options' => array(
-					'default' => __( 'System Default', 'chip-for-woocommerce' ),
-					'https' => __( 'HTTPS', 'chip-for-woocommerce' ),
-				)
+			'default'     => 'https',
+			'options'     => array(
+				'default' => __( 'System Default', 'chip-for-woocommerce' ),
+				'https'   => __( 'HTTPS', 'chip-for-woocommerce' ),
+			),
 		);
 
 		$this->form_fields['bypass_chip'] = array(
-			'title' => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Tick to bypass CHIP payment page.', 'chip-for-woocommerce' ),
-			'default' => 'yes',
+			'default'     => 'yes',
 		);
 
 		$this->form_fields['disable_recurring_support'] = array(
-			'title' => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
-			'description' => __( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code> and <code>Maestro</code>.', 'chip-for-woocommerce' ),
-			'default' => 'no',
+			'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
+			'description' => __( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code> && <code>Maestro</code>.', 'chip-for-woocommerce' ),
+			'default'     => 'no',
 		);
 
 		$this->form_fields['disable_clients_api'] = array(
-			'title' => __( 'Disable CHIP clients API', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Disable CHIP clients API', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Tick to disable CHIP clients API integration.', 'chip-for-woocommerce' ),
-			'default' => 'no',
+			'default'     => 'no',
 		);
 
 		$this->form_fields['enable_auto_clear_cart'] = array(
-			'title' => __( 'Enable auto clear Cart', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
-			'label' => __( 'Enable clear cart upon checkout', 'chip-for-woocommerce' ),
+			'title'   => __( 'Enable auto clear Cart', 'chip-for-woocommerce' ),
+			'type'    => 'checkbox',
+			'label'   => __( 'Enable clear cart upon checkout', 'chip-for-woocommerce' ),
 			'default' => 'no',
 		);
 
 		$this->form_fields['force_tokenization'] = array(
-			'title' => __( 'Force Tokenization', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
-			'description' => __( 'Tick to force tokenization if possible. This only applies when <code>Visa</code> or <code>Mastercard</code> or <code>Maestro</code> payment method are available.', 'chip-for-woocommerce' ),
-			'default' => 'no',
-			'disabled' => empty( $this->arecuring_p )
+			'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
+			'description' => __( 'Tick to force tokenization if possible. This only applies when <code>Visa</code> || <code>Mastercard</code> || <code>Maestro</code> payment method are available.', 'chip-for-woocommerce' ),
+			'default'     => 'no',
+			'disabled'    => empty( $this->arecuring_p ),
 		);
 
 		$this->form_fields['payment_method_whitelist'] = array(
-			'title' => __( 'Payment Method Whitelist', 'chip-for-woocommerce' ),
-			'type' => 'multiselect',
-			'class' => 'wc-enhanced-select',
+			'title'       => __( 'Payment Method Whitelist', 'chip-for-woocommerce' ),
+			'type'        => 'multiselect',
+			'class'       => 'wc-enhanced-select',
 			'description' => __( 'Choose payment method to enforce payment method whitelisting if possible.', 'chip-for-woocommerce' ),
-			'default' => [ 'fpx' ],
-			'options' => $this->a_payment_m,
-			'disabled' => empty( $this->a_payment_m )
+			'default'     => [ 'fpx' ],
+			'options'     => $this->a_payment_m,
+			'disabled'    => empty( $this->a_payment_m ),
 		);
 
 		$this->form_fields['public_key'] = array(
-			'title' => __( 'Public Key', 'chip-for-woocommerce' ),
-			'type' => 'textarea',
+			'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
+			'type'        => 'textarea',
 			'description' => __( 'Public key for validating callback will be auto-filled upon successful configuration.', 'chip-for-woocommerce' ),
-			'disabled' => true,
+			'disabled'    => true,
 		);
 
 		$this->form_fields['cancel_order_flow'] = array(
-			'title' => __( 'Cancel Order Flow', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Cancel Order Flow', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Tick to redirect customer to cancel order URL for unsuccessful payment.', 'chip-for-woocommerce' ),
-			'default' => 'no',
+			'default'     => 'no',
 		);
 
 		$this->form_fields['email_fallback'] = array(
-			'title' => __( 'Email fallback', 'chip-for-woocommerce' ),
-			'type' => 'email',
-            'description' => __( '<strong>Required</strong> if the merchant did not intend to request customer email address', 'chip-for-woocommerce' ),
-            'placeholder' => 'merchant@gmail.com',
+			'title'       => __( 'Email fallback', 'chip-for-woocommerce' ),
+			'type'        => 'email',
+			'description' => __( '<strong>Required</strong> if the merchant did not intend to request customer email address', 'chip-for-woocommerce' ),
+			'placeholder' => 'merchant@gmail.com',
 		);
 
 		$this->form_fields['metabox'] = array(
-			'title' => __( 'Metaboxes', 'chip-for-woocommerce' ),
-			'type' => 'title',
+			'title'       => __( 'Metaboxes', 'chip-for-woocommerce' ),
+			'type'        => 'title',
 			'description' => sprintf( __( 'Option to set meta boxes', 'chip-for-woocommerce' ) ),
 		);
 
 		$this->form_fields['enable_metabox'] = array(
-			'title' => __( 'Enable account metabox', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Enable account metabox', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Tick to enable account metabox in WordPress Dashboard. If you are using the same CHIP account for other payment method, you should enable only once.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['webhooks'] = array(
-			'title' => __( 'Webhooks', 'chip-for-woocommerce' ),
-			'type' => 'title',
+			'title'       => __( 'Webhooks', 'chip-for-woocommerce' ),
+			'type'        => 'title',
 			'description' => sprintf( __( 'Option to set public key. The supported event is <code>%1$s</code>', 'chip-for-woocommerce' ), 'Purchase Recurring Token Deleted' ),
 		);
 
-		$callback_url = preg_replace( "/^http:/i", "https:", add_query_arg( [ 'callback_flag' => 'yes' ], WC()->api_request_url( $this->id ) ) );
+		$callback_url = preg_replace( '/^http:/i', 'https:', add_query_arg( [ 'callback_flag' => 'yes' ], WC()->api_request_url( $this->id ) ) );
 
 		$this->form_fields['webhook_public_key'] = array(
-			'title' => __( 'Public Key', 'chip-for-woocommerce' ),
-			'type' => 'textarea',
+			'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
+			'type'        => 'textarea',
 			'description' => sprintf( __( 'This option to set public key that are generated through CHIP Dashboard >> Webhooks page. The callback url is: <code>%s</code>', 'chip-for-woocommerce' ), $callback_url ),
 		);
 
 		$this->form_fields['additional_charges'] = array(
-			'title' => __( 'Additional Charges', 'chip-for-woocommerce' ),
-			'type' => 'title',
+			'title'       => __( 'Additional Charges', 'chip-for-woocommerce' ),
+			'type'        => 'title',
 			'description' => __( 'Options to add additional charges after checkout. This option doesn\'t apply to Woocommerce Pre-order fee.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['enable_additional_charges'] = array(
-			'title' => __( 'Enable Additional Charges', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Enable Additional Charges', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Tick to activate additional charges.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['fixed_charges'] = array(
-			'title' => __( 'Fixed Charges (cents)', 'chip-for-woocommerce' ),
-			'type' => 'number',
+			'title'       => __( 'Fixed Charges (cents)', 'chip-for-woocommerce' ),
+			'type'        => 'number',
 			'description' => __( 'Fixed charges in cents. Default to: <code>100</code>. This will only be applied when additional charges are activated.', 'chip-for-woocommerce' ),
-			'default' => '100',
+			'default'     => '100',
 		);
 
 		$this->form_fields['percent_charges'] = array(
-			'title' => __( 'Percentage Charges (%)', 'chip-for-woocommerce' ),
-			'type' => 'number',
+			'title'       => __( 'Percentage Charges (%)', 'chip-for-woocommerce' ),
+			'type'        => 'number',
 			'description' => __( 'Percentage charges. Input <code>100</code> for 1%. Default to: <code>0</code>. This will only be applied when additional charges are activated.', 'chip-for-woocommerce' ),
-			'default' => '0',
+			'default'     => '0',
 		);
 
 		$this->form_fields['troubleshooting'] = array(
-			'title' => __( 'Troubleshooting', 'chip-for-woocommerce' ),
-			'type' => 'title',
-			'description' => __( 'Options to disable redirect, disable callback and turn on debugging.', 'chip-for-woocommerce' ),
+			'title'       => __( 'Troubleshooting', 'chip-for-woocommerce' ),
+			'type'        => 'title',
+			'description' => __( 'Options to disable redirect, disable callback && turn on debugging.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['disable_redirect'] = array(
-			'title' => __( 'Disable Redirect', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Disable Redirect', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Disable redirect for troubleshooting purpose.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['disable_callback'] = array(
-			'title' => __( 'Disable Callback', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
+			'title'       => __( 'Disable Callback', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
 			'description' => __( 'Disable callback for troubleshooting purpose.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['debug'] = array(
-			'title' => __( 'Debug Log', 'chip-for-woocommerce' ),
-			'type' => 'checkbox',
-			'label' => __( 'Enable logging', 'chip-for-woocommerce' ),
-			'default' => 'no',
+			'title'       => __( 'Debug Log', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
+			'label'       => __( 'Enable logging', 'chip-for-woocommerce' ),
+			'default'     => 'no',
 			'description' =>
-				sprintf( __( 'Log events to <code>%s</code>', 'chip-for-woocommerce' ), esc_url( admin_url( 'admin.php?page=wc-status&tab=logs&source=chip-for-woocommerce' ) ) ),
+			sprintf( __( 'Log events to <code>%s</code>', 'chip-for-woocommerce' ), esc_url( admin_url( 'admin.php?page=wc-status&tab=logs&source=chip-for-woocommerce' ) ) ),
 		);
 	}
 
@@ -705,8 +1037,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$formatted_time_zones = array();
 		foreach ( $list_time_zones as $mtz ) {
-			$formatted_time_zones[ $mtz ] = str_replace( "_", " ", $mtz );
-			;
+			$formatted_time_zones[ $mtz ] = str_replace( '_', ' ', $mtz );
 		}
 
 		return $formatted_time_zones;
@@ -725,11 +1056,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		} else {
 			parent::payment_fields();
 
-			// Check for razer
-			$pattern = "/^razer_/";
+			// Check for razer.
+			$pattern  = '/^razer_/';
 			$is_razer = false;
 
-			// Check if payment_met empty
+			// Check if payment_met empty.
 			if ( is_array( $this->payment_met ) ) {
 				$output = preg_grep( $pattern, $this->payment_met );
 
@@ -738,35 +1069,44 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				}
 			}
 
-			if ( is_array( $this->payment_met ) and count( $this->payment_met ) == 1 and $this->payment_met[0] == 'fpx' and $this->bypass_chip == 'yes' ) {
-				woocommerce_form_field( 'chip_fpx_bank', array(
-					'type' => 'select',
-					'required' => true,
-					'label' => __( 'Internet Banking', 'chip-for-woocommerce' ),
-					'options' => $this->list_fpx_banks(),
-				) );
-			} elseif ( is_array( $this->payment_met ) and count( $this->payment_met ) == 1 and $this->payment_met[0] == 'fpx_b2b1' and $this->bypass_chip == 'yes' ) {
-				woocommerce_form_field( 'chip_fpx_b2b1_bank', array(
-					'type' => 'select',
-					'required' => true,
-					'label' => __( 'Corporate Internet Banking', 'chip-for-woocommerce' ),
-					'options' => $this->list_fpx_b2b1_banks()
-				) );
-			} elseif ( is_array( $this->payment_met ) and $is_razer and $this->bypass_chip == 'yes' ) {
-				woocommerce_form_field( 'chip_razer_ewallet', array(
-					'type' => 'select',
-					'required' => true,
-					'label' => __( 'E-Wallet', 'chip-for-woocommerce' ),
-					'options' => $this->list_razer_ewallets()
-				) );
-			} elseif ( $this->id == 'wc_gateway_chip_5' ) {
-				// do nothing
+			if ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'fpx' === $this->payment_met[0] && 'yes' === $this->bypass_chip ) {
+				woocommerce_form_field(
+					'chip_fpx_bank',
+					array(
+						'type'     => 'select',
+						'required' => true,
+						'label'    => __( 'Internet Banking', 'chip-for-woocommerce' ),
+						'options'  => $this->list_fpx_banks(),
+					)
+				);
+			} elseif ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'fpx_b2b1' === $this->payment_met[0] && 'yes' === $this->bypass_chip ) {
+				woocommerce_form_field(
+					'chip_fpx_b2b1_bank',
+					array(
+						'type'     => 'select',
+						'required' => true,
+						'label'    => __( 'Corporate Internet Banking', 'chip-for-woocommerce' ),
+						'options'  => $this->list_fpx_b2b1_banks(),
+					)
+				);
+			} elseif ( is_array( $this->payment_met ) && $is_razer && 'yes' === $this->bypass_chip ) {
+				woocommerce_form_field(
+					'chip_razer_ewallet',
+					array(
+						'type'     => 'select',
+						'required' => true,
+						'label'    => __( 'E-Wallet', 'chip-for-woocommerce' ),
+						'options'  => $this->list_razer_ewallets(),
+					)
+				);
+			} elseif ( 'wc_gateway_chip_5' === $this->id ) {
+				// Do nothing.
 			}
 		}
 
-		if ( ! is_wc_endpoint_url( 'order-pay' ) and ! is_add_payment_method_page() and is_array( $this->payment_met ) and count( $this->payment_met ) >= 2 and $this->bypass_chip == 'yes' and ! isset( $_GET['change_payment_method'] ) ) {
+		if ( ! is_wc_endpoint_url( 'order-pay' ) && ! is_add_payment_method_page() && is_array( $this->payment_met ) && count( $this->payment_met ) >= 2 && 'yes' === $this->bypass_chip && ! isset( $_GET['change_payment_method'] ) ) {
 			foreach ( $this->payment_met as $pm ) {
-				if ( in_array( $pm, [ 'visa', 'mastercard', 'maestro' ] ) ) {
+				if ( in_array( $pm, array( 'visa', 'mastercard', 'maestro' ), true ) ) {
 					wp_enqueue_script( "wc-{$this->id}-direct-post" );
 					$this->form();
 					break;
@@ -805,21 +1145,29 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		return $ln;
 	}
 
+	/**
+	 * Validate payment fields.
+	 *
+	 * @return bool
+	 * @throws Exception When required field is missing.
+	 */
 	public function validate_fields() {
-		// Check and throw error if payment method not selected
-		if ( is_array( $this->payment_met ) and count( $this->payment_met ) == 1 and $this->bypass_chip == 'yes' ) {
-			if ( $this->payment_met[0] == 'fpx' and isset( $_POST['chip_fpx_bank'] ) and strlen( $_POST['chip_fpx_bank'] ) == 0 ) {
+		// Check and throw error if payment method not selected.
+		if ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'yes' === $this->bypass_chip ) {
+			// phpcs:disable WordPress.Security.NonceVerification.Missing
+			if ( 'fpx' === $this->payment_met[0] && isset( $_POST['chip_fpx_bank'] ) && 0 === strlen( $_POST['chip_fpx_bank'] ) ) {
 				throw new Exception( __( '<strong>Internet Banking</strong> is a required field.', 'chip-for-woocommerce' ) );
-			} elseif ( $this->payment_met[0] == 'fpx_b2b1' and isset( $_POST['chip_fpx_b2b1_bank'] ) and strlen( $_POST['chip_fpx_b2b1_bank'] ) == 0 ) {
+			} elseif ( 'fpx_b2b1' === $this->payment_met[0] && isset( $_POST['chip_fpx_b2b1_bank'] ) && 0 === strlen( $_POST['chip_fpx_b2b1_bank'] ) ) {
 				throw new Exception( __( '<strong>Corporate Internet Banking</strong> is a required field.', 'chip-for-woocommerce' ) );
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		}
 
-		// Check for razer
-		$pattern = "/^razer_/";
+		// Check for razer.
+		$pattern  = '/^razer_/';
 		$is_razer = false;
 
-		// Check if payment_met empty
+		// Check if payment_met empty.
 		if ( is_array( $this->payment_met ) ) {
 			$output = preg_grep( $pattern, $this->payment_met );
 
@@ -828,7 +1176,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( is_array( $this->payment_met ) and $this->bypass_chip == 'yes' and $is_razer and isset( $_POST['chip_razer_ewallet'] ) and strlen( $_POST['chip_razer_ewallet'] ) == 0 ) {
+		if ( is_array( $this->payment_met ) && 'yes' === $this->bypass_chip && $is_razer && isset( $_POST['chip_razer_ewallet'] ) && strlen( $_POST['chip_razer_ewallet'] ) === 0 ) {
 			throw new Exception( __( "<strong>E-Wallet</strong> is a required field. $this->payment_met", 'chip-for-woocommerce' ) );
 		}
 
@@ -838,18 +1186,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	public function process_payment( $order_id ) {
 		do_action( 'wc_' . $this->id . '_before_process_payment', $order_id, $this );
 
-		// Start of logic for subscription_payment_method_change_customer supports
-		if ( isset( $_GET['change_payment_method'] ) and $_GET['change_payment_method'] == $order_id ) {
+		// Start of logic for subscription_payment_method_change_customer supports.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['change_payment_method'] ) && absint( $_GET['change_payment_method'] ) === $order_id ) {
 			return $this->process_payment_method_change( $order_id );
 		}
-		// End of logic for subscription_payment_method_change_customer supports
+		// End of logic for subscription_payment_method_change_customer supports.
 
-		$order = new WC_Order( $order_id );
+		$order   = new WC_Order( $order_id );
 		$user_id = $order->get_user_id();
 
 		$token_id = '';
 
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) and 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
+		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			$token_id = wc_clean( $_POST[ "wc-{$this->id}-payment-token" ] );
 
 			if ( $token = WC_Payment_Tokens::get( $token_id ) ) {
@@ -861,12 +1210,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( $this->add_charges == 'yes' ) {
+		if ( 'yes' === $this->add_charges ) {
 			$this->add_item_order_fee( $order );
 		}
 
 		$callback_url = add_query_arg( [ 'id' => $order_id ], WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) and WC_CHIP_OLD_URL_SCHEME === true ) {
+		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
@@ -874,60 +1223,64 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'success_callback' => $callback_url,
 			'success_redirect' => $callback_url,
 			'failure_redirect' => $callback_url,
-			'cancel_redirect' => $callback_url,
-			'force_recurring' => $this->force_token == 'yes',
-			'send_receipt' => false,
-			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
-			'reference' => $order->get_id(),
-			'platform' => 'woocommerce',
-			'due' => $this->get_due_timestamp(),
-			'purchase' => [
+			'cancel_redirect'  => $callback_url,
+			'force_recurring'  => 'yes' === $this->force_token,
+			'send_receipt'     => false,
+			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'reference'        => $order->get_id(),
+			'platform'         => 'woocommerce',
+			'due'              => $this->get_due_timestamp(),
+			'purchase'         => [
 				'total_override' => round( $order->get_total() * 100 ),
-				'due_strict' => $this->due_strict == 'yes',
-				'timezone' => $this->purchase_tz,
-				'currency' => $order->get_currency(),
-				'language' => $this->get_language(),
-				'products' => [],
+				'due_strict'     => 'yes' === $this->due_strict,
+				'timezone'       => $this->purchase_tz,
+				'currency'       => $order->get_currency(),
+				'language'       => $this->get_language(),
+				'products'       => [],
 			],
-			'brand_id' => $this->brand_id,
-			'client' => [
-				'email' => $order->get_billing_email(),
-				'phone' => substr( $order->get_billing_phone(), 0, 32 ),
-				'full_name' => $this->filter_customer_full_name( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
-				'street_address' => substr( $order->get_billing_address_1() . ' ' . $order->get_billing_address_2(), 0, 128 ),
-				'country' => substr( $order->get_billing_country(), 0, 2 ),
-				'city' => substr( $order->get_billing_city(), 0, 128 ),
-				'zip_code' => substr( $order->get_billing_postcode(), 0, 32 ),
-				'state' => substr( $order->get_billing_state(), 0, 128 ),
+			'brand_id'         => $this->brand_id,
+			'client'           => [
+				'email'                   => $order->get_billing_email(),
+				'phone'                   => substr( $order->get_billing_phone(), 0, 32 ),
+				'full_name'               => $this->filter_customer_full_name( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
+				'street_address'          => substr( $order->get_billing_address_1() . ' ' . $order->get_billing_address_2(), 0, 128 ),
+				'country'                 => substr( $order->get_billing_country(), 0, 2 ),
+				'city'                    => substr( $order->get_billing_city(), 0, 128 ),
+				'zip_code'                => substr( $order->get_billing_postcode(), 0, 32 ),
+				'state'                   => substr( $order->get_billing_state(), 0, 128 ),
 				'shipping_street_address' => substr( $order->get_shipping_address_1() . ' ' . $order->get_shipping_address_2(), 0, 128 ),
-				'shipping_country' => substr( $order->get_shipping_country(), 0, 2 ),
-				'shipping_city' => substr( $order->get_shipping_city(), 0, 128 ),
-				'shipping_zip_code' => substr( $order->get_shipping_postcode(), 0, 32 ),
-				'shipping_state' => substr( $order->get_shipping_state(), 0, 128 ),
+				'shipping_country'        => substr( $order->get_shipping_country(), 0, 2 ),
+				'shipping_city'           => substr( $order->get_shipping_city(), 0, 128 ),
+				'shipping_zip_code'       => substr( $order->get_shipping_postcode(), 0, 32 ),
+				'shipping_state'          => substr( $order->get_shipping_state(), 0, 128 ),
 			],
 		];
 
 		$items = $order->get_items();
 
-		if ( is_countable( $items ) and count( $items ) > 100 ) {
-			$params['purchase']['products'] = [ [
-				'name' => 'Order #' . $order->get_id(),
-				'price' => round( $order->get_total() * 100 ),
-			] ];
+		if ( is_countable( $items ) && count( $items ) > 100 ) {
+			$params['purchase']['products'] = [
+				[
+					'name'  => 'Order #' . $order->get_id(),
+					'price' => round( $order->get_total() * 100 ),
+				],
+			];
 		} else {
 			foreach ( $items as $item ) {
-				/** @var \WC_Order_Item_Product $item **/
+				/**
+		 * @var \WC_Order_Item_Product $item
+*/
 				$price = round( $item->get_total() * 100 );
-				$qty = $item->get_quantity();
+				$qty   = $item->get_quantity();
 
 				if ( $price < 0 ) {
 					$price = 0;
 				}
 
 				$params['purchase']['products'][] = array(
-					'name' => substr( $item->get_name(), 0, 256 ),
-					'price' => round( $price / $qty ),
-					'quantity' => $qty
+					'name'     => substr( $item->get_name(), 0, 256 ),
+					'price'    => round( $price / $qty ),
+					'quantity' => $qty,
 				);
 			}
 		}
@@ -939,9 +1292,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		if ( empty( $params['purchase']['products'] ) ) {
 			$params['purchase']['products'] = array(
 				[
-					'name' => 'Product',
+					'name'  => 'Product',
 					'price' => round( $order->get_total() * 100 ),
-				]
+				],
 			);
 		}
 
@@ -955,10 +1308,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$user = get_user_by( 'id', $user_id );
 
-		if ( $user and $this->disable_cli != 'yes' ) {
+		if ( $user && 'yes' !== $this->disable_cli ) {
 			$params['client']['email'] = $user->user_email;
-			$client_with_params = $params['client'];
-			$old_client_records = true;
+			$client_with_params        = $params['client'];
+			$old_client_records        = true;
 			unset( $params['client'] );
 
 			$params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
@@ -972,11 +1325,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 					);
 				}
 
-				if ( is_array( $get_client['results'] ) and ! empty( $get_client['results'] ) ) {
+				if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
 					$client = $get_client['results'][0];
 				} else {
 					$old_client_records = false;
-					$client = $chip->create_client( $client_with_params );
+					$client             = $chip->create_client( $client_with_params );
 				}
 
 				update_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
@@ -984,40 +1337,41 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				$params['client_id'] = $client['id'];
 			}
 
-			if ( $this->update_clie == 'yes' and $old_client_records ) {
+			if ( 'yes' === $this->update_clie && $old_client_records ) {
 				$chip->patch_client( $params['client_id'], $client_with_params );
 			}
 		}
 
-		if ( is_array( $this->payment_met ) and ! empty( $this->payment_met ) ) {
+		if ( is_array( $this->payment_met ) && ! empty( $this->payment_met ) ) {
 			$params['payment_method_whitelist'] = $this->payment_met;
 		}
 
-		if ( isset( $_POST[ "wc-{$this->id}-new-payment-method" ] ) and in_array( $_POST[ "wc-{$this->id}-new-payment-method" ], [ 'true', 1 ] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( isset( $_POST[ "wc-{$this->id}-new-payment-method" ] ) && in_array( sanitize_text_field( wp_unslash( $_POST[ "wc-{$this->id}-new-payment-method" ] ) ), array( 'true', '1' ), true ) ) {
 			$params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
-			$params['force_recurring'] = true;
+			$params['force_recurring']          = true;
 		}
 
 		if ( function_exists( 'wcs_order_contains_subscription' ) ) {
-			if ( $this->supports( 'tokenization' ) and wcs_order_contains_subscription( $order ) ) {
+			if ( $this->supports( 'tokenization' ) && wcs_order_contains_subscription( $order ) ) {
 				$params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
-				$params['force_recurring'] = true;
+				$params['force_recurring']          = true;
 
-				if ( $params['purchase']['total_override'] == 0 ) {
+				if ( 0 === $params['purchase']['total_override'] ) {
 					$params['skip_capture'] = true;
 				}
 			}
 		}
 
-		if ( $this->system_url_ == 'https' ) {
-			$params['success_callback'] = preg_replace( "/^http:/i", "https:", $params['success_callback'] );
+		if ( 'https' === $this->system_url_ ) {
+			$params['success_callback'] = preg_replace( '/^http:/i', 'https:', $params['success_callback'] );
 		}
 
-		if ( $this->disable_cal == 'yes' ) {
+		if ( 'yes' === $this->disable_cal ) {
 			unset( $params['success_callback'] );
 		}
 
-		if ( $this->disable_red == 'yes' ) {
+		if ( 'yes' === $this->disable_red ) {
 			unset( $params['success_redirect'] );
 		}
 
@@ -1025,26 +1379,26 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
 		}
 
-		if ( ! isset( $params['client_id'] ) and ( ! isset( $params['client']['email'] ) or empty( $params['client']['email'] ) ) ) {
+		if ( ! isset( $params['client_id'] ) && ( ! isset( $params['client']['email'] ) || empty( $params['client']['email'] ) ) ) {
 			$params['client']['email'] = $this->email_fallback;
 		}
 
-		// Start of logic for WooCommerce Pre-orders
-		if ( $this->order_contains_pre_order( $order ) and $this->order_requires_payment_tokenization( $order ) ) {
+		// Start of logic for WooCommerce Pre-orders.
+		if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 
-			// WooCommerce Pre-orders only accept 1 single item in cart
+			// WooCommerce Pre-orders only accept 1 single item in cart.
 			foreach ( $order->get_items() as $item_id => $item ) {
 				$product = $item->get_product();
 			}
 
 			$params['purchase']['total_override'] = round( absint( WC_Pre_Orders_Product::get_pre_order_fee( $product ) ) * 100 );
 
-			if ( ! empty( $token_id ) and $params['purchase']['total_override'] == 0 ) {
+			if ( ! empty( $token_id ) && 0 === $params['purchase']['total_override'] ) {
 
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 
 				return array(
-					'result' => 'success',
+					'result'   => 'success',
 					'redirect' => $this->get_return_url( $order ),
 				);
 			}
@@ -1057,7 +1411,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				$params['skip_capture'] = true;
 			}
 		}
-		// End of logic for WooCommerce Pre-orders
+		// End of logic for WooCommerce Pre-orders.
 
 		$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 
@@ -1080,7 +1434,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			);
 		}
 
-		if ( $this->enable_auto == 'yes' ) {
+		if ( 'yes' === $this->enable_auto ) {
 			WC()->cart->empty_cart();
 		}
 
@@ -1096,7 +1450,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 			$this->maybe_delete_payment_token( $charge_payment, $token_id );
 
-			$get_payment = $chip->get_payment( $payment['id'] );
+			$get_payment            = $chip->get_payment( $payment['id'] );
 			$payment_requery_status = $get_payment['status'];
 		}
 
@@ -1109,15 +1463,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
 
-		if ( $payment_requery_status != 'paid' ) {
+		if ( 'paid' !== $payment_requery_status ) {
 			$this->schedule_requery( $payment['id'], $order_id );
 		}
 
 		$redirect_url = $payment['checkout_url'];
 
-		if ( is_array( $payment['payment_method_whitelist'] ) and ! empty( $payment['payment_method_whitelist'] ) ) {
+		if ( is_array( $payment['payment_method_whitelist'] ) && ! empty( $payment['payment_method_whitelist'] ) ) {
 			foreach ( $payment['payment_method_whitelist'] as $pm ) {
-				if ( ! in_array( $pm, [ 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' ] ) ) {
+				if ( ! in_array( $pm, array( 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' ), true ) ) {
 					$redirect_url = $payment['checkout_url'];
 					break;
 				}
@@ -1129,7 +1483,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		do_action( 'wc_' . $this->id . '_after_process_payment', $order_id, $this );
 
 		return array(
-			'result' => 'success',
+			'result'   => 'success',
 			'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
 			'messages' => '<div class="woocommerce-info"><a href="' . esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ) . '">' . __( 'Click here to pay', 'chip-for-woocommerce' ) . '</a></div>',
 		);
@@ -1144,8 +1498,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function can_refund_order( $order ) {
-		$has_api_creds = $this->enabled and $this->secret_key and $this->brand_id;
-		$can_refund_order = $order and $order->get_transaction_id() and $has_api_creds;
+		$has_api_creds    = $this->enabled && $this->secret_key && $this->brand_id;
+		$can_refund_order = $order && $order->get_transaction_id() && $has_api_creds;
 
 		return apply_filters( 'wc_' . $this->id . '_can_refund_order', $can_refund_order, $order, $this );
 	}
@@ -1161,7 +1515,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return new WP_Error( 'error', __( 'Refund failed.', 'chip-for-woocommerce' ) );
 		}
 
-		$chip = $this->api();
+		$chip   = $this->api();
 		$params = [ 'amount' => round( $amount * 100 ) ];
 
 		$result = $chip->refund_payment( $order->get_transaction_id(), $params );
@@ -1197,7 +1551,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		parent::process_admin_options();
 		$post = $this->get_post_data();
 
-		$brand_id = wc_clean( $post[ "woocommerce_{$this->id}_brand_id" ] );
+		$brand_id   = wc_clean( $post[ "woocommerce_{$this->id}_brand_id" ] );
 		$secret_key = wc_clean( $post[ "woocommerce_{$this->id}_secret_key" ] );
 
 		$chip = $this->api();
@@ -1239,7 +1593,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( ! isset( $post[ "woocommerce_{$this->id}_disable_recurring_support" ] ) and isset( $post[ "woocommerce_{$this->id}_disable_clients_api" ] ) ) {
+		if ( ! isset( $post[ "woocommerce_{$this->id}_disable_recurring_support" ] ) && isset( $post[ "woocommerce_{$this->id}_disable_clients_api" ] ) ) {
 			$this->add_error( __( 'Configuration error: Disable clients API requires disable recurring support to be activated', 'chip-for-woocommerce' ) );
 			$this->update_option( 'disable_clients_api', 'no' );
 		}
@@ -1249,7 +1603,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 	public function auto_charge( $total_amount, $renewal_order ) {
 
-		if ( $this->add_charges == 'yes' ) {
+		if ( 'yes' === $this->add_charges ) {
 			$this->add_item_order_fee( $renewal_order );
 		}
 
@@ -1261,26 +1615,26 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		$callback_url = add_query_arg( [ 'id' => $renewal_order_id ], WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) and WC_CHIP_OLD_URL_SCHEME === true ) {
+		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $renewal_order_id );
 		}
 
 		$params = [
 			'success_callback' => $callback_url,
-			'send_receipt' => false,
-			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
-			'reference' => $renewal_order_id,
-			'platform' => 'woocommerce_subscriptions',
-			'due' => $this->get_due_timestamp(),
-			'brand_id' => $this->brand_id,
-			'client_id' => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
-			'purchase' => [
-				'timezone' => $this->purchase_tz,
-				'currency' => $renewal_order->get_currency(),
-				'language' => $this->get_language(),
-				'due_strict' => $this->due_strict == 'yes',
+			'send_receipt'     => false,
+			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'reference'        => $renewal_order_id,
+			'platform'         => 'woocommerce_subscriptions',
+			'due'              => $this->get_due_timestamp(),
+			'brand_id'         => $this->brand_id,
+			'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
+			'purchase'         => [
+				'timezone'       => $this->purchase_tz,
+				'currency'       => $renewal_order->get_currency(),
+				'language'       => $this->get_language(),
+				'due_strict'     => 'yes' === $this->due_strict,
 				'total_override' => round( $total_amount * 100 ),
-				'products' => [],
+				'products'       => [],
 			],
 		];
 
@@ -1288,22 +1642,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		foreach ( $items as $item ) {
 			$price = round( $item->get_total() * 100 );
-			$qty = $item->get_quantity();
+			$qty   = $item->get_quantity();
 
 			if ( $price < 0 ) {
 				$price = 0;
 			}
 
 			$params['purchase']['products'][] = array(
-				'name' => substr( $item->get_name(), 0, 256 ),
-				'price' => round( $price / $qty ),
-				'quantity' => $qty
+				'name'     => substr( $item->get_name(), 0, 256 ),
+				'price'    => round( $price / $qty ),
+				'quantity' => $qty,
 			);
 		}
 
 		$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 
-		$chip = $this->api();
+		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
 
 		$renewal_order->update_meta_data( '_' . $this->id . '_purchase', $payment );
@@ -1311,9 +1665,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $renewal_order_id );
 
-		$token = new WC_Payment_Token_CC;
+		$token = new WC_Payment_Token_CC();
 		foreach ( $tokens as $key => $t ) {
-			if ( $t->get_gateway_id() == $this->id ) {
+			if ( $t->get_gateway_id() === $this->id ) {
 				$token = $t;
 				break;
 			}
@@ -1325,13 +1679,14 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->maybe_delete_payment_token( $charge_payment, $token->get_id() );
 
-		if ( is_array( $charge_payment ) and array_key_exists( '__all__', $charge_payment ) ) {
+		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$renewal_order->update_status( 'failed' );
 			$renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment['__all__'], true ) ) );
-		} elseif ( is_array( $charge_payment ) and $charge_payment['status'] == 'paid' ) {
+		} elseif ( is_array( $charge_payment ) && 'paid' === $charge_payment['status'] ) {
 			$this->payment_complete( $renewal_order, $charge_payment );
+			/* translators: %s: Transaction ID */
 			$renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
-		} elseif ( is_array( $charge_payment ) and $charge_payment['status'] == 'pending_charge' ) {
+		} elseif ( is_array( $charge_payment ) && 'pending_charge' === $charge_payment['status'] ) {
 			$renewal_order->update_status( 'on-hold' );
 		} else {
 			$renewal_order->update_status( 'failed' );
@@ -1369,8 +1724,11 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		foreach ( $chip_token_ids as $purchase_id => $token_id ) {
-			if ( $purchase_id == $chip_tokenized_purchase_id and ( $wc_payment_token = WC_Payment_Tokens::get( $token_id ) ) ) {
-				return $wc_payment_token;
+			if ( $purchase_id === $chip_tokenized_purchase_id ) {
+				$wc_payment_token = WC_Payment_Tokens::get( $token_id );
+				if ( $wc_payment_token ) {
+					return $wc_payment_token;
+				}
 			}
 		}
 
@@ -1410,26 +1768,26 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$params = array(
 			'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
-			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
-			'platform' => 'woocommerce_subscriptions',
-			'success_redirect' => $url,
-			'failure_redirect' => $url,
-			'force_recurring' => true,
-			'reference' => get_current_user_id(),
-			'brand_id' => $this->brand_id,
-			'skip_capture' => true,
-			'client' => [
-				'email' => wp_get_current_user()->user_email,
-				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() )
+			'creator_agent'            => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'platform'                 => 'woocommerce_subscriptions',
+			'success_redirect'         => $url,
+			'failure_redirect'         => $url,
+			'force_recurring'          => true,
+			'reference'                => get_current_user_id(),
+			'brand_id'                 => $this->brand_id,
+			'skip_capture'             => true,
+			'client'                   => [
+				'email'     => wp_get_current_user()->user_email,
+				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() ),
 			],
-			'purchase' => [
+			'purchase'                 => [
 				'currency' => 'MYR',
 				'products' => [
 					[
-						'name' => 'Add payment method',
-						'price' => 0
-					]
-				]
+						'name'  => 'Add payment method',
+						'price' => 0,
+					],
+				],
 			],
 		);
 
@@ -1446,7 +1804,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				);
 			}
 
-			if ( is_array( $get_client['results'] ) and ! empty( $get_client['results'] ) ) {
+			if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
 				$client = $get_client['results'][0];
 
 			} else {
@@ -1460,7 +1818,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		unset( $params['client'] );
 
-		if ( $this->disable_red == 'yes' ) {
+		if ( 'yes' === $this->disable_red ) {
 			unset( $params['success_redirect'] );
 		}
 
@@ -1469,7 +1827,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		WC()->session->set( 'chip_preauthorize', $payment['id'] );
 
 		return array(
-			'result' => 'redirect',
+			'result'   => 'redirect',
 			'redirect' => $payment['checkout_url'],
 		);
 	}
@@ -1515,7 +1873,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function payment_complete( $order, $payment ) {
-		if ( $payment['is_recurring_token'] or ! empty( $payment['recurring_token'] ) ) {
+		if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 			if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
 				$this->add_payment_token( $order->get_id(), $token );
 			}
@@ -1526,7 +1884,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$order->payment_complete( $payment['id'] );
 		$order->save();
 
-		if ( $payment['is_test'] == true ) {
+		if ( true === $payment['is_test'] ) {
+			/* translators: %s: Payment ID */
 			$order->add_order_note( sprintf( __( 'The payment (%s) made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment['id'] ) );
 		}
 	}
@@ -1536,8 +1895,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function payment_token_deleted( $token_id, $token ) {
-		$user_id = $token->get_user_id();
-		$token_id = $token->get_id();
+		$user_id    = $token->get_user_id();
+		$token_id   = $token->get_id();
 		$payment_id = $token->get_token();
 
 		$chip_token_ids = get_user_meta( $user_id, '_' . $this->id . '_client_token_ids', true );
@@ -1547,7 +1906,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		foreach ( $chip_token_ids as $purchase_id => $c_token_id ) {
-			if ( $token_id == $c_token_id ) {
+			if ( $token_id === $c_token_id ) {
 				unset( $chip_token_ids[ $payment_id ] );
 				update_user_meta( $user_id, '_' . $this->id . '_client_token_ids', $chip_token_ids );
 				break;
@@ -1566,7 +1925,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		try {
 			$order = new WC_Order( $order_id );
-		} catch (Exception $e) {
+		} catch ( Exception $e ) {
 			$this->release_lock( $order_id );
 			return;
 		}
@@ -1581,22 +1940,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$payment = $chip->get_payment( $purchase_id );
 
 		if ( array_key_exists( '__all__', $payment ) ) {
-			$order->add_order_note( __( 'Order status check failed and no further reattempt will be made.', 'chip-for-woocommerce' ) );
+			$order->add_order_note( __( 'Order status check failed && no further reattempt will be made.', 'chip-for-woocommerce' ) );
 			$this->release_lock( $order_id );
 			return;
 		}
 
-		if ( $payment['status'] == 'paid' ) {
+		if ( 'paid' === $payment['status'] ) {
 			$this->payment_complete( $order, $payment );
 			$this->release_lock( $order_id );
 			return;
 		}
 
-		$order->add_order_note( sprintf( __( 'Order status checked and the status is %1$s', 'chip-for-woocommerce' ), $payment['status'] ) );
+		$order->add_order_note( sprintf( __( 'Order status checked && the status is %1$s', 'chip-for-woocommerce' ), $payment['status'] ) );
 
 		$this->release_lock( $order_id );
 
-		if ( $payment['status'] == 'expired' ) {
+		if ( 'expired' === $payment['status'] ) {
 			return;
 		}
 
@@ -1617,30 +1976,30 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 	public function list_fpx_banks() {
 		$default_fpx = array(
-			'' => __( 'Choose your bank', 'chip-for-woocommerce' ),
-			'ABB0233' => __( 'Affin Bank', 'chip-for-woocommerce' ),
+			''         => __( 'Choose your bank', 'chip-for-woocommerce' ),
+			'ABB0233'  => __( 'Affin Bank', 'chip-for-woocommerce' ),
 			'ABMB0212' => __( 'Alliance Bank (Personal)', 'chip-for-woocommerce' ),
-			'AGRO01' => __( 'AGRONet', 'chip-for-woocommerce' ),
+			'AGRO01'   => __( 'AGRONet', 'chip-for-woocommerce' ),
 			'AMBB0209' => __( 'AmBank', 'chip-for-woocommerce' ),
 			'BIMB0340' => __( 'Bank Islam', 'chip-for-woocommerce' ),
 			'BMMB0341' => __( 'Bank Muamalat', 'chip-for-woocommerce' ),
 			'BKRM0602' => __( 'Bank Rakyat', 'chip-for-woocommerce' ),
-			'BOCM01' => __( 'Bank Of China', 'chip-for-woocommerce' ),
-			'BSN0601' => __( 'BSN', 'chip-for-woocommerce' ),
+			'BOCM01'   => __( 'Bank Of China', 'chip-for-woocommerce' ),
+			'BSN0601'  => __( 'BSN', 'chip-for-woocommerce' ),
 			'BCBB0235' => __( 'CIMB Bank', 'chip-for-woocommerce' ),
-			'HLB0224' => __( 'Hong Leong Bank', 'chip-for-woocommerce' ),
+			'HLB0224'  => __( 'Hong Leong Bank', 'chip-for-woocommerce' ),
 			'HSBC0223' => __( 'HSBC Bank', 'chip-for-woocommerce' ),
-			'KFH0346' => __( 'KFH', 'chip-for-woocommerce' ),
-			'MBB0228' => __( 'Maybank2E', 'chip-for-woocommerce' ),
+			'KFH0346'  => __( 'KFH', 'chip-for-woocommerce' ),
+			'MBB0228'  => __( 'Maybank2E', 'chip-for-woocommerce' ),
 			'MB2U0227' => __( 'Maybank2u', 'chip-for-woocommerce' ),
 			'OCBC0229' => __( 'OCBC Bank', 'chip-for-woocommerce' ),
-			'PBB0233' => __( 'Public Bank', 'chip-for-woocommerce' ),
-			'RHB0218' => __( 'RHB Bank', 'chip-for-woocommerce' ),
-			'SCB0216' => __( 'Standard Chartered', 'chip-for-woocommerce' ),
-			'UOB0226' => __( 'UOB Bank', 'chip-for-woocommerce' ),
+			'PBB0233'  => __( 'Public Bank', 'chip-for-woocommerce' ),
+			'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
+			'SCB0216'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
+			'UOB0226'  => __( 'UOB Bank', 'chip-for-woocommerce' ),
 		);
 
-		$data_chip_fpx_b2c_banks = $this->get_fpx_banks_data('chip_fpx_b2c_banks');
+		$data_chip_fpx_b2c_banks = $this->get_fpx_banks_data( 'chip_fpx_b2c_banks' );
 
 		$fpx = $data_chip_fpx_b2c_banks['fpx'];
 
@@ -1656,57 +2015,57 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( false === $data || $this->is_fpx_data_expired( $data ) ) {
 			$data = array(
-				'timestamp' => current_time('timestamp')
+				'timestamp' => current_time( 'timestamp' ),
 			);
 
-			if ( $transient_key == 'chip_fpx_b2c_banks') {
+			if ( 'chip_fpx_b2c_banks' === $transient_key ) {
 				$data['fpx'] = $this->fpx_api()->get_fpx();
 			} else {
 				$data['fpx'] = $this->fpx_api()->get_fpx_b2b1();
 			}
 
-			set_transient($transient_key, $data, $expiration);
+			set_transient( $transient_key, $data, $expiration );
 		}
 
 		return $data;
 	}
 
 	protected function is_fpx_data_expired( $data ) {
-		if ( ! is_array( $data ) || ! isset( $data[ 'timestamp' ] ) ) {
+		if ( ! is_array( $data ) || ! isset( $data['timestamp'] ) ) {
 			return true;
 		}
 
 		$expiration = 60 * 3; // 3 minutes
-		return ( current_time( 'timestamp' ) - $data[ 'timestamp' ] ) > $expiration;
+		return ( current_time( 'timestamp' ) - $data['timestamp'] ) > $expiration;
 	}
 
 	public function list_fpx_b2b1_banks() {
 		$default_fpx = array(
-			'' => __( 'Choose your bank', 'chip-for-woocommerce' ),
-			'ABB0235' => __( 'AFFINMAX', 'chip-for-woocommerce' ),
+			''         => __( 'Choose your bank', 'chip-for-woocommerce' ),
+			'ABB0235'  => __( 'AFFINMAX', 'chip-for-woocommerce' ),
 			'ABMB0213' => __( 'Alliance Bank (Business)', 'chip-for-woocommerce' ),
-			'AGRO02' => __( 'AGRONetBIZ', 'chip-for-woocommerce' ),
+			'AGRO02'   => __( 'AGRONetBIZ', 'chip-for-woocommerce' ),
 			'AMBB0208' => __( 'AmBank', 'chip-for-woocommerce' ),
 			'BIMB0340' => __( 'Bank Islam', 'chip-for-woocommerce' ),
 			'BMMB0342' => __( 'Bank Muamalat', 'chip-for-woocommerce' ),
-			'BNP003' => __( 'BNP Paribas', 'chip-for-woocommerce' ),
+			'BNP003'   => __( 'BNP Paribas', 'chip-for-woocommerce' ),
 			'BCBB0235' => __( 'CIMB Bank', 'chip-for-woocommerce' ),
-			'CIT0218' => __( 'Citibank Corporate Banking', 'chip-for-woocommerce' ),
-			'DBB0199' => __( 'Deutsche Bank', 'chip-for-woocommerce' ),
-			'HLB0224' => __( 'Hong Leong Bank', 'chip-for-woocommerce' ),
+			'CIT0218'  => __( 'Citibank Corporate Banking', 'chip-for-woocommerce' ),
+			'DBB0199'  => __( 'Deutsche Bank', 'chip-for-woocommerce' ),
+			'HLB0224'  => __( 'Hong Leong Bank', 'chip-for-woocommerce' ),
 			'HSBC0223' => __( 'HSBC Bank', 'chip-for-woocommerce' ),
 			'BKRM0602' => __( 'Bank Rakyat', 'chip-for-woocommerce' ),
-			'KFH0346' => __( 'KFH', 'chip-for-woocommerce' ),
-			'MBB0228' => __( 'Maybank2E', 'chip-for-woocommerce' ),
+			'KFH0346'  => __( 'KFH', 'chip-for-woocommerce' ),
+			'MBB0228'  => __( 'Maybank2E', 'chip-for-woocommerce' ),
 			'OCBC0229' => __( 'OCBC Bank', 'chip-for-woocommerce' ),
-			'PBB0233' => __( 'Public Bank', 'chip-for-woocommerce' ),
-			'PBB0234' => __( 'Public Bank PB enterprise', 'chip-for-woocommerce' ),
-			'RHB0218' => __( 'RHB Bank', 'chip-for-woocommerce' ),
-			'SCB0215' => __( 'Standard Chartered', 'chip-for-woocommerce' ),
-			'UOB0228' => __( 'UOB Regional', 'chip-for-woocommerce' ),
+			'PBB0233'  => __( 'Public Bank', 'chip-for-woocommerce' ),
+			'PBB0234'  => __( 'Public Bank PB enterprise', 'chip-for-woocommerce' ),
+			'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
+			'SCB0215'  => __( 'Standard Chartered', 'chip-for-woocommerce' ),
+			'UOB0228'  => __( 'UOB Regional', 'chip-for-woocommerce' ),
 		);
 
-		$data_chip_fpx_b2b1_banks = $this->get_fpx_banks_data('chip_fpx_b2b1_banks');
+		$data_chip_fpx_b2b1_banks = $this->get_fpx_banks_data( 'chip_fpx_b2b1_banks' );
 
 		$fpx = $data_chip_fpx_b2b1_banks['fpx'];
 
@@ -1718,41 +2077,46 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	public function filter_non_available_fpx( &$default_fpx, $fpx ) {
 		if ( is_array( $fpx ) ) {
 			foreach ( $default_fpx as $key => $value ) {
-				if ( $key === '' ) {
+				if ( '' === $key ) {
 					continue;
 				}
-				if ( isset( $fpx[ $key ] ) && $fpx[ $key ] != 'A' ) {
+				if ( isset( $fpx[ $key ] ) && 'A' !== $fpx[ $key ] ) {
 					unset( $default_fpx[ $key ] );
 				}
 			}
 		}
 	}
 
+	/**
+	 * Get list of available Razer e-wallets.
+	 *
+	 * @return array
+	 */
 	public function list_razer_ewallets() {
-		$ewallet_list = [
+		$ewallet_list = array(
 			'' => __( 'Choose your e-wallet', 'chip-for-woocommerce' ),
-		];
+		);
 
-		if ( in_array( 'razer_atome', $this->payment_met ) ) {
+		if ( in_array( 'razer_atome', $this->payment_met, true ) ) {
 			$ewallet_list['Atome'] = __( 'Atome', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_grabpay', $this->payment_met ) ) {
+		if ( in_array( 'razer_grabpay', $this->payment_met, true ) ) {
 			$ewallet_list['GrabPay'] = __( 'GrabPay', 'chip-for-woocommerce' );
 		}
-		if ( in_array( 'razer_maybankqr', $this->payment_met ) ) {
+		if ( in_array( 'razer_maybankqr', $this->payment_met, true ) ) {
 			$ewallet_list['MB2U_QRPay-Push'] = __( 'Maybank QRPay', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_shopeepay', $this->payment_met ) ) {
+		if ( in_array( 'razer_shopeepay', $this->payment_met, true ) ) {
 			$ewallet_list['ShopeePay'] = __( 'ShopeePay', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_tng', $this->payment_met ) ) {
+		if ( in_array( 'razer_tng', $this->payment_met, true ) ) {
 			$ewallet_list['TNG-EWALLET'] = __( 'Touch \'n Go eWallet', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'duitnow_qr', $this->payment_met ) ) {
+		if ( in_array( 'duitnow_qr', $this->payment_met, true ) ) {
 			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
 		}
 
@@ -1760,12 +2124,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function bypass_chip( $url, $payment ) {
-		if ( $this->bypass_chip == 'yes' and ! $payment['is_test'] ) {
-			if ( isset( $_POST['chip_fpx_bank'] ) and ! empty( $_POST['chip_fpx_bank'] ) ) {
+		if ( 'yes' === $this->bypass_chip && ! $payment['is_test'] ) {
+			if ( isset( $_POST['chip_fpx_bank'] ) && ! empty( $_POST['chip_fpx_bank'] ) ) {
 				$url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_bank'] );
-			} elseif ( isset( $_POST['chip_fpx_b2b1_bank'] ) and ! empty( $_POST['chip_fpx_b2b1_bank'] ) ) {
+			} elseif ( isset( $_POST['chip_fpx_b2b1_bank'] ) && ! empty( $_POST['chip_fpx_b2b1_bank'] ) ) {
 				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( $_POST['chip_fpx_b2b1_bank'] );
-			} elseif ( isset( $_POST['chip_razer_ewallet'] ) and ! empty( $_POST['chip_razer_ewallet'] ) ) {
+			} elseif ( isset( $_POST['chip_razer_ewallet'] ) && ! empty( $_POST['chip_razer_ewallet'] ) ) {
 				switch ( $_POST['chip_razer_ewallet'] ) {
 					case 'Atome':
 						$preferred = 'razer_atome';
@@ -1788,52 +2152,58 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				}
 
 				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . sanitize_text_field( $_POST['chip_razer_ewallet'] );
-			} elseif ( is_array( $this->payment_met ) and count( $this->payment_met ) == 1 and $this->payment_met[0] == 'duitnow_qr' ) {
+			} elseif ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'duitnow_qr' === $this->payment_met[0] ) {
 				$url .= '?preferred=duitnow_qr';
 			}
-		} elseif ( $this->id == 'wc_gateway_chip_5' ) {
+		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
 			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
 		}
 		return $url;
 	}
 
 	public function process_payment_method_change( $order_id ) {
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) and 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
+		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			return array(
-				'result' => 'success',
+				'result'   => 'success',
 				'redirect' => wc_get_page_permalink( 'myaccount' ),
 			);
 		}
 
 		$customer = new WC_Customer( get_current_user_id() );
 
-		$url = add_query_arg( [ 'id' => $order_id, 'process_payment_method_change' => 'yes' ], WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) and WC_CHIP_OLD_URL_SCHEME === true ) {
+		$url = add_query_arg(
+			[
+				'id'                            => $order_id,
+				'process_payment_method_change' => 'yes',
+			],
+			WC()->api_request_url( $this->id )
+		);
+		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
 			$url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
 		$params = array(
 			'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
-			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
-			'platform' => 'woocommerce_subscriptions',
-			'success_redirect' => $url,
-			'failure_redirect' => $url,
-			'force_recurring' => true,
-			'reference' => $order_id,
-			'brand_id' => $this->brand_id,
-			'skip_capture' => true,
-			'client' => [
-				'email' => wp_get_current_user()->user_email,
-				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() )
+			'creator_agent'            => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'platform'                 => 'woocommerce_subscriptions',
+			'success_redirect'         => $url,
+			'failure_redirect'         => $url,
+			'force_recurring'          => true,
+			'reference'                => $order_id,
+			'brand_id'                 => $this->brand_id,
+			'skip_capture'             => true,
+			'client'                   => [
+				'email'     => wp_get_current_user()->user_email,
+				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() ),
 			],
-			'purchase' => [
+			'purchase'                 => [
 				'currency' => 'MYR',
 				'products' => [
 					[
-						'name' => 'Add payment method',
-						'price' => 0
-					]
-				]
+						'name'  => 'Add payment method',
+						'price' => 0,
+					],
+				],
 			],
 		);
 
@@ -1848,7 +2218,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				throw new Exception( __( 'Failed to get client', 'chip-for-woocommerce' ) );
 			}
 
-			if ( is_array( $get_client['results'] ) and ! empty( $get_client['results'] ) ) {
+			if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
 				$client = $get_client['results'][0];
 
 			} else {
@@ -1862,7 +2232,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		unset( $params['client'] );
 
-		if ( $this->disable_red == 'yes' ) {
+		if ( 'yes' === $this->disable_red ) {
 			unset( $params['success_redirect'] );
 		}
 
@@ -1872,9 +2242,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$redirect_url = $payment['checkout_url'];
 
-		if ( is_array( $payment['payment_method_whitelist'] ) and ! empty( $payment['payment_method_whitelist'] ) ) {
+		if ( is_array( $payment['payment_method_whitelist'] ) && ! empty( $payment['payment_method_whitelist'] ) ) {
 			foreach ( $payment['payment_method_whitelist'] as $pm ) {
-				if ( ! in_array( $pm, [ 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' ] ) ) {
+				if ( ! in_array( $pm, array( 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' ), true ) ) {
 					$redirect_url = $payment['checkout_url'];
 					break;
 				}
@@ -1884,17 +2254,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		return array(
-			'result' => 'success',
+			'result'   => 'success',
 			'redirect' => $redirect_url,
 		);
 	}
 
 	public function maybe_dont_update_payment_method( $update, $new_payment_method, $subscription ) {
-		if ( $this->id != $new_payment_method ) {
+		if ( $this->id !== $new_payment_method ) {
 			return $update;
 		}
 
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) and 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
+		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			/**
 			 * this means the customer choose to use existing card token where it should:
 			 *   - Immediately call update_payment method
@@ -1917,7 +2287,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 	public function handle_payment_method_change() {
 		$subscription_id = intval( $_GET['id'] );
-		$payment_id = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
+		$payment_id      = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
 
 		if ( ! wcs_is_subscription( $subscription_id ) ) {
 			exit( __( 'Order is not subscription', 'chip-for-woocommerce' ) );
@@ -1928,21 +2298,21 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		if ( ! $payment_id && isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 			$content = file_get_contents( 'php://input' );
 
-			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) != 1 ) {
+			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
 				$this->log_order_info( $message, $subscription );
 				exit( $message );
 			}
 
-			$payment = json_decode( $content, true );
+			$payment    = json_decode( $content, true );
 			$payment_id = array_key_exists( 'id', $payment ) ? sanitize_key( $payment['id'] ) : '';
-		} else if ( $payment_id ) {
+		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
 			exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
-		if ( $payment['status'] != 'preauthorized' ) {
+		if ( 'preauthorized' !== $payment['status'] ) {
 			wc_clear_notices();
 			wc_add_notice( sprintf( '%1$s %2$s', __( 'Unable to change payment method.', 'chip-for-woocommerce' ), print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
 			wp_safe_redirect( $subscription->get_view_order_url() );
@@ -1962,19 +2332,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				$subscription_ids = WCS_Customer_Store::instance()->get_users_subscription_ids( $subscription->get_customer_id() );
 				foreach ( $subscription_ids as $subscription_id ) {
 					// Skip the subscription providing the new payment meta.
-					if ( $subscription->get_id() == $subscription_id ) {
+					if ( $subscription->get_id() === $subscription_id ) {
 						continue;
 					}
 
 					$user_subscription = wcs_get_subscription( $subscription_id );
-					// Skip if subscription's current payment method is not supported
+					// Skip if subscription's current payment method is not supported.
 					if ( ! $user_subscription->payment_method_supports( 'subscription_cancellation' ) ) {
 						continue;
 					}
 
-					// Skip if there are no remaining payments or the subscription is not current.
+					// Skip if there are no remaining payments || the subscription is not current.
 					if ( $user_subscription->get_time( 'next_payment' ) <= 0 || ! $user_subscription->has_status( array( 'active', 'on-hold' ) ) ) {
-						continue;
+							continue;
 					}
 
 					$this->add_payment_token( $user_subscription->get_id(), $token );
@@ -1989,26 +2359,26 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function handle_change_payment_method_shortcode( $subscription ) {
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) and 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
+		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			$token_id = wc_clean( $_POST[ "wc-{$this->id}-payment-token" ] );
 
 			$this->add_payment_token( $subscription->get_id(), WC_Payment_Tokens::get( $token_id ) );
 
-			if ( isset( $_POST['update_all_subscriptions_payment_method'] ) and $_POST['update_all_subscriptions_payment_method'] ) {
+			if ( isset( $_POST['update_all_subscriptions_payment_method'] ) && $_POST['update_all_subscriptions_payment_method'] ) {
 				$subscription_ids = WCS_Customer_Store::instance()->get_users_subscription_ids( $subscription->get_customer_id() );
 				foreach ( $subscription_ids as $subscription_id ) {
 					// Skip the subscription providing the new payment meta.
-					if ( $subscription->get_id() == $subscription_id ) {
+					if ( $subscription->get_id() === $subscription_id ) {
 						continue;
 					}
 
 					$user_subscription = wcs_get_subscription( $subscription_id );
-					// Skip if subscription's current payment method is not supported
+					// Skip if subscription's current payment method is not supported.
 					if ( ! $user_subscription->payment_method_supports( 'subscription_cancellation' ) ) {
 						continue;
 					}
 
-					// Skip if there are no remaining payments or the subscription is not current.
+					// Skip if there are no remaining payments || the subscription is not current.
 					if ( $user_subscription->get_time( 'next_payment' ) <= 0 || ! $user_subscription->has_status( array( 'active', 'on-hold' ) ) ) {
 						continue;
 					}
@@ -2020,7 +2390,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function maybe_hide_add_new_payment_method( $html, $gateway ) {
-		if ( count( $gateway->get_tokens() ) == 0 ) {
+		if ( count( $gateway->get_tokens() ) === 0 ) {
 			return '';
 		}
 
@@ -2058,7 +2428,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
     </p>';
 
 		$default_fields = array(
-			'card-name-field' => '<p class="form-row form-row-wide">
+			'card-name-field'   => '<p class="form-row form-row-wide">
         <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
         <input id="' . esc_attr( $this->id ) . '-card-name" style="font-size: 1.5em; padding: 8px;" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="text" maxlength="30" placeholder="Name" />
       </p>',
@@ -2080,44 +2450,44 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		?>
 
 		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
-			<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
-			<?php
-			$allowed_html = array(
-					'p'     => array(
-						'class' => array(),
-					),
-					'label' => array(
-						'for' => array(),
-					),
-					'span'  => array(
-						'class' => array(),
-					),
-					'input' => array(
-						'id'           => array(),
-						'class'        => array(),
-						'type'         => array(),
-						'inputmode'    => array(),
-						'autocomplete' => array(),
-						'autocorrect'  => array(),
-						'autocapitalize' => array(),
-						'spellcheck'   => array(),
-						'maxlength'    => array(),
-						'placeholder'  => array(),
-						'style'        => array(),
-						'name'         => array(),
-						'value'        => array(),
-					),
-				);
-				foreach ( $fields as $field ) {
-					echo wp_kses( $field, $allowed_html );
-				}
-			?>
-			<?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
+		<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
+		<?php
+		$allowed_html = array(
+			'p'     => array(
+				'class' => array(),
+			),
+			'label' => array(
+				'for' => array(),
+			),
+			'span'  => array(
+				'class' => array(),
+			),
+			'input' => array(
+				'id'             => array(),
+				'class'          => array(),
+				'type'           => array(),
+				'inputmode'      => array(),
+				'autocomplete'   => array(),
+				'autocorrect'    => array(),
+				'autocapitalize' => array(),
+				'spellcheck'     => array(),
+				'maxlength'      => array(),
+				'placeholder'    => array(),
+				'style'          => array(),
+				'name'           => array(),
+				'value'          => array(),
+			),
+		);
+		foreach ( $fields as $field ) {
+			echo wp_kses( $field, $allowed_html );
+		}
+		?>
+		<?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
 			<div class="clear"></div>
 		</fieldset>
 		<?php
 
-		if ( $this->force_token != 'yes' ) {
+		if ( 'yes' !== $this->force_token ) {
 			$this->save_payment_method_checkbox();
 		}
 
@@ -2127,31 +2497,45 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function get_payment_method_list() {
-		return [ 'fpx' => 'FPX', 'fpx_b2b1' => 'FPX B2B1', 'mastercard' => 'Mastercard', 'maestro' => 'Maestro', 'visa' => 'Visa', 'mpgs_google_pay' => 'Google Pay', 'mpgs_apple_pay' => 'Apple Pay', 'razer_atome' => 'Razer Atome', 'razer_grabpay' => 'Razer Grabpay', 'razer_maybankqr' => 'Razer Maybankqr', 'razer_shopeepay' => 'Razer Shopeepay', 'razer_tng' => 'Razer Tng', 'duitnow_qr' => 'Duitnow QR' ];
+		return [
+			'fpx'             => 'FPX',
+			'fpx_b2b1'        => 'FPX B2B1',
+			'mastercard'      => 'Mastercard',
+			'maestro'         => 'Maestro',
+			'visa'            => 'Visa',
+			'mpgs_google_pay' => 'Google Pay',
+			'mpgs_apple_pay'  => 'Apple Pay',
+			'razer_atome'     => 'Razer Atome',
+			'razer_grabpay'   => 'Razer Grabpay',
+			'razer_maybankqr' => 'Razer Maybankqr',
+			'razer_shopeepay' => 'Razer Shopeepay',
+			'razer_tng'       => 'Razer Tng',
+			'duitnow_qr'      => 'Duitnow QR',
+		];
 	}
 
 	public function add_item_order_fee( &$order ) {
 		foreach ( $order->get_items( 'fee' ) as $item_id => $item_value ) {
-			if ( in_array( $item_value->get_name( 'chip_view' ), [ 'Fixed Processing Fee', 'Variable Processing Fee' ] ) ) {
+			if ( in_array( $item_value->get_name( 'chip_view' ), array( 'Fixed Processing Fee', 'Variable Processing Fee' ), true ) ) {
 				$order->remove_item( $item_id );
 			}
 		}
 
 		// It cannot be baesd on the item id as in some cases the id is changed
 		// if (!empty($item_id = $order->get_meta( '_chip_fixed_processing_fee', true))) {
-		//   $item_id = absint( $item_id );
+		// $item_id = absint( $item_id );
 
-		//   if ( $order->get_item( $item_id ) ) {
-		//     $order->remove_item($item_id);
-		//   }
+		// if ( $order->get_item( $item_id ) ) {
+		// $order->remove_item($item_id);
+		// }
 		// }
 
 		// if (!empty($item_id = $order->get_meta( '_chip_variable_processing_fee', true))) {
-		//   $item_id = absint( $item_id );
+		// $item_id = absint( $item_id );
 
-		//   if ( $order->get_item( $item_id ) ) {
-		//     $order->remove_item($item_id);
-		//   }
+		// if ( $order->get_item( $item_id ) ) {
+		// $order->remove_item($item_id);
+		// }
 		// }
 
 		do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
@@ -2200,9 +2584,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 	public function get_payment_method_for_recurring() {
 
-		if ( is_countable( $pmw = $this->get_payment_method_whitelist() ) and count( $pmw ) >= 1 ) {
+		if ( is_countable( $pmw = $this->get_payment_method_whitelist() ) && count( $pmw ) >= 1 ) {
 			return $pmw;
-		} else if ( $this->supports( 'tokenization' ) ) {
+		} elseif ( $this->supports( 'tokenization' ) ) {
 			return [ 'visa', 'mastercard' ]; // return the most generic card payment method
 		}
 
@@ -2210,10 +2594,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	public function maybe_delete_payment_token( $charge_payment, $token_id ) {
-		if ( is_array( $charge_payment ) and array_key_exists( '__all__', $charge_payment ) ) {
+		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			if ( is_array( $charge_payment['__all__'] ) ) {
 				foreach ( $charge_payment['__all__'] as $errors ) {
-					if ( isset( $errors['code'] ) and $errors['code'] == 'invalid_recurring_token' ) {
+					if ( isset( $errors['code'] ) && 'invalid_recurring_token' === $errors['code'] ) {
 						WC_Payment_Tokens::delete( $token_id );
 					}
 				}
@@ -2249,7 +2633,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		$callback_url = add_query_arg( [ 'id' => $order->get_id() ], WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) and WC_CHIP_OLD_URL_SCHEME ) {
+		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order->get_id() );
 		}
 
@@ -2258,25 +2642,25 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 		$total_pre_order_fee = WC_Pre_Orders_Product::get_pre_order_fee( $product );
 
-		# TODO: Check if still require to minus total_pre_order_fee;
+		// TODO: Check if still require to minus total_pre_order_fee;
 		$total = absint( $order->get_total() ) - absint( $total_pre_order_fee );
 
 		$params = [
 			'success_callback' => $callback_url,
-			'send_receipt' => false,
-			'creator_agent' => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
-			'reference' => $order->get_id(),
-			'platform' => 'woocommerce',
-			'due' => $this->get_due_timestamp(),
-			'brand_id' => $this->brand_id,
-			'client_id' => get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
-			'purchase' => [
-				'timezone' => $this->purchase_tz,
-				'currency' => $order->get_currency(),
-				'language' => $this->get_language(),
-				'due_strict' => $this->due_strict == 'yes',
+			'send_receipt'     => false,
+			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'reference'        => $order->get_id(),
+			'platform'         => 'woocommerce',
+			'due'              => $this->get_due_timestamp(),
+			'brand_id'         => $this->brand_id,
+			'client_id'        => get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
+			'purchase'         => [
+				'timezone'       => $this->purchase_tz,
+				'currency'       => $order->get_currency(),
+				'language'       => $this->get_language(),
+				'due_strict'     => 'yes' === $this->due_strict,
 				'total_override' => round( $total * 100 ),
-				'products' => [],
+				'products'       => [],
 			],
 		];
 
@@ -2284,22 +2668,22 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		foreach ( $items as $item ) {
 			$price = round( $item->get_total() * 100 );
-			$qty = $item->get_quantity();
+			$qty   = $item->get_quantity();
 
 			if ( $price < 0 ) {
 				$price = 0;
 			}
 
 			$params['purchase']['products'][] = array(
-				'name' => substr( $item->get_name(), 0, 256 ),
-				'price' => round( $price / $qty ),
-				'quantity' => $qty
+				'name'     => substr( $item->get_name(), 0, 256 ),
+				'price'    => round( $price / $qty ),
+				'quantity' => $qty,
 			);
 		}
 
 		$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 
-		$chip = $this->api();
+		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
 
 		$order->add_order_note(
@@ -2311,9 +2695,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
 
-		$token = new WC_Payment_Token_CC;
+		$token = new WC_Payment_Token_CC();
 		foreach ( $tokens as $key => $t ) {
-			if ( $t->get_gateway_id() == $this->id ) {
+			if ( $t->get_gateway_id() === $this->id ) {
 				$token = $t;
 				break;
 			}
@@ -2325,25 +2709,32 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->maybe_delete_payment_token( $charge_payment, $token->get_id() );
 
-		if ( is_array( $charge_payment ) and array_key_exists( '__all__', $charge_payment ) ) {
+		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$order->update_status( 'failed' );
 			$order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment['__all__'], true ) ) );
-		} elseif ( is_array( $charge_payment ) and $charge_payment['status'] == 'paid' ) {
+		} elseif ( is_array( $charge_payment ) && 'paid' === $charge_payment['status'] ) {
 			$this->payment_complete( $order, $charge_payment );
+			/* translators: %s: Transaction ID */
 			$order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
 		} else {
 			$order->update_status( 'failed' );
 			$order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
 		}
 
+		/* translators: %1$s: Token ID */
 		$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
 		$this->release_lock( $order->get_id() );
-
 	}
 
+	/**
+	 * Register metabox on dashboard.
+	 *
+	 * @param WP_Screen $current_screen Current screen object.
+	 * @return void
+	 */
 	public function register_metabox( $current_screen ) {
-		if ( $this->enabled != 'yes' or $this->enable_metabox != 'yes' or empty( $this->public_key ) ) {
+		if ( 'yes' !== $this->enabled || 'yes' !== $this->enable_metabox || empty( $this->public_key ) ) {
 			return;
 		}
 
@@ -2414,45 +2805,55 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return;
 		}
 
-		$this->chip_incoming_count = $turnover['incoming']['count']['all'];
-		$this->chip_incoming_fee = $turnover['incoming']['fee_sell'] / 100;
+		$this->chip_incoming_count    = $turnover['incoming']['count']['all'];
+		$this->chip_incoming_fee      = $turnover['incoming']['fee_sell'] / 100;
 		$this->chip_incoming_turnover = $turnover['incoming']['turnover'] / 100;
 
-		$this->chip_outgoing_count = $turnover['outgoing']['count']['all'];
-		$this->chip_outgoing_fee = $turnover['outgoing']['fee_sell'] / 100;
+		$this->chip_outgoing_count    = $turnover['outgoing']['count']['all'];
+		$this->chip_outgoing_fee      = $turnover['outgoing']['fee_sell'] / 100;
 		$this->chip_outgoing_turnover = $turnover['outgoing']['turnover'] / 100;
 
 		$this->chip_company_balance = $balance['MYR']['available_balance'] / 100;
 	}
 
+	/**
+	 * Enqueue meta box scripts.
+	 *
+	 * @return void
+	 */
 	public function meta_box_scripts() {
-		if ( $this->enabled != 'yes' or $this->enable_metabox != 'yes' or empty( $this->public_key ) ) {
+		if ( 'yes' !== $this->enabled || 'yes' !== $this->enable_metabox || empty( $this->public_key ) ) {
 			return;
 		}
 
-		// get current admin screen, or null
+		// Get current admin screen, or null.
 		$screen = get_current_screen();
-		// verify admin screen object
+		// Verify admin screen object.
 		if ( is_object( $screen ) ) {
-			if ( $screen->post_type == '' and in_array( $screen->id, [ 'dashboard' ] ) ) {
-				// enqueue script
-				wp_enqueue_script( $this->id . '_meta_box_script', WC_CHIP_URL . 'admin/meta-boxes/js/admin_' . $this->id . '.js', [ 'jquery' ] );
+			if ( '' === $screen->post_type && in_array( $screen->id, array( 'dashboard' ), true ) ) {
+				// Enqueue script.
+				wp_enqueue_script( $this->id . '_meta_box_script', WC_CHIP_URL . 'admin/meta-boxes/js/admin_' . $this->id . '.js', array( 'jquery' ), WC_CHIP_MODULE_VERSION, true );
 
 				// localize script, create a custom js object
 				wp_localize_script(
 					$this->id . '_meta_box_script',
 					$this->id . '_meta_box_obj',
-					[
-						'url' => admin_url( 'admin-ajax.php' ),
+					array(
+						'url'        => admin_url( 'admin-ajax.php' ),
 						'gateway_id' => $this->id,
-					]
+					)
 				);
 			}
 		}
 	}
 
+	/**
+	 * Handle metabox AJAX request.
+	 *
+	 * @return void
+	 */
 	public function metabox_ajax_handler() {
-		if ( $this->enabled != 'yes' or $this->enable_metabox != 'yes' or empty( $this->public_key ) ) {
+		if ( 'yes' !== $this->enabled || 'yes' !== $this->enable_metabox || empty( $this->public_key ) ) {
 			wp_die();
 		}
 
@@ -2461,18 +2862,21 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->load_metabox_info();
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( array_key_exists( 'gateway_id', $_POST ) ) {
-			if ( $_POST['gateway_id'] == $this->id ) {
-				$data = [
-					'balance' => number_format( $this->chip_company_balance, 2 ),
-					'incoming_count' => number_format( $this->chip_incoming_count ),
-					'incoming_fee' => number_format( $this->chip_incoming_fee, 2 ),
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$gateway_id = sanitize_text_field( wp_unslash( $_POST['gateway_id'] ) );
+			if ( $gateway_id === $this->id ) {
+				$data = array(
+					'balance'           => number_format( $this->chip_company_balance, 2 ),
+					'incoming_count'    => number_format( $this->chip_incoming_count ),
+					'incoming_fee'      => number_format( $this->chip_incoming_fee, 2 ),
 					'incoming_turnover' => number_format( $this->chip_incoming_turnover, 2 ),
-					'outgoing_count' => number_format( $this->chip_outgoing_count ),
-					'outgoing_fee' => number_format( $this->chip_outgoing_fee, 2 ),
+					'outgoing_count'    => number_format( $this->chip_outgoing_count ),
+					'outgoing_fee'      => number_format( $this->chip_outgoing_fee, 2 ),
 					'outgoing_turnover' => number_format( $this->chip_outgoing_turnover, 2 ),
-				];
-				echo json_encode( $data );
+				);
+				echo wp_json_encode( $data );
 			}
 		}
 
