@@ -190,7 +190,7 @@ class Chip_Woocommerce {
 	 */
 	public function block_support() {
 		if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-blocks.php';
+			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-blocks-support.php';
 			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-2-blocks-support.php';
 			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-3-blocks-support.php';
 			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-wc-gateway-chip-4-blocks-support.php';

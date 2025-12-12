@@ -72,10 +72,10 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 		);
 
 		$localize_variable = array(
-			'id'      => $this->name,
-			'fpx_b2c' => array( 'empty' => 'bank' ),
+			'id'       => $this->name,
+			'fpx_b2c'  => array( 'empty' => 'bank' ),
 			'fpx_b2b1' => array( 'empty' => 'bank' ),
-			'razer'   => array( 'empty' => 'ewallet' ),
+			'razer'    => array( 'empty' => 'ewallet' ),
 		);
 
 		$whitelisted_payment_method = $this->gateway->get_payment_method_whitelist();
@@ -92,12 +92,10 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 				} elseif ( 'fpx_b2b1' === $whitelisted_payment_method[0] ) {
 					$localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
 					unset( $localize_variable['fpx_b2b1'][''] );
-				} else {
+				} elseif ( count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0 ) {
 					// Checker when whitelist one e-wallet only (razer).
-					if ( ( count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0 ) ) {
-						$localize_variable['razer'] = $this->gateway->list_razer_ewallets();
-						unset( $localize_variable['razer'][''] );
-					}
+					$localize_variable['razer'] = $this->gateway->list_razer_ewallets();
+					unset( $localize_variable['razer'][''] );
 				}
 			} elseif ( 0 === count( array_diff( $whitelisted_payment_method, $razer_ewallet_list ) ) ) {
 				$localize_variable['razer'] = $this->gateway->list_razer_ewallets();
@@ -143,3 +141,4 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 		);
 	}
 }
+
