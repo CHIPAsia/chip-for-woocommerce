@@ -738,8 +738,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 					$fpx_txn_id          = $payment_extra['payload']['fpx_fpxTxnId'][0];
 					$fpx_seller_order_no = $payment_extra['payload']['fpx_sellerOrderNo'][0];
 
-					/* translators: %1$s: FPX Debit Auth Code, %2$s: FPX Transaction ID, %3$s: FPX Seller Order Number */
 					$order->add_order_note(
+						/* translators: %1$s: FPX Debit Auth Code, %2$s: FPX Transaction ID, %3$s: FPX Seller Order Number */
 						sprintf( __( 'FPX Debit Auth Code: %1$s. FPX Transaction ID: %2$s. FPX Seller Order Number: %3$s.', 'chip-for-woocommerce' ), $debit_auth_code, $fpx_txn_id, $fpx_seller_order_no )
 					);
 				}
@@ -1324,7 +1324,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			);
 		} else {
 			foreach ( $items as $item ) {
-				/* @var \WC_Order_Item_Product $item */
 				$price = round( $item->get_total() * 100 );
 				$qty   = $item->get_quantity();
 
@@ -1401,8 +1400,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$params['payment_method_whitelist'] = $this->payment_met;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if ( isset( $_POST[ "wc-{$this->id}-new-payment-method" ] ) && in_array( sanitize_text_field( wp_unslash( $_POST[ "wc-{$this->id}-new-payment-method" ] ) ), array( 'true', '1' ), true ) ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		$new_payment_method = isset( $_POST[ "wc-{$this->id}-new-payment-method" ] ) ? sanitize_text_field( wp_unslash( $_POST[ "wc-{$this->id}-new-payment-method" ] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		if ( in_array( $new_payment_method, array( 'true', '1' ), true ) ) {
 			$params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
 			$params['force_recurring']          = true;
 		}
@@ -1825,7 +1826,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		} else {
 			// MySQL named lock with 15 second timeout.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->query( $wpdb->prepare( "SELECT GET_LOCK(%s, 15)", 'chip_payment_' . $order_id ) );
+			$wpdb->query( $wpdb->prepare( 'SELECT GET_LOCK(%s, 15)', 'chip_payment_' . $order_id ) );
 		}
 	}
 
@@ -1849,7 +1850,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		} else {
 			// MySQL release named lock.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->query( $wpdb->prepare( "SELECT RELEASE_LOCK(%s)", 'chip_payment_' . $order_id ) );
+			$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'chip_payment_' . $order_id ) );
 		}
 	}
 
@@ -1871,7 +1872,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( null === $is_pgsql ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			$result  = $wpdb->get_var( 'SELECT VERSION()' );
+			$result   = $wpdb->get_var( 'SELECT VERSION()' );
 			$is_pgsql = ( false !== stripos( $result, 'PostgreSQL' ) );
 		}
 
