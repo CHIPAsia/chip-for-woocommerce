@@ -37,9 +37,12 @@ jobs:
           mkdir "$VERSION"
           git archive HEAD | tar -x -C "$VERSION"
           
+          # Create directory for build artifacts (may not exist after git archive)
+          mkdir -p "$VERSION/assets/js/frontend"
+          
           # Copy build artifacts (not in git)
-          cp -r assets/js/frontend/*.js "$VERSION/assets/js/frontend/"
-          cp -r assets/js/frontend/*.php "$VERSION/assets/js/frontend/"
+          cp assets/js/frontend/*.js "$VERSION/assets/js/frontend/"
+          cp assets/js/frontend/*.php "$VERSION/assets/js/frontend/"
           
           echo "✅ Build artifacts copied"
           ls -la "$VERSION/assets/js/frontend/"

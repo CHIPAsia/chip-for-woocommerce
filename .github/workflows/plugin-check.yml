@@ -35,9 +35,12 @@ jobs:
           # Use git archive to get clean files (respects .gitignore)
           git archive HEAD | tar -x -C dist/chip-for-woocommerce
           
+          # Create directory for build artifacts (may not exist after git archive)
+          mkdir -p dist/chip-for-woocommerce/assets/js/frontend
+          
           # Copy build artifacts (not in git)
-          cp -r assets/js/frontend/*.js dist/chip-for-woocommerce/assets/js/frontend/
-          cp -r assets/js/frontend/*.php dist/chip-for-woocommerce/assets/js/frontend/
+          cp assets/js/frontend/*.js dist/chip-for-woocommerce/assets/js/frontend/
+          cp assets/js/frontend/*.php dist/chip-for-woocommerce/assets/js/frontend/
           
           echo "✅ Prepared plugin folder"
           ls -la dist/chip-for-woocommerce/assets/js/frontend/
@@ -124,7 +127,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies and build
         run: |
@@ -134,7 +137,7 @@ jobs:
       - name: Prepare plugin directory (exclude hidden files)
         run: |
           mkdir -p ./build/chip-for-woocommerce
-          # Copy only non-hidden files and directories
+          # Copy only non-hidden files and directories (includes build artifacts since they exist now)
           rsync -av --exclude='.*' --exclude='build' --exclude='node_modules' ./ ./build/chip-for-woocommerce/
           ls -la ./build/chip-for-woocommerce/assets/js/frontend/
 
