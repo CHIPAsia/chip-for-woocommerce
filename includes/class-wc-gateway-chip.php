@@ -269,7 +269,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$file_extension = 'svg';
 		}
 
-		$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', plugins_url( "assets/{$logo}.{$file_extension}", WC_CHIP_FILE ) );
+		$this->icon = $this->apply_filters_with_deprecated( 'load_icon', plugins_url( "assets/{$logo}.{$file_extension}", WC_CHIP_FILE ) );
 	}
 
 	/**
@@ -308,7 +308,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 */
 	protected function init_currency_check() {
 		$woocommerce_currency = get_woocommerce_currency();
-		$supported_currencies = apply_filters( 'wc_' . $this->id . '_supported_currencies', array( 'MYR' ), $this );
+		$supported_currencies = $this->apply_filters_with_deprecated( 'supported_currencies', array( 'MYR' ), $this );
 
 		if ( ! in_array( $woocommerce_currency, $supported_currencies, true ) ) {
 			$this->enabled = 'no';
@@ -402,7 +402,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$style = '';
 		}
 
-		$style = apply_filters( 'wc_' . $this->id . '_get_icon_style', $style, $this );
+		$style = $this->apply_filters_with_deprecated( 'get_icon_style', $style, $this );
 
 		$icon = '<img class="chip-for-woocommerce-' . esc_attr( $this->id ) . '" src="' . esc_url( WC_HTTPS::force_https_url( $this->icon ) ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
 		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
@@ -563,8 +563,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
-		if ( has_action( 'wc_' . $this->id . '_before_handle_callback_order' ) ) {
-			do_action( 'wc_' . $this->id . '_before_handle_callback_order', $order, $payment, $this );
+		if ( has_action( 'chip_' . $this->id . '_before_handle_callback_order' ) ) {
+			$this->do_action_with_deprecated( 'before_handle_callback_order', $order, $payment, $this );
 
 			$payment = $this->api()->get_payment( $payment_id );
 		}
@@ -608,8 +608,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->release_lock( $order_id );
 
-		if ( has_action( 'wc_' . $this->id . '_after_handle_callback_order' ) ) {
-			do_action( 'wc_' . $this->id . '_after_handle_callback_order', $order, $payment, $this );
+		if ( has_action( 'chip_' . $this->id . '_after_handle_callback_order' ) ) {
+			$this->do_action_with_deprecated( 'after_handle_callback_order', $order, $payment, $this );
 		}
 
 		$redirect_url = $this->get_return_url( $order );
@@ -618,7 +618,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$redirect_url = esc_url_raw( $order->get_cancel_order_url_raw() );
 		}
 
-		$redirect_url = apply_filters( 'wc_' . $this->id . '_order_redirect_url', $redirect_url, $this );
+		$redirect_url = $this->apply_filters_with_deprecated( 'order_redirect_url', $redirect_url, $this );
 
 		wp_safe_redirect( $redirect_url );
 
@@ -884,8 +884,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function payment_fields() {
-		if ( has_action( 'wc_' . $this->id . '_payment_fields' ) ) {
-			do_action( 'wc_' . $this->id . '_payment_fields', $this );
+		if ( has_action( 'chip_' . $this->id . '_payment_fields' ) ) {
+			$this->do_action_with_deprecated( 'payment_fields', $this );
 		} elseif ( $this->supports( 'tokenization' ) && is_checkout() ) {
 			$description = $this->get_description();
 			if ( ! empty( $description ) ) {
@@ -1040,7 +1040,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function process_payment( $order_id ) {
-		do_action( 'wc_' . $this->id . '_before_process_payment', $order_id, $this );
+		$this->do_action_with_deprecated( 'before_process_payment', $order_id, $this );
 
 		// Start of logic for subscription_payment_method_change_customer supports.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -1238,7 +1238,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 		// End of logic for WooCommerce Pre-orders.
 
-		$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
+		$params = $this->apply_filters_with_deprecated( 'purchase_params', $params, $this );
 
 		$payment = $chip->create_payment( $params );
 
@@ -1286,7 +1286,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
 		$order->save();
 
-		do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
+		$this->do_action_with_deprecated( 'chip_purchase', $payment, $order->get_id() );
 
 		if ( 'paid' !== $payment_requery_status ) {
 			$this->schedule_requery( $payment['id'], $order_id );
@@ -1305,7 +1305,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		do_action( 'wc_' . $this->id . '_after_process_payment', $order_id, $this );
+		$this->do_action_with_deprecated( 'after_process_payment', $order_id, $this );
 
 		return array(
 			'result'   => 'success',
@@ -1337,7 +1337,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$has_api_creds    = $this->enabled && $this->secret_key && $this->brand_id;
 		$can_refund_order = $order && $order->get_transaction_id() && $has_api_creds;
 
-		return apply_filters( 'wc_' . $this->id . '_can_refund_order', $can_refund_order, $order, $this );
+		return $this->apply_filters_with_deprecated( 'can_refund_order', $can_refund_order, $order, $this );
 	}
 
 	/**
@@ -1427,7 +1427,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$public_key = str_replace( '\n', "\n", $public_key );
 
-		$woocommerce_currency = apply_filters( 'wc_' . $this->id . '_purchase_currency', get_woocommerce_currency(), $this );
+		$woocommerce_currency = $this->apply_filters_with_deprecated( 'purchase_currency', get_woocommerce_currency(), $this );
 
 		$available_recurring_payment_method = array();
 
@@ -1507,7 +1507,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			);
 		}
 
-		$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
+		$params = $this->apply_filters_with_deprecated( 'purchase_params', $params, $this );
 
 		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
@@ -1515,7 +1515,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$renewal_order->update_meta_data( '_' . $this->id . '_purchase', $payment );
 		$renewal_order->save();
 
-		do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $renewal_order_id );
+		$this->do_action_with_deprecated( 'chip_purchase', $payment, $renewal_order_id );
 
 		$token = new WC_Payment_Token_CC();
 		foreach ( $tokens as $key => $t ) {
@@ -2006,7 +2006,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->filter_non_available_fpx( $default_fpx, $fpx );
 
-		return apply_filters( 'wc_' . $this->id . '_list_fpx_banks', $default_fpx );
+		return $this->apply_filters_with_deprecated( 'list_fpx_banks', $default_fpx );
 	}
 
 	/**
@@ -2089,7 +2089,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->filter_non_available_fpx( $default_fpx, $fpx );
 
-		return apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', $default_fpx );
+		return $this->apply_filters_with_deprecated( 'list_fpx_b2b1_banks', $default_fpx );
 	}
 
 	/**
@@ -2145,7 +2145,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
 		}
 
-		return apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', $ewallet_list );
+		return $this->apply_filters_with_deprecated( 'list_razer_ewallets', $ewallet_list );
 	}
 
 	/**
@@ -2635,7 +2635,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
+		$this->do_action_with_deprecated( 'before_add_item_order_fee', $order, $this );
 		if ( $this->fix_charges > 0 ) {
 			$item_fee = new WC_Order_Item_Fee();
 
@@ -2665,7 +2665,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$order->calculate_totals();
 		$order->save();
 
-		do_action( 'wc_' . $this->id . '_after_add_item_order_fee', $order, $this );
+		$this->do_action_with_deprecated( 'after_add_item_order_fee', $order, $this );
 	}
 
 	/**
@@ -2817,7 +2817,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			);
 		}
 
-		$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
+		$params = $this->apply_filters_with_deprecated( 'purchase_params', $params, $this );
 
 		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
@@ -2830,7 +2830,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
 		$order->save();
 
-		do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
+		$this->do_action_with_deprecated( 'chip_purchase', $payment, $order->get_id() );
 
 		$token = new WC_Payment_Token_CC();
 		foreach ( $tokens as $key => $t ) {
@@ -2870,5 +2870,56 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
 		$this->release_lock( $order->get_id() );
+	}
+
+	/**
+	 * Apply filters with deprecated wc_ prefix support.
+	 *
+	 * Fires the deprecated wc_ prefixed filter first (with deprecation notice if used),
+	 * then fires the new chip_ prefixed filter. Both hooks are always available.
+	 *
+	 * @param string $hook_suffix The hook suffix after the prefix.
+	 * @param mixed  $value       The value to filter.
+	 * @param mixed  ...$args     Additional arguments to pass to the filter.
+	 * @return mixed The filtered value.
+	 */
+	protected function apply_filters_with_deprecated( $hook_suffix, $value, ...$args ) {
+		$new_hook        = 'chip_' . $this->id . '_' . $hook_suffix;
+		$deprecated_hook = 'wc_' . $this->id . '_' . $hook_suffix;
+
+		// Fire deprecated hook first (with notice if used).
+		if ( has_filter( $deprecated_hook ) ) {
+			_deprecated_hook( $deprecated_hook, '1.9.0', $new_hook );
+		}
+		$value = apply_filters( $deprecated_hook, $value, ...$args );
+
+		// Fire new hook.
+		$value = apply_filters( $new_hook, $value, ...$args );
+
+		return $value;
+	}
+
+	/**
+	 * Do action with deprecated wc_ prefix support.
+	 *
+	 * Fires the deprecated wc_ prefixed action first (with deprecation notice if used),
+	 * then fires the new chip_ prefixed action. Both hooks are always available.
+	 *
+	 * @param string $hook_suffix The hook suffix after the prefix.
+	 * @param mixed  ...$args     Arguments to pass to the action.
+	 * @return void
+	 */
+	protected function do_action_with_deprecated( $hook_suffix, ...$args ) {
+		$new_hook        = 'chip_' . $this->id . '_' . $hook_suffix;
+		$deprecated_hook = 'wc_' . $this->id . '_' . $hook_suffix;
+
+		// Fire deprecated hook first (with notice if used).
+		if ( has_action( $deprecated_hook ) ) {
+			_deprecated_hook( $deprecated_hook, '1.9.0', $new_hook );
+		}
+		do_action( $deprecated_hook, ...$args );
+
+		// Fire new hook.
+		do_action( $new_hook, ...$args );
 	}
 }

@@ -40,7 +40,7 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 	 * @return void
 	 */
 	protected function init_icon() {
-		$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', plugins_url( 'assets/atome.svg', WC_CHIP_FILE ) );
+		$this->icon = $this->apply_filters_with_deprecated( 'load_icon', plugins_url( 'assets/atome.svg', WC_CHIP_FILE ) );
 	}
 
 	/**
@@ -72,10 +72,7 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 		$this->form_fields['description']['default']              = __( 'Buy now pay later with Atome. <br>The bill will be split into three easy payments. <br>No hidden fees, 0% interest. <br><br><a href="https://www.atome.my">Terms & Conditions</a>', 'chip-for-woocommerce' );
 		unset( $this->form_fields['display_logo'] );
 		unset( $this->form_fields['disable_recurring_support'] );
-		unset( $this->form_fields['force_tokenization'] );
 		unset( $this->form_fields['payment_method_whitelist'] );
 		unset( $this->form_fields['bypass_chip'] );
-		unset( $this->form_fields['webhooks'] );
-		unset( $this->form_fields['webhook_public_key'] );
 	}
 }
