@@ -141,4 +141,3 @@ class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
 		);
 	}
 }
-
