@@ -2082,9 +2082,35 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
 			<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
 			<?php
-			foreach ( $fields as $field ) {
-				echo $field; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
-			}
+			$allowed_html = array(
+					'p'     => array(
+						'class' => array(),
+					),
+					'label' => array(
+						'for' => array(),
+					),
+					'span'  => array(
+						'class' => array(),
+					),
+					'input' => array(
+						'id'           => array(),
+						'class'        => array(),
+						'type'         => array(),
+						'inputmode'    => array(),
+						'autocomplete' => array(),
+						'autocorrect'  => array(),
+						'autocapitalize' => array(),
+						'spellcheck'   => array(),
+						'maxlength'    => array(),
+						'placeholder'  => array(),
+						'style'        => array(),
+						'name'         => array(),
+						'value'        => array(),
+					),
+				);
+				foreach ( $fields as $field ) {
+					echo wp_kses( $field, $allowed_html );
+				}
 			?>
 			<?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
 			<div class="clear"></div>
@@ -2096,7 +2122,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
-			echo '<fieldset>' . $cvc_field . '</fieldset>'; // phpcs:ignore WordPress.XSS.EscapeOutput.OutputNotEscaped
+			echo '<fieldset>' . wp_kses( $cvc_field, $allowed_html ) . '</fieldset>';
 		}
 	}
 
