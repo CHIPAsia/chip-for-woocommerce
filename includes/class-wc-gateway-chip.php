@@ -63,13 +63,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	protected $system_url_;
 
 	/**
-	 * Force tokenization setting.
-	 *
-	 * @var string
-	 */
-	protected $force_token;
-
-	/**
 	 * Disable recurring support setting.
 	 *
 	 * @var string
@@ -227,7 +220,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->purchase_tz       = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
 		$this->system_url_       = $this->get_option( 'system_url_scheme', 'https' );
-		$this->force_token       = $this->get_option( 'force_tokenization' );
 		$this->disable_rec       = $this->get_option( 'disable_recurring_support' );
 		$this->payment_met       = $this->get_option( 'payment_method_whitelist' );
 		$this->disable_red       = $this->get_option( 'disable_redirect' );
@@ -843,14 +835,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'default' => 'no',
 		);
 
-		$this->form_fields['force_tokenization'] = array(
-			'title'       => __( 'Force Tokenization', 'chip-for-woocommerce' ),
-			'type'        => 'checkbox',
-			'description' => __( 'Tick to force tokenization if possible. This only applies when <code>Visa</code> || <code>Mastercard</code> || <code>Maestro</code> payment method are available.', 'chip-for-woocommerce' ),
-			'default'     => 'no',
-			'disabled'    => empty( $this->arecuring_p ),
-		);
-
 		$this->form_fields['payment_method_whitelist'] = array(
 			'title'       => __( 'Payment Method Whitelist', 'chip-for-woocommerce' ),
 			'type'        => 'multiselect',
@@ -1176,7 +1160,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'success_redirect' => $callback_url,
 			'failure_redirect' => $callback_url,
 			'cancel_redirect'  => $callback_url,
-			'force_recurring'  => 'yes' === $this->force_token,
+			'force_recurring'  => false,
 			'send_receipt'     => false,
 			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
 			'reference'        => $order->get_id(),
@@ -2693,9 +2677,7 @@ return true;
 		</fieldset>
 		<?php
 
-		if ( 'yes' !== $this->force_token ) {
-			$this->save_payment_method_checkbox();
-		}
+		$this->save_payment_method_checkbox();
 
 		if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
 			echo '<fieldset>' . wp_kses( $cvc_field, $allowed_html ) . '</fieldset>';
