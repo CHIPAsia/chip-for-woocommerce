@@ -1,4 +1,11 @@
 <?php
+/**
+ * CHIP for WooCommerce Uninstall
+ *
+ * Removes all plugin options when the plugin is uninstalled.
+ *
+ * @package CHIP for WooCommerce
+ */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	die;
