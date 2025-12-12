@@ -12,7 +12,17 @@ jobs:
 
     steps:
       - name: Checkout Git repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
 
       - name: Extract version from tag
         id: vars
@@ -26,11 +36,21 @@ jobs:
           VERSION="${{ steps.vars.outputs.version }}"
           mkdir "$VERSION"
           git archive HEAD | tar -x -C "$VERSION"
+          
+          # Copy build artifacts (not in git)
+          cp -r assets/js/frontend/*.js "$VERSION/assets/js/frontend/"
+          cp -r assets/js/frontend/*.php "$VERSION/assets/js/frontend/"
+          
+          echo "✅ Build artifacts copied"
+          ls -la "$VERSION/assets/js/frontend/"
 
       - name: Install SVN
         run: sudo apt-get install -y subversion
 
       - name: Checkout SVN
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
         run: |
           svn checkout --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/chip-for-woocommerce/ svn-tags
 

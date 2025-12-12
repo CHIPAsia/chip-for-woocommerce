@@ -16,6 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+
       - name: Prepare plugin folder
         run: |
           # Create a clean directory structure for the plugin
@@ -25,8 +35,12 @@ jobs:
           # Use git archive to get clean files (respects .gitignore)
           git archive HEAD | tar -x -C dist/chip-for-woocommerce
           
+          # Copy build artifacts (not in git)
+          cp -r assets/js/frontend/*.js dist/chip-for-woocommerce/assets/js/frontend/
+          cp -r assets/js/frontend/*.php dist/chip-for-woocommerce/assets/js/frontend/
+          
           echo "✅ Prepared plugin folder"
-          ls -la dist/
+          ls -la dist/chip-for-woocommerce/assets/js/frontend/
 
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
@@ -65,7 +79,7 @@ jobs:
 
       - name: Check PHP ${{ matrix.php-version }} Compatibility
         run: |
-          phpcs --standard=PHPCompatibilityWP --runtime-set testVersion ${{ matrix.php-version }} --extensions=php --ignore=vendor,node_modules .
+          phpcs --standard=PHPCompatibilityWP --runtime-set testVersion ${{ matrix.php-version }} --extensions=php --ignore=vendor,node_modules,assets/js/frontend .
 
   # Second tier: phpcs runs after php-compatibility
   phpcs:
@@ -94,7 +108,7 @@ jobs:
 
       - name: Run PHPCS
         run: |
-          phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules .
+          phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/js/frontend .
         continue-on-error: false
 
   # Third tier: plugin-check runs after phpcs
@@ -107,12 +121,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+
       - name: Prepare plugin directory (exclude hidden files)
         run: |
           mkdir -p ./build/chip-for-woocommerce
           # Copy only non-hidden files and directories
-          rsync -av --exclude='.*' --exclude='build' ./ ./build/chip-for-woocommerce/
-          ls -la ./build/chip-for-woocommerce/
+          rsync -av --exclude='.*' --exclude='build' --exclude='node_modules' ./ ./build/chip-for-woocommerce/
+          ls -la ./build/chip-for-woocommerce/assets/js/frontend/
 
       # Runs all check categories by default: general, plugin_repo, security, performance, accessibility
       # To run specific categories only, add: categories: |
@@ -123,4 +147,3 @@ jobs:
         with:
           build-dir: './build/chip-for-woocommerce'
           exclude-directories: 'vendor,node_modules'
-
