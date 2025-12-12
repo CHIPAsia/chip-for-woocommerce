@@ -662,12 +662,19 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Handle order callback from CHIP.
+	 * Handle order callback from CHIP payment gateway.
+	 *
+	 * This is an external callback endpoint called by CHIP servers after payment.
+	 * Nonce verification is not possible as requests originate from external service.
+	 * Security is handled via X-Signature header verification using RSA public key.
 	 *
 	 * @return void
 	 */
 	public function handle_callback_order() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
+		if ( ! isset( $_GET['id'] ) ) {
+			exit( 'Missing order ID' );
+		}
 		$order_id = intval( $_GET['id'] );
 
 		$this->api()->log_info( 'received callback for order id: ' . $order_id );
