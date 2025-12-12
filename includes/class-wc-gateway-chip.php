@@ -1476,8 +1476,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			WC()->cart->empty_cart();
 		}
 
-		// WC()->session->set( 'chip_payment_id_' . $order_id, $payment['id'] );
-
 		$this->log_order_info( 'got checkout url, redirecting', $order );
 
 		$payment_requery_status = 'due';
@@ -2784,23 +2782,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		// It cannot be baesd on the item id as in some cases the id is changed
-		// if (!empty($item_id = $order->get_meta( '_chip_fixed_processing_fee', true))) {
-		// $item_id = absint( $item_id );
-
-		// if ( $order->get_item( $item_id ) ) {
-		// $order->remove_item($item_id);
-		// }
-		// }
-
-		// if (!empty($item_id = $order->get_meta( '_chip_variable_processing_fee', true))) {
-		// $item_id = absint( $item_id );
-
-		// if ( $order->get_item( $item_id ) ) {
-		// $order->remove_item($item_id);
-		// }
-		// }
-
 		do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
 		if ( $this->fix_charges > 0 ) {
 			$item_fee = new WC_Order_Item_Fee();
@@ -2941,7 +2922,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 		$total_pre_order_fee = WC_Pre_Orders_Product::get_pre_order_fee( $product );
 
-		// TODO: Check if still require to minus total_pre_order_fee;
+		// TODO: Check if still require to minus total_pre_order_fee.
 		$total = absint( $order->get_total() ) - absint( $total_pre_order_fee );
 
 		$params = array(
@@ -3053,7 +3034,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$this->id . '_box',
 			'CHIP - ' . $this->title,
 			array( $this, 'metabox_html' ),
-			'dashboard', // Post type,
+			'dashboard', // Post type.
 			'normal',
 			'default',
 		);
@@ -3152,7 +3133,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 				// Enqueue script.
 				wp_enqueue_script( $this->id . '_meta_box_script', WC_CHIP_URL . 'admin/meta-boxes/js/admin_' . $this->id . '.js', array( 'jquery' ), WC_CHIP_MODULE_VERSION, true );
 
-				// localize script, create a custom js object
+				// Localize script, create a custom js object.
 				wp_localize_script(
 					$this->id . '_meta_box_script',
 					$this->id . '_meta_box_obj',
@@ -3198,6 +3179,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		wp_die(); // All ajax handlers die when finished
+		wp_die(); // All ajax handlers die when finished.
 	}
 }
