@@ -2451,8 +2451,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @throws Exception If failed to get client.
 	 */
 	public function process_payment_method_change( $order_id ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce.
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce Subscriptions.
+		$payment_token = isset( $_POST[ "wc-{$this->id}-payment-token" ] ) ? sanitize_text_field( wp_unslash( $_POST[ "wc-{$this->id}-payment-token" ] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		if ( '' !== $payment_token && 'new' !== $payment_token ) {
 			return array(
 				'result'   => 'success',
 				'redirect' => wc_get_page_permalink( 'myaccount' ),
@@ -3265,22 +3267,20 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->load_metabox_info();
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if ( array_key_exists( 'gateway_id', $_POST ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$gateway_id = sanitize_text_field( wp_unslash( $_POST['gateway_id'] ) );
-			if ( $gateway_id === $this->id ) {
-				$data = array(
-					'balance'           => number_format( $this->chip_company_balance, 2 ),
-					'incoming_count'    => number_format( $this->chip_incoming_count ),
-					'incoming_fee'      => number_format( $this->chip_incoming_fee, 2 ),
-					'incoming_turnover' => number_format( $this->chip_incoming_turnover, 2 ),
-					'outgoing_count'    => number_format( $this->chip_outgoing_count ),
-					'outgoing_fee'      => number_format( $this->chip_outgoing_fee, 2 ),
-					'outgoing_turnover' => number_format( $this->chip_outgoing_turnover, 2 ),
-				);
-				echo wp_json_encode( $data );
-			}
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer above.
+		$gateway_id = isset( $_POST['gateway_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gateway_id'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		if ( $gateway_id === $this->id ) {
+			$data = array(
+				'balance'           => number_format( $this->chip_company_balance, 2 ),
+				'incoming_count'    => number_format( $this->chip_incoming_count ),
+				'incoming_fee'      => number_format( $this->chip_incoming_fee, 2 ),
+				'incoming_turnover' => number_format( $this->chip_incoming_turnover, 2 ),
+				'outgoing_count'    => number_format( $this->chip_outgoing_count ),
+				'outgoing_fee'      => number_format( $this->chip_outgoing_fee, 2 ),
+				'outgoing_turnover' => number_format( $this->chip_outgoing_turnover, 2 ),
+			);
+			echo wp_json_encode( $data );
 		}
 
 		wp_die(); // All ajax handlers die when finished.
