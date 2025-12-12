@@ -196,13 +196,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	protected $email_fallback;
 
 	/**
-	 * Enable metabox setting.
-	 *
-	 * @var string
-	 */
-	protected $enable_metabox;
-
-	/**
 	 * Cached API instance.
 	 *
 	 * @var Chip_Woocommerce_API
@@ -222,55 +215,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @var array
 	 */
 	protected $cached_payment_method;
-
-	/**
-	 * Metabox incoming count.
-	 *
-	 * @var int
-	 */
-	protected $chip_incoming_count = 0;
-
-	/**
-	 * Metabox incoming fee.
-	 *
-	 * @var int
-	 */
-	protected $chip_incoming_fee = 0;
-
-	/**
-	 * Metabox incoming turnover.
-	 *
-	 * @var int
-	 */
-	protected $chip_incoming_turnover = 0;
-
-	/**
-	 * Metabox outgoing count.
-	 *
-	 * @var int
-	 */
-	protected $chip_outgoing_count = 0;
-
-	/**
-	 * Metabox outgoing fee.
-	 *
-	 * @var int
-	 */
-	protected $chip_outgoing_fee = 0;
-
-	/**
-	 * Metabox outgoing turnover.
-	 *
-	 * @var int
-	 */
-	protected $chip_outgoing_turnover = 0;
-
-	/**
-	 * Metabox company balance.
-	 *
-	 * @var int
-	 */
-	protected $chip_company_balance = 0;
 
 	/**
 	 * Preferred payment type.
@@ -317,7 +261,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->per_charges       = $this->get_option( 'percent_charges', 0 );
 		$this->cancel_order_flow = $this->get_option( 'cancel_order_flow' );
 		$this->email_fallback    = $this->get_option( 'email_fallback' );
-		$this->enable_metabox    = $this->get_option( 'enable_metabox' );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -467,12 +410,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		add_action( 'woocommerce_subscription_change_payment_method_via_pay_shortcode', array( $this, 'handle_change_payment_method_shortcode' ), 10, 1 );
 
 		add_action( 'init', array( $this, 'register_script' ) );
-
-		// Add metaboxes to dashboard.
-		add_action( 'current_screen', array( $this, 'register_metabox' ) );
-
-		add_action( 'admin_enqueue_scripts', array( $this, 'meta_box_scripts' ) );
-		add_action( 'wp_ajax_' . $this->id . '_metabox_refresh', array( $this, 'metabox_ajax_handler' ) );
 	}
 
 	/**
@@ -973,18 +910,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'type'        => 'email',
 			'description' => __( '<strong>Required</strong> if the merchant did not intend to request customer email address', 'chip-for-woocommerce' ),
 			'placeholder' => 'merchant@gmail.com',
-		);
-
-		$this->form_fields['metabox'] = array(
-			'title'       => __( 'Metaboxes', 'chip-for-woocommerce' ),
-			'type'        => 'title',
-			'description' => sprintf( __( 'Option to set meta boxes', 'chip-for-woocommerce' ) ),
-		);
-
-		$this->form_fields['enable_metabox'] = array(
-			'title'       => __( 'Enable account metabox', 'chip-for-woocommerce' ),
-			'type'        => 'checkbox',
-			'description' => __( 'Tick to enable account metabox in WordPress Dashboard. If you are using the same CHIP account for other payment method, you should enable only once.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['webhooks'] = array(
@@ -3119,170 +3044,5 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
 		$this->release_lock( $order->get_id() );
-	}
-
-	/**
-	 * Register metabox on dashboard.
-	 *
-	 * @param WP_Screen $current_screen Current screen object.
-	 * @return void
-	 */
-	public function register_metabox( $current_screen ) {
-		if ( 'yes' !== $this->enabled || 'yes' !== $this->enable_metabox || empty( $this->public_key ) ) {
-			return;
-		}
-
-		if ( ! function_exists( 'add_meta_box' ) ) {
-			return;
-		}
-
-		add_meta_box(
-			$this->id . '_box',
-			'CHIP - ' . $this->title,
-			array( $this, 'metabox_html' ),
-			'dashboard', // Post type.
-			'normal',
-			'default',
-		);
-	}
-
-	/**
-	 * Output metabox HTML content.
-	 *
-	 * @return void
-	 */
-	public function metabox_html() {
-		$this->load_metabox_info();
-		?>
-		<div class="sub" style="background-color: rgb(246, 247, 247);">
-			<p id="chip_company_balance">Balance: RM <span
-					id="<?php echo esc_attr( $this->id ); ?>_balance"><?php echo esc_html( number_format( $this->chip_company_balance, 2 ) ); ?></span></p>
-		</div>
-		<div style="display: grid; grid-template-columns: 2fr 2fr; column-gap: 16px; align-items: center;">
-			<div>
-				<p>Incoming Count: <span
-						id="<?php echo esc_attr( $this->id ); ?>_incoming_count"><?php echo esc_html( number_format( $this->chip_incoming_count ) ); ?></span></p>
-				<p>Incoming Fee: RM <span
-						id="<?php echo esc_attr( $this->id ); ?>_incoming_fee"><?php echo esc_html( number_format( $this->chip_incoming_fee, 2 ) ); ?></span></p>
-				<p>Incoming Turnover: RM <span
-						id="<?php echo esc_attr( $this->id ); ?>_incoming_turnover"><?php echo esc_html( number_format( $this->chip_incoming_turnover, 2 ) ); ?></span>
-				</p>
-			</div>
-			<div>
-				<p>Outgoing Count: <span
-						id="<?php echo esc_attr( $this->id ); ?>_outgoing_count"><?php echo esc_html( number_format( $this->chip_outgoing_count ) ); ?></span></p>
-				<p>Outgoing Fee: RM <span
-						id="<?php echo esc_attr( $this->id ); ?>_outgoing_fee"><?php echo esc_html( number_format( $this->chip_outgoing_fee, 2 ) ); ?></span></p>
-				<p>Outgoing Turnover: RM <span
-						id="<?php echo esc_attr( $this->id ); ?>_outgoing_turnover"><?php echo esc_html( number_format( $this->chip_outgoing_turnover, 2 ) ); ?></span>
-				</p>
-			</div>
-		</div>
-		<form method="POST" id="chip-refresh-meta-box-<?php echo esc_attr( $this->id ); ?>">
-			<input type="submit" name="save" class="button button-primary" value="Refresh">
-		</form>
-		<?php
-	}
-
-	/**
-	 * Load metabox information from API.
-	 *
-	 * @return void
-	 */
-	public function load_metabox_info() {
-		$turnover = get_transient( 'chip_' . $this->id . '_turnover' );
-		if ( false === $turnover ) {
-			$turnover = $this->api()->turnover();
-			set_transient( 'chip_' . $this->id . '_turnover', $turnover, HOUR_IN_SECONDS );
-		}
-
-		if ( ! isset( $turnover['incoming'] ) ) {
-			return;
-		}
-
-		$balance = get_transient( 'chip_' . $this->id . '_balance' );
-		if ( false === $balance ) {
-			$balance = $this->api()->balance();
-			set_transient( 'chip_' . $this->id . '_balance', $balance, HOUR_IN_SECONDS );
-		}
-
-		if ( ! isset( $balance['MYR'] ) ) {
-			return;
-		}
-
-		$this->chip_incoming_count    = $turnover['incoming']['count']['all'];
-		$this->chip_incoming_fee      = $turnover['incoming']['fee_sell'] / 100;
-		$this->chip_incoming_turnover = $turnover['incoming']['turnover'] / 100;
-
-		$this->chip_outgoing_count    = $turnover['outgoing']['count']['all'];
-		$this->chip_outgoing_fee      = $turnover['outgoing']['fee_sell'] / 100;
-		$this->chip_outgoing_turnover = $turnover['outgoing']['turnover'] / 100;
-
-		$this->chip_company_balance = $balance['MYR']['available_balance'] / 100;
-	}
-
-	/**
-	 * Enqueue meta box scripts.
-	 *
-	 * @return void
-	 */
-	public function meta_box_scripts() {
-		if ( 'yes' !== $this->enabled || 'yes' !== $this->enable_metabox || empty( $this->public_key ) ) {
-			return;
-		}
-
-		// Get current admin screen, or null.
-		$screen = get_current_screen();
-		// Verify admin screen object.
-		if ( is_object( $screen ) ) {
-			if ( '' === $screen->post_type && in_array( $screen->id, array( 'dashboard' ), true ) ) {
-				// Enqueue script.
-				wp_enqueue_script( $this->id . '_meta_box_script', WC_CHIP_URL . 'admin/meta-boxes/js/admin_' . $this->id . '.js', array( 'jquery' ), WC_CHIP_MODULE_VERSION, true );
-
-				// Localize script, create a custom js object.
-				wp_localize_script(
-					$this->id . '_meta_box_script',
-					$this->id . '_meta_box_obj',
-					array(
-						'url'        => admin_url( 'admin-ajax.php' ),
-						'gateway_id' => $this->id,
-					)
-				);
-			}
-		}
-	}
-
-	/**
-	 * Handle metabox AJAX request.
-	 *
-	 * @return void
-	 */
-	public function metabox_ajax_handler() {
-		if ( 'yes' !== $this->enabled || 'yes' !== $this->enable_metabox || empty( $this->public_key ) ) {
-			wp_die();
-		}
-
-		delete_transient( 'chip_' . $this->id . '_turnover' );
-		delete_transient( 'chip_' . $this->id . '_balance' );
-
-		$this->load_metabox_info();
-
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer above.
-		$gateway_id = isset( $_POST['gateway_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gateway_id'] ) ) : '';
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
-		if ( $gateway_id === $this->id ) {
-			$data = array(
-				'balance'           => number_format( $this->chip_company_balance, 2 ),
-				'incoming_count'    => number_format( $this->chip_incoming_count ),
-				'incoming_fee'      => number_format( $this->chip_incoming_fee, 2 ),
-				'incoming_turnover' => number_format( $this->chip_incoming_turnover, 2 ),
-				'outgoing_count'    => number_format( $this->chip_outgoing_count ),
-				'outgoing_fee'      => number_format( $this->chip_outgoing_fee, 2 ),
-				'outgoing_turnover' => number_format( $this->chip_outgoing_turnover, 2 ),
-			);
-			echo wp_json_encode( $data );
-		}
-
-		wp_die(); // All ajax handlers die when finished.
 	}
 }
