@@ -637,9 +637,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			exit;
 		}
 
-		$user_id = get_user_by( 'email', $payment['client']['email'] )->ID;
+		$user_id        = get_user_by( 'email', $payment['client']['email'] )->ID;
+		$chip_client_id = get_user_meta( $user_id, '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
 
-		if ( ! ( $chip_client_id = get_user_meta( $user_id, '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ) ) ) {
+		if ( ! $chip_client_id ) {
 			exit;
 		}
 
