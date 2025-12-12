@@ -2372,6 +2372,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 *
 	 * @param int $order_id Order ID.
 	 * @return array
+	 * @throws Exception If failed to get client.
 	 */
 	public function process_payment_method_change( $order_id ) {
 		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
