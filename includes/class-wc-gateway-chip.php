@@ -716,7 +716,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		if ( ( 'paid' === $payment['status'] ) || ( ( 'preauthorized' === $payment['status'] ) && 0 === $payment['purchase']['total_override'] ) ) {
 			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 				if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
-					if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
+					$token = $this->store_recurring_token( $payment, $order->get_user_id() );
+					if ( $token ) {
 						$this->add_payment_token( $order->get_id(), $token );
 					}
 				}
@@ -729,7 +730,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 			$this->log_order_info( 'payment processed', $order );
 		} elseif ( ! $order->is_paid() ) {
-			if ( ! empty( $payment['transaction_data']['attempts'] ) && ! empty( $payment_extra = $payment['transaction_data']['attempts'][0]['extra'] ) ) {
+			$payment_extra = isset( $payment['transaction_data']['attempts'][0]['extra'] ) ? $payment['transaction_data']['attempts'][0]['extra'] : array();
+			if ( ! empty( $payment['transaction_data']['attempts'] ) && ! empty( $payment_extra ) ) {
 				if ( isset( $payment_extra['payload'] ) && isset( $payment_extra['payload']['fpx_debitAuthCode'] ) ) {
 					$debit_auth_code     = $payment_extra['payload']['fpx_debitAuthCode'][0];
 					$fpx_txn_id          = $payment_extra['payload']['fpx_fpxTxnId'][0];
@@ -1074,7 +1076,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		if ( has_action( 'wc_' . $this->id . '_payment_fields' ) ) {
 			do_action( 'wc_' . $this->id . '_payment_fields', $this );
 		} elseif ( $this->supports( 'tokenization' ) && is_checkout() ) {
-			if ( ! empty( $description = $this->get_description() ) ) {
+			$description = $this->get_description();
+			if ( ! empty( $description ) ) {
 				echo wpautop( wptexturize( $description ) );
 			}
 			$this->tokenization_script();
@@ -1238,8 +1241,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
 			$token_id = wc_clean( $_POST[ "wc-{$this->id}-payment-token" ] );
+			$token    = WC_Payment_Tokens::get( $token_id );
 
-			if ( $token = WC_Payment_Tokens::get( $token_id ) ) {
+			if ( $token ) {
 				if ( $token->get_user_id() !== $user_id ) {
 					return array( 'result' => 'failure' );
 				}
@@ -1684,7 +1688,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		$renewal_order_id = $renewal_order->get_id();
-		if ( empty( $tokens = WC_Payment_Tokens::get_order_tokens( $renewal_order_id ) ) ) {
+		$tokens           = WC_Payment_Tokens::get_order_tokens( $renewal_order_id );
+		if ( empty( $tokens ) ) {
 			$renewal_order->update_status( 'failed' );
 			$renewal_order->add_order_note( __( 'No card token available to charge.', 'chip-for-woocommerce' ) );
 			return;
@@ -2542,7 +2547,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$this->get_lock( $payment_id );
 
-		if ( $token = $this->store_recurring_token( $payment, $subscription->get_user_id() ) ) {
+		$token = $this->store_recurring_token( $payment, $subscription->get_user_id() );
+		if ( $token ) {
 			$this->add_payment_token( $subscription_id, $token );
 
 			WC_Subscriptions_Change_Payment_Gateway::update_payment_method( $subscription, $this->id );
@@ -2586,8 +2592,12 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function handle_change_payment_method_shortcode( $subscription ) {
+		if ( ! isset( $_POST['_wcsnonce'] ) || ! wp_verify_nonce( wc_clean( wp_unslash( $_POST['_wcsnonce'] ) ), 'wcs_change_payment_method' ) ) {
+			return;
+		}
+
 		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
-			$token_id = wc_clean( $_POST[ "wc-{$this->id}-payment-token" ] );
+			$token_id = wc_clean( wp_unslash( $_POST[ "wc-{$this->id}-payment-token" ] ) );
 
 			$this->add_payment_token( $subscription->get_id(), WC_Payment_Tokens::get( $token_id ) );
 
@@ -2638,7 +2648,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function filter_customer_full_name( $name ) {
-		$name = str_replace( ''', '\'', $name );
+		$name = str_replace( "\u{2019}", "'", $name );
 
 		$name = preg_replace( '/[^A-Za-z0-9\@\/\\\(\)\.\-\_\,\&\']\ /', '', $name );
 
@@ -2816,6 +2826,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the payment method whitelist.
+	 *
 	 * @return array
 	 */
 	public function get_payment_method_whitelist() {
@@ -2906,7 +2918,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function process_pre_order_payments( $order ) {
-		if ( empty( $tokens = WC_Payment_Tokens::get_order_tokens( $order->get_id() ) ) ) {
+		$tokens = WC_Payment_Tokens::get_order_tokens( $order->get_id() );
+		if ( empty( $tokens ) ) {
 			$order->update_status( 'failed' );
 			$order->add_order_note( __( 'No card token available to charge.', 'chip-for-woocommerce' ) );
 			return;
@@ -2966,6 +2979,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
 
+		/* translators: %1$s: CHIP Purchase ID */
 		$order->add_order_note(
 			sprintf( __( 'Payment attempt with CHIP. Purchase ID: %1$s', 'chip-for-woocommerce' ), $payment['id'] )
 		);
@@ -3050,29 +3064,29 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		?>
 		<div class="sub" style="background-color: rgb(246, 247, 247);">
 			<p id="chip_company_balance">Balance: RM <span
-					id="<?php echo $this->id; ?>_balance"><?php echo number_format( $this->chip_company_balance, 2 ); ?></span></p>
+					id="<?php echo esc_attr( $this->id ); ?>_balance"><?php echo esc_html( number_format( $this->chip_company_balance, 2 ) ); ?></span></p>
 		</div>
 		<div style="display: grid; grid-template-columns: 2fr 2fr; column-gap: 16px; align-items: center;">
 			<div>
 				<p>Incoming Count: <span
-						id="<?php echo $this->id; ?>_incoming_count"><?php echo number_format( $this->chip_incoming_count ); ?></span></p>
+						id="<?php echo esc_attr( $this->id ); ?>_incoming_count"><?php echo esc_html( number_format( $this->chip_incoming_count ) ); ?></span></p>
 				<p>Incoming Fee: RM <span
-						id="<?php echo $this->id; ?>_incoming_fee"><?php echo number_format( $this->chip_incoming_fee, 2 ); ?></span></p>
+						id="<?php echo esc_attr( $this->id ); ?>_incoming_fee"><?php echo esc_html( number_format( $this->chip_incoming_fee, 2 ) ); ?></span></p>
 				<p>Incoming Turnover: RM <span
-						id="<?php echo $this->id; ?>_incoming_turnover"><?php echo number_format( $this->chip_incoming_turnover, 2 ); ?></span>
+						id="<?php echo esc_attr( $this->id ); ?>_incoming_turnover"><?php echo esc_html( number_format( $this->chip_incoming_turnover, 2 ) ); ?></span>
 				</p>
 			</div>
 			<div>
 				<p>Outgoing Count: <span
-						id="<?php echo $this->id; ?>_outgoing_count"><?php echo number_format( $this->chip_outgoing_count ); ?></span></p>
+						id="<?php echo esc_attr( $this->id ); ?>_outgoing_count"><?php echo esc_html( number_format( $this->chip_outgoing_count ) ); ?></span></p>
 				<p>Outgoing Fee: RM <span
-						id="<?php echo $this->id; ?>_outgoing_fee"><?php echo number_format( $this->chip_outgoing_fee, 2 ); ?></span></p>
+						id="<?php echo esc_attr( $this->id ); ?>_outgoing_fee"><?php echo esc_html( number_format( $this->chip_outgoing_fee, 2 ) ); ?></span></p>
 				<p>Outgoing Turnover: RM <span
-						id="<?php echo $this->id; ?>_outgoing_turnover"><?php echo number_format( $this->chip_outgoing_turnover, 2 ); ?></span>
+						id="<?php echo esc_attr( $this->id ); ?>_outgoing_turnover"><?php echo esc_html( number_format( $this->chip_outgoing_turnover, 2 ) ); ?></span>
 				</p>
 			</div>
 		</div>
-		<form method="POST" id="chip-refresh-meta-box-<?php echo $this->id; ?>">
+		<form method="POST" id="chip-refresh-meta-box-<?php echo esc_attr( $this->id ); ?>">
 			<input type="submit" name="save" class="button button-primary" value="Refresh">
 		</form>
 		<?php
