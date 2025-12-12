@@ -103,7 +103,7 @@ class Chip_Woocommerce_API {
 	public function get_client_by_email( $email ) {
 		$this->log_info( "get client by email: {$email}" );
 
-		$email_encoded = urlencode( $email );
+		$email_encoded = rawurlencode( $email );
 		return $this->call( 'GET', "/clients/?q={$email_encoded}" );
 	}
 
@@ -332,13 +332,14 @@ class Chip_Woocommerce_API {
 	 * @return string
 	 */
 	private function request( $method, $url, $params = array(), $headers = array() ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		$this->log_info(
 			sprintf(
 				'%s `%s`\n%s\n%s',
 				$method,
 				$url,
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 				print_r( $params, true ),
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 				print_r( $headers, true )
 			)
 		);

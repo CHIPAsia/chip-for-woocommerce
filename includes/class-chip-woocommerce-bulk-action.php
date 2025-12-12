@@ -159,7 +159,7 @@ class Chip_Woocommerce_Bulk_Action {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verification not required for admin notice display.
-		$number      = isset( $_REQUEST['changed'] ) ? absint( $_REQUEST['changed'] ) : 0;
+		$number = isset( $_REQUEST['changed'] ) ? absint( $_REQUEST['changed'] ) : 0;
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized with wc_clean.
 		$bulk_action = isset( $_REQUEST['bulk_action'] ) ? wc_clean( wp_unslash( $_REQUEST['bulk_action'] ) ) : '';
 
