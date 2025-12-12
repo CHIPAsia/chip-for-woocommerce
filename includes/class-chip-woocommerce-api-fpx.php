@@ -115,10 +115,8 @@ class Chip_Woocommerce_API_FPX {
 				'%s `%s`\n%s\n%s',
 				$method,
 				$url,
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-				print_r( $params, true ),
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-				print_r( $headers, true )
+				wc_print_r( $params, true ),
+				wc_print_r( $headers, true )
 			)
 		);
 
@@ -181,8 +179,7 @@ class Chip_Woocommerce_API_FPX {
 		$error_text = "ERROR: {$error_text};";
 
 		if ( $error_data ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-			$error_text .= ' ERROR DATA: ' . print_r( $error_data, true ) . ';';
+			$error_text .= ' ERROR DATA: ' . wc_print_r( $error_data, true ) . ';';
 		}
 
 		$this->logger->log( $error_text );

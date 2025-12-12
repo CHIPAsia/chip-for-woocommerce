@@ -215,8 +215,7 @@ class Chip_Woocommerce_API {
 
 		// time() is to force fresh instead cache.
 		$result = $this->call( 'GET', "/purchases/{$payment_id}/?time=" . time() );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-		$this->log_info( sprintf( 'success check result: %s', print_r( $result, true ) ) );
+		$this->log_info( sprintf( 'success check result: %s', wc_print_r( $result, true ) ) );
 
 		return $result;
 	}
@@ -233,8 +232,7 @@ class Chip_Woocommerce_API {
 
 		$result = $this->call( 'POST', "/purchases/{$payment_id}/refund/", $params );
 
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-		$this->log_info( sprintf( 'payment refund result: %s', print_r( $result, true ) ) );
+		$this->log_info( sprintf( 'payment refund result: %s', wc_print_r( $result, true ) ) );
 
 		return $result;
 	}
@@ -249,8 +247,7 @@ class Chip_Woocommerce_API {
 
 		$result = $this->call( 'GET', '/public_key/' );
 
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-		$this->log_info( sprintf( 'public key: %s', print_r( $result, true ) ) );
+		$this->log_info( sprintf( 'public key: %s', wc_print_r( $result, true ) ) );
 
 		return $result;
 	}
@@ -337,10 +334,8 @@ class Chip_Woocommerce_API {
 				'%s `%s`\n%s\n%s',
 				$method,
 				$url,
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-				print_r( $params, true ),
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-				print_r( $headers, true )
+				wc_print_r( $params, true ),
+				wc_print_r( $headers, true )
 			)
 		);
 
@@ -403,8 +398,7 @@ class Chip_Woocommerce_API {
 		$error_text = "ERROR: {$error_text};";
 
 		if ( $error_data ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-			$error_text .= ' ERROR DATA: ' . print_r( $error_data, true ) . ';';
+			$error_text .= ' ERROR DATA: ' . wc_print_r( $error_data, true ) . ';';
 		}
 
 		$this->logger->log( $error_text );

@@ -594,8 +594,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		}
 
 		if ( 'preauthorized' !== $payment['status'] ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-			wc_add_notice( sprintf( '%1$s %2$s', __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
+			wc_add_notice( sprintf( '%1$s %2$s', __( 'Unable to add payment method to your account.', 'chip-for-woocommerce' ), wc_print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
 			wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
 			exit;
 		}
@@ -1458,9 +1457,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 					wc_add_notice( 'Amount: ' . $params['purchase']['currency'] . ' ' . number_format( $params['purchase']['total_override'] / 100, 2 ), 'error' );
 				}
 			} else {
-				wc_add_notice( var_export( $payment, true ), 'error' );
+				wc_add_notice( wc_print_r( $payment, true ), 'error' );
 			}
-			$this->log_order_info( 'create payment failed. message: ' . print_r( $payment, true ), $order );
+			$this->log_order_info( 'create payment failed. message: ' . wc_print_r( $payment, true ), $order );
 			return array(
 				'result' => 'failure',
 			);
@@ -1569,8 +1568,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$result = $chip->refund_payment( $order->get_transaction_id(), $params );
 
 		if ( is_wp_error( $result ) || isset( $result['__all__'] ) ) {
-			$chip->log_error( var_export( $result['__all__'], true ) . ': ' . $order->get_order_number() );
-			return new WP_Error( 'error', var_export( $result['__all__'], true ) );
+			$error_messages = array_map(
+				function ( $error ) {
+					return isset( $error['message'] ) ? $error['message'] : '';
+				},
+				$result['__all__']
+			);
+			$error_details  = implode( '; ', array_filter( $error_messages ) );
+			$chip->log_error( $error_details . ': ' . $order->get_order_number() );
+			return new WP_Error( 'error', $error_details );
 		}
 
 		$this->log_order_info( 'Refund Result: ' . wc_print_r( $result, true ), $order );
@@ -1746,7 +1752,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$renewal_order->update_status( 'failed' );
-			$renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment['__all__'], true ) ) );
+			$error_messages = array_map(
+				function ( $error ) {
+					return isset( $error['message'] ) ? $error['message'] : '';
+				},
+				$charge_payment['__all__']
+			);
+			$error_details  = implode( '; ', array_filter( $error_messages ) );
+			/* translators: %1$s: Error message details */
+			$renewal_order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), $error_details ) );
 		} elseif ( is_array( $charge_payment ) && 'paid' === $charge_payment['status'] ) {
 			$this->payment_complete( $renewal_order, $charge_payment );
 			/* translators: %s: Transaction ID */
@@ -1758,6 +1772,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
 		}
 
+		/* translators: %1$s: Payment token ID */
 		$renewal_order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
 		$this->release_lock( $renewal_order_id );
@@ -1924,7 +1939,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	/**
 	 * Add payment token to order.
 	 *
-	 * @param int                  $order_id Order ID.
+	 * @param int                 $order_id Order ID.
 	 * @param WC_Payment_Token_CC $token    Payment token.
 	 * @return void
 	 */
@@ -1984,7 +1999,8 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 */
 	public function payment_complete( $order, $payment ) {
 		if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
-			if ( $token = $this->store_recurring_token( $payment, $order->get_user_id() ) ) {
+			$token = $this->store_recurring_token( $payment, $order->get_user_id() );
+			if ( $token ) {
 				$this->add_payment_token( $order->get_id(), $token );
 			}
 		}
@@ -2514,7 +2530,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( 'preauthorized' !== $payment['status'] ) {
 			wc_clear_notices();
-			wc_add_notice( sprintf( '%1$s %2$s', __( 'Unable to change payment method.', 'chip-for-woocommerce' ), print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
+			wc_add_notice( sprintf( '%1$s %2$s', __( 'Unable to change payment method.', 'chip-for-woocommerce' ), wc_print_r( $payment['transaction_data']['attempts'][0]['error'], true ) ), 'error' );
 			wp_safe_redirect( $subscription->get_view_order_url() );
 			exit;
 		}
@@ -2987,7 +3003,15 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$order->update_status( 'failed' );
-			$order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), var_export( $charge_payment['__all__'], true ) ) );
+			$error_messages = array_map(
+				function ( $error ) {
+					return isset( $error['message'] ) ? $error['message'] : '';
+				},
+				$charge_payment['__all__']
+			);
+			$error_details  = implode( '; ', array_filter( $error_messages ) );
+			/* translators: %1$s: Error message details */
+			$order->add_order_note( sprintf( __( 'Automatic charge attempt failed. Details: %1$s', 'chip-for-woocommerce' ), $error_details ) );
 		} elseif ( is_array( $charge_payment ) && 'paid' === $charge_payment['status'] ) {
 			$this->payment_complete( $order, $charge_payment );
 			/* translators: %s: Transaction ID */
