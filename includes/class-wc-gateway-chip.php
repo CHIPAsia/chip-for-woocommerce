@@ -56,13 +56,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	protected $purchase_tz;
 
 	/**
-	 * Update client information setting.
-	 *
-	 * @var string
-	 */
-	protected $update_clie;
-
-	/**
 	 * System URL scheme.
 	 *
 	 * @var string
@@ -82,13 +75,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	protected $disable_rec;
-
-	/**
-	 * Disable clients API setting.
-	 *
-	 * @var string
-	 */
-	protected $disable_cli;
 
 	/**
 	 * Payment method whitelist.
@@ -240,11 +226,9 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->due_str_t  = $this->get_option( 'due_strict_timing', 60 );
 
 		$this->purchase_tz       = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
-		$this->update_clie       = $this->get_option( 'update_client_information' );
 		$this->system_url_       = $this->get_option( 'system_url_scheme', 'https' );
 		$this->force_token       = $this->get_option( 'force_tokenization' );
 		$this->disable_rec       = $this->get_option( 'disable_recurring_support' );
-		$this->disable_cli       = $this->get_option( 'disable_clients_api' );
 		$this->payment_met       = $this->get_option( 'payment_method_whitelist' );
 		$this->disable_red       = $this->get_option( 'disable_redirect' );
 		$this->disable_cal       = $this->get_option( 'disable_callback' );
@@ -826,13 +810,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'options'     => $this->get_timezone_list(),
 		);
 
-		$this->form_fields['update_client_information'] = array(
-			'title'       => __( 'Update client information', 'chip-for-woocommerce' ),
-			'type'        => 'checkbox',
-			'description' => __( 'Tick to update client information on purchase creation.', 'chip-for-woocommerce' ),
-			'default'     => 'yes',
-		);
-
 		$this->form_fields['system_url_scheme'] = array(
 			'title'       => __( 'System URL Scheme', 'chip-for-woocommerce' ),
 			'type'        => 'select',
@@ -856,13 +833,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
 			'description' => __( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code> && <code>Maestro</code>.', 'chip-for-woocommerce' ),
-			'default'     => 'no',
-		);
-
-		$this->form_fields['disable_clients_api'] = array(
-			'title'       => __( 'Disable CHIP clients API', 'chip-for-woocommerce' ),
-			'type'        => 'checkbox',
-			'description' => __( 'Tick to disable CHIP clients API integration.', 'chip-for-woocommerce' ),
 			'default'     => 'no',
 		);
 
@@ -1285,42 +1255,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$chip = $this->api();
 
-		$user = get_user_by( 'id', $user_id );
-
-		if ( $user && 'yes' !== $this->disable_cli ) {
-			$params['client']['email'] = $user->user_email;
-			$client_with_params        = $params['client'];
-			$old_client_records        = true;
-			unset( $params['client'] );
-
-			$params['client_id'] = get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
-
-			if ( empty( $params['client_id'] ) ) {
-				$get_client = $chip->get_client_by_email( $client_with_params['email'] );
-
-				if ( array_key_exists( '__all__', $get_client ) ) {
-					return array(
-						'result' => 'failure',
-					);
-				}
-
-				if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
-					$client = $get_client['results'][0];
-				} else {
-					$old_client_records = false;
-					$client             = $chip->create_client( $client_with_params );
-				}
-
-				update_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
-
-				$params['client_id'] = $client['id'];
-			}
-
-			if ( 'yes' === $this->update_clie && $old_client_records ) {
-				$chip->patch_client( $params['client_id'], $client_with_params );
-			}
-		}
-
 		if ( is_array( $this->payment_met ) && ! empty( $this->payment_met ) ) {
 			$params['payment_method_whitelist'] = $this->payment_met;
 		}
@@ -1609,12 +1543,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( ! isset( $post[ "woocommerce_{$this->id}_disable_recurring_support" ] ) && isset( $post[ "woocommerce_{$this->id}_disable_clients_api" ] ) ) {
-			$this->add_error( __( 'Configuration error: Disable clients API requires disable recurring support to be activated', 'chip-for-woocommerce' ) );
-			$this->update_option( 'disable_clients_api', 'no' );
-		}
-
-		return true;
+return true;
 	}
 
 	/**

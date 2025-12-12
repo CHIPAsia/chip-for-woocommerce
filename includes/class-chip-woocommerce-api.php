@@ -108,19 +108,6 @@ class Chip_Woocommerce_API {
 	}
 
 	/**
-	 * Patch client.
-	 *
-	 * @param string $client_id Client ID.
-	 * @param array  $params    Client parameters.
-	 * @return array|null
-	 */
-	public function patch_client( $client_id, $params ) {
-		$this->log_info( "patch client: {$client_id}" );
-
-		return $this->call( 'PATCH', "/clients/{$client_id}/", $params );
-	}
-
-	/**
 	 * Delete token.
 	 *
 	 * @param string $purchase_id Purchase ID.
