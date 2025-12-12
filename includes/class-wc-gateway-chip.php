@@ -2427,7 +2427,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			$get_client = $chip->get_client_by_email( $params['client']['email'] );
 
 			if ( array_key_exists( '__all__', $get_client ) ) {
-				throw new Exception( __( 'Failed to get client', 'chip-for-woocommerce' ) );
+				throw new Exception( esc_html__( 'Failed to get client', 'chip-for-woocommerce' ) );
 			}
 
 			if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
@@ -2484,9 +2484,17 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			return $update;
 		}
 
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
+		$nonce = isset( $_POST['_wcsnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wcsnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wcs_change_payment_method' ) ) {
+			return $update;
+		}
+
+		$payment_token_key   = "wc-{$this->id}-payment-token";
+		$payment_token_value = isset( $_POST[ $payment_token_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $payment_token_key ] ) ) : '';
+
+		if ( ! empty( $payment_token_value ) && 'new' !== $payment_token_value ) {
 			/**
-			 * this means the customer choose to use existing card token where it should:
+			 * This means the customer choose to use existing card token where it should:
 			 *   - Immediately call update_payment method
 			 *   - Do not flag with _delayed_update_payment_method_all if any
 			 *   - Immediately call to update_payment method for all subscriptions
@@ -2494,10 +2502,10 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		} else {
 			/**
-			 * this means the customer choose to create new card token where it should:
+			 * This means the customer choose to create new card token where it should:
 			 *   - Do not immediately call ::update_payment_method
 			 *   - Do flag _delayed_update_payment_method_all if any
-			 * */
+			 */
 
 			$update = false;
 		}
@@ -2511,23 +2519,28 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function handle_payment_method_change() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
+		if ( ! isset( $_GET['id'] ) ) {
+			exit( 'Missing subscription ID' );
+		}
 		$subscription_id = intval( $_GET['id'] );
 		$payment_id      = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
 
 		if ( ! wcs_is_subscription( $subscription_id ) ) {
-			exit( __( 'Order is not subscription', 'chip-for-woocommerce' ) );
+			exit( esc_html__( 'Order is not subscription', 'chip-for-woocommerce' ) );
 		}
 
 		$subscription = new WC_Subscription( $subscription_id );
 
 		if ( ! $payment_id && isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
-			$content = file_get_contents( 'php://input' );
+			$content   = file_get_contents( 'php://input' );
+			$signature = isset( $_SERVER['HTTP_X_SIGNATURE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_SIGNATURE'] ) ) : '';
 
-			if ( openssl_verify( $content, base64_decode( $_SERVER['HTTP_X_SIGNATURE'] ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Required to decode RSA signature from payment gateway for verification.
+			if ( openssl_verify( $content, base64_decode( $signature ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
 				$this->log_order_info( $message, $subscription );
-				exit( $message );
+				exit( esc_html( $message ) );
 			}
 
 			$payment    = json_decode( $content, true );
@@ -2535,7 +2548,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
-			exit( __( 'Unexpected response', 'chip-for-woocommerce' ) );
+			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
 		if ( 'preauthorized' !== $payment['status'] ) {
