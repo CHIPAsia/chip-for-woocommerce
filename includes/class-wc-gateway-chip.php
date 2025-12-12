@@ -2592,16 +2592,21 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function handle_change_payment_method_shortcode( $subscription ) {
-		if ( ! isset( $_POST['_wcsnonce'] ) || ! wp_verify_nonce( wc_clean( wp_unslash( $_POST['_wcsnonce'] ) ), 'wcs_change_payment_method' ) ) {
+		$nonce = isset( $_POST['_wcsnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wcsnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wcs_change_payment_method' ) ) {
 			return;
 		}
 
-		if ( isset( $_POST[ "wc-{$this->id}-payment-token" ] ) && 'new' !== $_POST[ "wc-{$this->id}-payment-token" ] ) {
-			$token_id = wc_clean( wp_unslash( $_POST[ "wc-{$this->id}-payment-token" ] ) );
+		$payment_token_key   = "wc-{$this->id}-payment-token";
+		$payment_token_value = isset( $_POST[ $payment_token_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $payment_token_key ] ) ) : '';
+
+		if ( ! empty( $payment_token_value ) && 'new' !== $payment_token_value ) {
+			$token_id = wc_clean( $payment_token_value );
 
 			$this->add_payment_token( $subscription->get_id(), WC_Payment_Tokens::get( $token_id ) );
 
-			if ( isset( $_POST['update_all_subscriptions_payment_method'] ) && $_POST['update_all_subscriptions_payment_method'] ) {
+			$update_all = isset( $_POST['update_all_subscriptions_payment_method'] ) ? sanitize_text_field( wp_unslash( $_POST['update_all_subscriptions_payment_method'] ) ) : '';
+			if ( $update_all ) {
 				$subscription_ids = WCS_Customer_Store::instance()->get_users_subscription_ids( $subscription->get_customer_id() );
 				foreach ( $subscription_ids as $subscription_id ) {
 					// Skip the subscription providing the new payment meta.
