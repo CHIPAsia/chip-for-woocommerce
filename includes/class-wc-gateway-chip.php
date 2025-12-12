@@ -119,13 +119,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 	protected $a_payment_m;
 
 	/**
-	 * Webhook public key.
-	 *
-	 * @var string
-	 */
-	protected $webhook_pub;
-
-	/**
 	 * Bypass CHIP payment page setting.
 	 *
 	 * @var string
@@ -230,7 +223,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->arecuring_p       = $this->get_option( 'available_recurring_payment_method' );
 		$this->a_payment_m       = $this->get_payment_method_list();
 		$this->description       = $this->get_option( 'description' );
-		$this->webhook_pub       = $this->get_option( 'webhook_public_key' );
 		$this->bypass_chip       = $this->get_option( 'bypass_chip' );
 		$this->add_charges       = $this->get_option( 'enable_additional_charges' );
 		$this->fix_charges       = $this->get_option( 'fixed_charges', 100 );
@@ -470,8 +462,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['tokenization'] ) && 'yes' === sanitize_text_field( wp_unslash( $_GET['tokenization'] ) ) ) {
 			$this->handle_callback_token();
-		} elseif ( isset( $_GET['callback_flag'] ) && 'yes' === sanitize_text_field( wp_unslash( $_GET['callback_flag'] ) ) ) {
-			$this->handle_callback_event();
 		} elseif ( isset( $_GET['process_payment_method_change'] ) && 'yes' === sanitize_text_field( wp_unslash( $_GET['process_payment_method_change'] ) ) ) {
 			$this->handle_payment_method_change();
 		} else {
@@ -523,54 +513,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->release_lock( $payment_id );
 
 		wp_safe_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
-		exit;
-	}
-
-	/**
-	 * Handle callback event from webhook.
-	 *
-	 * @return void
-	 */
-	public function handle_callback_event() {
-		if ( ! isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
-			exit;
-		}
-
-		$content   = file_get_contents( 'php://input' );
-		$signature = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_SIGNATURE'] ) );
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-		if ( 1 !== openssl_verify( $content, base64_decode( $signature ), $this->webhook_pub, 'sha256WithRSAEncryption' ) ) {
-			exit;
-		}
-
-		$payment = json_decode( $content, true );
-
-		if ( ! in_array( $payment['event_type'], array( 'purchase.recurring_token_deleted' ), true ) ) {
-			exit;
-		}
-
-		$user_id        = get_user_by( 'email', $payment['client']['email'] )->ID;
-		$chip_client_id = get_user_meta( $user_id, '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
-
-		if ( ! $chip_client_id ) {
-			exit;
-		}
-
-		if ( $chip_client_id !== $payment['client_id'] ) {
-			exit;
-		}
-
-		$chip_token_ids = get_user_meta( $user_id, '_' . $this->id . '_client_token_ids', true );
-
-		if ( ! isset( $chip_token_ids[ $payment['id'] ] ) ) {
-			exit;
-		}
-
-		$token_id = $chip_token_ids[ $payment['id'] ];
-
-		WC_Payment_Tokens::delete( $token_id );
-
 		exit;
 	}
 
@@ -864,22 +806,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 			'type'        => 'email',
 			'description' => __( '<strong>Required</strong> if the merchant did not intend to request customer email address', 'chip-for-woocommerce' ),
 			'placeholder' => 'merchant@gmail.com',
-		);
-
-		$this->form_fields['webhooks'] = array(
-			'title'       => __( 'Webhooks', 'chip-for-woocommerce' ),
-			'type'        => 'title',
-			/* translators: %1$s: Supported webhook event name */
-			'description' => sprintf( __( 'Option to set public key. The supported event is <code>%1$s</code>', 'chip-for-woocommerce' ), 'Purchase Recurring Token Deleted' ),
-		);
-
-		$callback_url = preg_replace( '/^http:/i', 'https:', add_query_arg( array( 'callback_flag' => 'yes' ), WC()->api_request_url( $this->id ) ) );
-
-		$this->form_fields['webhook_public_key'] = array(
-			'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
-			'type'        => 'textarea',
-			/* translators: %s: Webhook callback URL */
-			'description' => sprintf( __( 'This option to set public key that are generated through CHIP Dashboard >> Webhooks page. The callback url is: <code>%s</code>', 'chip-for-woocommerce' ), $callback_url ),
 		);
 
 		$this->form_fields['additional_charges'] = array(
@@ -1516,18 +1442,7 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$this->update_option( 'public_key', $public_key );
 		$this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
 
-		$webhook_public_key = $post[ "woocommerce_{$this->id}_webhook_public_key" ] ?? '';
-
-		if ( ! empty( $webhook_public_key ) ) {
-			$webhook_public_key = str_replace( '\n', "\n", $webhook_public_key );
-
-			if ( ! openssl_pkey_get_public( $webhook_public_key ) ) {
-				$this->add_error( __( 'Configuration error: Webhook Public Key is invalid format', 'chip-for-woocommerce' ) );
-				$this->update_option( 'webhook_public_key', '' );
-			}
-		}
-
-return true;
+		return true;
 	}
 
 	/**
