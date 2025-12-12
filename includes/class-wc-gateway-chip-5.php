@@ -40,7 +40,13 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 	 * @return void
 	 */
 	protected function init_icon() {
-		$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', plugins_url( 'assets/atome.svg', WC_CHIP_FILE ) );
+		$this->icon = plugins_url( 'assets/atome.svg', WC_CHIP_FILE );
+		if ( has_filter( 'wc_' . $this->id . '_load_icon' ) ) {
+			_deprecated_hook( 'wc_' . $this->id . '_load_icon', '1.9.0', 'chip_' . $this->id . '_load_icon' );
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
+			$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', $this->icon );
+		}
+		$this->icon = apply_filters( 'chip_' . $this->id . '_load_icon', $this->icon );
 	}
 
 	/**
@@ -72,10 +78,7 @@ class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
 		$this->form_fields['description']['default']              = __( 'Buy now pay later with Atome. <br>The bill will be split into three easy payments. <br>No hidden fees, 0% interest. <br><br><a href="https://www.atome.my">Terms & Conditions</a>', 'chip-for-woocommerce' );
 		unset( $this->form_fields['display_logo'] );
 		unset( $this->form_fields['disable_recurring_support'] );
-		unset( $this->form_fields['force_tokenization'] );
 		unset( $this->form_fields['payment_method_whitelist'] );
 		unset( $this->form_fields['bypass_chip'] );
-		unset( $this->form_fields['webhooks'] );
-		unset( $this->form_fields['webhook_public_key'] );
 	}
 }

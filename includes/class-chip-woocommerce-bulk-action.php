@@ -91,7 +91,13 @@ class Chip_Woocommerce_Bulk_Action {
 	 * @return string
 	 */
 	public function handle_bulk_actions( $redirect_to, $action, $ids ) {
-		$ids = apply_filters( 'wc_chip_bulk_action_ids', array_reverse( array_map( 'absint', $ids ) ), $action, 'order' );
+		$ids = array_reverse( array_map( 'absint', $ids ) );
+		if ( has_filter( 'wc_chip_bulk_action_ids' ) ) {
+			_deprecated_hook( 'wc_chip_bulk_action_ids', '1.9.0', 'chip_bulk_action_ids' );
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
+			$ids = apply_filters( 'wc_chip_bulk_action_ids', $ids, $action, 'order' );
+		}
+		$ids = apply_filters( 'chip_bulk_action_ids', $ids, $action, 'order' );
 
 		$changed = 0;
 
@@ -107,7 +113,12 @@ class Chip_Woocommerce_Bulk_Action {
 						$order->add_order_note( __( 'Order status scheduled to requery by admin', 'chip-for-woocommerce' ) );
 
 						WC()->queue()->schedule_single( time(), 'wc_chip_check_order_status', array( $purchase['id'], $id, 8, $gateway_id ), "{$gateway_id}_bulk_requery" );
-						do_action( 'wc_chip_bulk_order_requery', $id );
+						if ( has_action( 'wc_chip_bulk_order_requery' ) ) {
+							_deprecated_hook( 'wc_chip_bulk_order_requery', '1.9.0', 'chip_bulk_order_requery' );
+							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
+							do_action( 'wc_chip_bulk_order_requery', $id );
+						}
+						do_action( 'chip_bulk_order_requery', $id );
 						++$changed;
 					}
 				}
