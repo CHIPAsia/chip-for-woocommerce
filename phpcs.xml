@@ -15,11 +15,6 @@
 	<rule ref="WordPress">
 	</rule>
 
-	<!-- Allow file names that don't match class names for main plugin file -->
-	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
-		<exclude-pattern>chip-for-woocommerce.php</exclude-pattern>
-	</rule>
-
 	<!-- Set minimum supported PHP version -->
 	<config name="minimum_supported_wp_version" value="6.3"/>
 	<config name="testVersion" value="7.4-"/>
