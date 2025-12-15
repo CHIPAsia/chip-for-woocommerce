@@ -32,7 +32,7 @@ class Chip_Woocommerce_Site_Health {
 	public function chip_plugin_register_site_health_tests( $tests ) {
 		$tests['direct']['CHIP_plugin_api_status'] = array(
 			'test'  => array( $this, 'chip_plugin_check_api_health' ),
-			'label' => 'CHIP Plugin Connection Status',
+			'label' => __( 'CHIP Plugin Connection Status', 'chip-for-woocommerce' ),
 		);
 		return $tests;
 	}
@@ -63,15 +63,15 @@ class Chip_Woocommerce_Site_Health {
 	 */
 	public function response_success() {
 		return array(
-			'label'       => 'CHIP API is working',
+			'label'       => __( 'CHIP Payment Gateway is connected', 'chip-for-woocommerce' ),
 			'status'      => 'good',
 			'badge'       => array(
-				'label' => 'CHIP Plugin',
+				'label' => __( 'CHIP Plugin', 'chip-for-woocommerce' ),
 				'color' => 'green',
 			),
 			'description' => sprintf(
 				'<p>%s</p>',
-				'CHIP API is responding correctly.'
+				__( 'Your site can successfully communicate with the CHIP Payment Gateway.', 'chip-for-woocommerce' )
 			),
 			'actions'     => array(),
 			'test'        => 'CHIP_plugin_api_status',
@@ -85,15 +85,15 @@ class Chip_Woocommerce_Site_Health {
 	 */
 	public function response_fail() {
 		return array(
-			'label'       => 'API Issue Detected',
+			'label'       => __( 'CHIP Payment Gateway connection failed', 'chip-for-woocommerce' ),
 			'status'      => 'critical',
 			'badge'       => array(
-				'label' => 'CHIP Plugin',
+				'label' => __( 'CHIP Plugin', 'chip-for-woocommerce' ),
 				'color' => 'red',
 			),
 			'description' => sprintf(
 				'<p>%s</p>',
-				'Unable to connect to CHIP API.'
+				__( 'Your site cannot connect to the CHIP Payment Gateway. Please check your server\'s internet connectivity.', 'chip-for-woocommerce' )
 			),
 			'actions'     => array(),
 			'test'        => 'CHIP_plugin_api_status',
