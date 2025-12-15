@@ -19,6 +19,7 @@ package.json export-ignore
 webpack.config.js export-ignore
 .eslintrc export-ignore
 .prettierrc export-ignore
+phpcs.xml export-ignore
 README.md export-ignore
 resources/ export-ignore
 
