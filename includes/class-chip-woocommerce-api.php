@@ -8,7 +8,9 @@
  */
 
 // This is CHIP API URL Endpoint as per documented in: https://docs.chip-in.asia.
-define( 'WC_CHIP_ROOT_URL', 'https://gate.chip-in.asia/api' );
+if ( ! defined( 'CHIP_ROOT_URL' ) ) {
+	define( 'CHIP_ROOT_URL', 'https://gate.chip-in.asia/api' );
+}
 
 /**
  * CHIP API class.
@@ -281,7 +283,7 @@ class Chip_Woocommerce_API {
 
 		$response = $this->request(
 			$method,
-			sprintf( '%s/v1%s', WC_CHIP_ROOT_URL, $route ),
+			sprintf( '%s/v1%s', CHIP_ROOT_URL, $route ),
 			$params,
 			array(
 				'Content-type'  => 'application/json',

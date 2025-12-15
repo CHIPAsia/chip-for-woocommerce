@@ -7,7 +7,9 @@
  * @package CHIP for WooCommerce
  */
 
-define( 'WC_CHIP_FPX_ROOT_URL', 'https://api.chip-in.asia/health_check' );
+if ( ! defined( 'CHIP_FPX_ROOT_URL' ) ) {
+	define( 'CHIP_FPX_ROOT_URL', 'https://api.chip-in.asia/health_check' );
+}
 
 /**
  * CHIP FPX API class.
@@ -76,7 +78,7 @@ class Chip_Woocommerce_API_FPX {
 
 		$response = $this->request(
 			$method,
-			sprintf( '%s%s', WC_CHIP_FPX_ROOT_URL, $route ),
+			sprintf( '%s%s', CHIP_FPX_ROOT_URL, $route ),
 			$params,
 			array(
 				'Content-type' => 'application/json',

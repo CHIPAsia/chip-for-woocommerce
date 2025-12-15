@@ -80,7 +80,7 @@ You can visit our [API documentation](https://docs.chip-in.asia/) for your refer
 
 = What CHIP API services used in this plugin? =
 
-This plugin rely on CHIP API ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
+This plugin rely on CHIP API ([CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
 
   - **/payment_methods/**
     - This is for getting available payment method specific to your account
@@ -101,7 +101,7 @@ This plugin rely on CHIP API ([WC_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
   - **/clients/<id\>/**
     - This to get client and patch client information
 
-Additionally, for FPX Bank status, this plugin rely on CHIP API ([WC_CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
+Additionally, for FPX Bank status, this plugin rely on CHIP API ([CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
 
   - **/fpx_b2c**
     - This is for getting FPX B2C status

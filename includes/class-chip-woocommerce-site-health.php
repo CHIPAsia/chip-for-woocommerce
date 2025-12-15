@@ -43,7 +43,7 @@ class Chip_Woocommerce_Site_Health {
 	 * @return array
 	 */
 	public function chip_plugin_check_api_health() {
-		$purchase_api = WC_CHIP_ROOT_URL . '/v1/purchases/';
+		$purchase_api = CHIP_ROOT_URL . '/v1/purchases/';
 		$response     = wp_remote_get( $purchase_api );
 
 		$status_code = wp_remote_retrieve_response_code( $response );
