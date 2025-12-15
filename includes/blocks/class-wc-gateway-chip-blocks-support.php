@@ -12,12 +12,12 @@ use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodTyp
 /**
  * WooCommerce Blocks support class for CHIP gateway.
  */
-class WC_Gateway_Chip_Blocks_Support extends AbstractPaymentMethodType {
+class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType {
 
 	/**
 	 * Gateway instance.
 	 *
-	 * @var WC_Gateway_Chip
+	 * @var Chip_Woocommerce_Gateway
 	 */
 	protected $gateway;
 

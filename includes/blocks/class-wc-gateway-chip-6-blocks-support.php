@@ -10,7 +10,7 @@
 /**
  * WooCommerce Blocks support class for CHIP gateway 6.
  */
-class WC_Gateway_Chip_6_Blocks_Support extends WC_Gateway_Chip_Blocks_Support {
+class Chip_Woocommerce_Gateway_6_Blocks_Support extends Chip_Woocommerce_Gateway_Blocks_Support {
 
 	/**
 	 * Payment method name.

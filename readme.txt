@@ -110,7 +110,7 @@ Additionally, for FPX Bank status, this plugin rely on CHIP API ([CHIP_FPX_ROOT_
 
 = How to clone CHIP for WooCommerce? =
 
-Create new class and extend **WC_Gateway_Chip** or **WC_Gateway_Chip_Subscription** with own class.
+Create new class and extend **Chip_Woocommerce_Gateway** or **Chip_Woocommerce_Gateway_Subscription** with own class.
 
 Then, hook it with filter **woocommerce_payment_gateways** and pass the method own class name to it.
 

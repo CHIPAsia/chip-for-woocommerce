@@ -173,7 +173,7 @@
 = 1.3.0 2023-03-13 =
 * Added   - Add support for WooCommerce Subscription
 * Added   - Hook token deletion with CHIP
-* Added   - WC_Gateway_Chip can be extended for cloning
+* Added   - Chip_Woocommerce_Gateway can be extended for cloning
 * Added   - Now CHIP payment have 4 payment method by default
 * Added   - Support for whitelisting payment method
 * Added   - Purchase due strict is now configurable

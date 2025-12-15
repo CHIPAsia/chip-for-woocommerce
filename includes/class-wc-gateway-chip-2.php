@@ -8,9 +8,9 @@
  */
 
 /**
- * WC_Gateway_Chip_2 class for Corporate Online Banking.
+ * Chip_Woocommerce_Gateway_2 class for Corporate Online Banking.
  */
-class WC_Gateway_Chip_2 extends WC_Gateway_Chip {
+class Chip_Woocommerce_Gateway_2 extends Chip_Woocommerce_Gateway {
 
 	/**
 	 * Preferred payment type.

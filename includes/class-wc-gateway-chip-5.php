@@ -8,9 +8,9 @@
  */
 
 /**
- * WC_Gateway_Chip_5 class for Atome payments.
+ * Chip_Woocommerce_Gateway_5 class for Atome payments.
  */
-class WC_Gateway_Chip_5 extends WC_Gateway_Chip {
+class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 
 	/**
 	 * Preferred payment type.

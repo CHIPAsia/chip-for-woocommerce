@@ -8,9 +8,9 @@
  */
 
 /**
- * WC_Gateway_Chip_6 class for Duitnow QR payments.
+ * Chip_Woocommerce_Gateway_6 class for Duitnow QR payments.
  */
-class WC_Gateway_Chip_6 extends WC_Gateway_Chip {
+class Chip_Woocommerce_Gateway_6 extends Chip_Woocommerce_Gateway {
 
 	/**
 	 * Preferred payment type.

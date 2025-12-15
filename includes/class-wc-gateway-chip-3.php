@@ -8,9 +8,9 @@
  */
 
 /**
- * WC_Gateway_Chip_3 class for Card payments.
+ * Chip_Woocommerce_Gateway_3 class for Card payments.
  */
-class WC_Gateway_Chip_3 extends WC_Gateway_Chip {
+class Chip_Woocommerce_Gateway_3 extends Chip_Woocommerce_Gateway {
 
 	/**
 	 * Preferred payment type.

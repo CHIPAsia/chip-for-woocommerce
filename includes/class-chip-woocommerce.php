@@ -111,14 +111,14 @@ class Chip_Woocommerce {
 	 * Get CHIP gateway class by gateway ID.
 	 *
 	 * @param string $gateway_id Gateway ID.
-	 * @return WC_Gateway_Chip|false
+	 * @return Chip_Woocommerce_Gateway|false
 	 */
 	public static function get_chip_gateway_class( $gateway_id ) {
 		$wc_payment_gateway = WC_Payment_Gateways::instance();
 
 		$pgs = $wc_payment_gateway->payment_gateways();
 
-		if ( isset( $pgs[ $gateway_id ] ) && is_a( $pgs[ $gateway_id ], 'WC_Gateway_Chip' ) ) {
+		if ( isset( $pgs[ $gateway_id ] ) && is_a( $pgs[ $gateway_id ], 'Chip_Woocommerce_Gateway' ) ) {
 			return $pgs[ $gateway_id ];
 		}
 
@@ -132,14 +132,14 @@ class Chip_Woocommerce {
 	 * @return array
 	 */
 	public function add_gateways( $methods ) {
-		$methods[] = WC_Gateway_Chip::class;
+		$methods[] = Chip_Woocommerce_Gateway::class;
 
 		if ( ! defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
-			$methods[] = WC_Gateway_Chip_2::class;
-			$methods[] = WC_Gateway_Chip_3::class;
-			$methods[] = WC_Gateway_Chip_4::class;
-			$methods[] = WC_Gateway_Chip_5::class;
-			$methods[] = WC_Gateway_Chip_6::class;
+			$methods[] = Chip_Woocommerce_Gateway_2::class;
+			$methods[] = Chip_Woocommerce_Gateway_3::class;
+			$methods[] = Chip_Woocommerce_Gateway_4::class;
+			$methods[] = Chip_Woocommerce_Gateway_5::class;
+			$methods[] = Chip_Woocommerce_Gateway_6::class;
 		}
 
 		return $methods;
@@ -199,12 +199,12 @@ class Chip_Woocommerce {
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
 				function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
-					$payment_method_registry->register( new WC_Gateway_Chip_Blocks_Support() );
-					$payment_method_registry->register( new WC_Gateway_Chip_2_Blocks_Support() );
-					$payment_method_registry->register( new WC_Gateway_Chip_3_Blocks_Support() );
-					$payment_method_registry->register( new WC_Gateway_Chip_4_Blocks_Support() );
-					$payment_method_registry->register( new WC_Gateway_Chip_5_Blocks_Support() );
-					$payment_method_registry->register( new WC_Gateway_Chip_6_Blocks_Support() );
+					$payment_method_registry->register( new Chip_Woocommerce_Gateway_Blocks_Support() );
+					$payment_method_registry->register( new Chip_Woocommerce_Gateway_2_Blocks_Support() );
+					$payment_method_registry->register( new Chip_Woocommerce_Gateway_3_Blocks_Support() );
+					$payment_method_registry->register( new Chip_Woocommerce_Gateway_4_Blocks_Support() );
+					$payment_method_registry->register( new Chip_Woocommerce_Gateway_5_Blocks_Support() );
+					$payment_method_registry->register( new Chip_Woocommerce_Gateway_6_Blocks_Support() );
 				}
 			);
 		}

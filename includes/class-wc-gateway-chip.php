@@ -10,7 +10,7 @@
 /**
  * WooCommerce Payment Gateway for CHIP.
  */
-class WC_Gateway_Chip extends WC_Payment_Gateway {
+class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 
 	/**
