@@ -97,19 +97,6 @@ class Chip_Woocommerce_API {
 	}
 
 	/**
-	 * Get client by email.
-	 *
-	 * @param string $email Client email.
-	 * @return array|null
-	 */
-	public function get_client_by_email( $email ) {
-		$this->log_info( "get client by email: {$email}" );
-
-		$email_encoded = rawurlencode( $email );
-		return $this->call( 'GET', "/clients/?q={$email_encoded}" );
-	}
-
-	/**
 	 * Delete token.
 	 *
 	 * @param string $purchase_id Purchase ID.

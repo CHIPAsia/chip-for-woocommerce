@@ -1830,31 +1830,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$chip = $this->api();
 
-		$params['client_id'] = get_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
-
-		if ( empty( $params['client_id'] ) ) {
-			$get_client = $chip->get_client_by_email( $params['client']['email'] );
-
-			if ( array_key_exists( '__all__', $get_client ) ) {
-				return array(
-					'result' => 'failure',
-				);
-			}
-
-			if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
-				$client = $get_client['results'][0];
-
-			} else {
-				$client = $chip->create_client( $params['client'] );
-			}
-
-			update_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
-
-			$params['client_id'] = $client['id'];
-		}
-
-		unset( $params['client'] );
-
 		if ( 'yes' === $this->disable_red ) {
 			unset( $params['success_redirect'] );
 		}
@@ -2318,7 +2293,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 *
 	 * @param int $order_id Order ID.
 	 * @return array
-	 * @throws Exception If failed to get client.
 	 */
 	public function process_payment_method_change( $order_id ) {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce Subscriptions.
@@ -2370,29 +2344,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		$chip = $this->api();
-
-		$params['client_id'] = get_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true );
-
-		if ( empty( $params['client_id'] ) ) {
-			$get_client = $chip->get_client_by_email( $params['client']['email'] );
-
-			if ( array_key_exists( '__all__', $get_client ) ) {
-				throw new Exception( esc_html__( 'Failed to get client', 'chip-for-woocommerce' ) );
-			}
-
-			if ( is_array( $get_client['results'] ) && ! empty( $get_client['results'] ) ) {
-				$client = $get_client['results'][0];
-
-			} else {
-				$client = $chip->create_client( $params['client'] );
-			}
-
-			update_user_meta( get_current_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), $client['id'] );
-
-			$params['client_id'] = $client['id'];
-		}
-
-		unset( $params['client'] );
 
 		if ( 'yes' === $this->disable_red ) {
 			unset( $params['success_redirect'] );
