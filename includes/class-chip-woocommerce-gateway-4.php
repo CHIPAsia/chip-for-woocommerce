@@ -33,6 +33,7 @@ class Chip_Woocommerce_Gateway_4 extends Chip_Woocommerce_Gateway {
 	 */
 	public function init_form_fields() {
 		parent::init_form_fields();
+		$this->form_fields['display_logo']['default']             = 'ewallet_only';
 		$this->form_fields['payment_method_whitelist']['default'] = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
 		$this->form_fields['description']['default']              = __( 'Pay with E-Wallet', 'chip-for-woocommerce' );
 	}

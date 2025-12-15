@@ -33,6 +33,7 @@ class Chip_Woocommerce_Gateway_6 extends Chip_Woocommerce_Gateway {
 	 */
 	public function init_form_fields() {
 		parent::init_form_fields();
+		$this->form_fields['display_logo']['default']             = 'duitnow_only';
 		$this->form_fields['payment_method_whitelist']['default'] = array( 'duitnow_qr' );
 		$this->form_fields['description']['default']              = __( 'Pay with Duitnow QR', 'chip-for-woocommerce' );
 	}

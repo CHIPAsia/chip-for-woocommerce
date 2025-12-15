@@ -33,6 +33,7 @@ class Chip_Woocommerce_Gateway_2 extends Chip_Woocommerce_Gateway {
 	 */
 	public function init_form_fields() {
 		parent::init_form_fields();
+		$this->form_fields['display_logo']['default']             = 'fpx_only';
 		$this->form_fields['payment_method_whitelist']['default'] = array( 'fpx_b2b1' );
 		$this->form_fields['description']['default']              = __( 'Pay with Corporate Online Banking (FPX)', 'chip-for-woocommerce' );
 	}

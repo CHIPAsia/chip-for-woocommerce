@@ -743,7 +743,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'class'       => 'wc-enhanced-select',
 			/* translators: %1$s: Logo URL, %2$s: FPX B2C URL, %3$s: FPX B2B1 URL, %4$s: E-Wallet URL, %5$s: Card URL */
 			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%1$s">Logo</a>. <a target="_blank" href="%2$s">FPX B2C</a>. <a target="_blank" href="%3$s">FPX B2B1</a>. <a target="_blank" href="%4$s">E-Wallet</a>. <a target="_blank" href="%5$s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
-			'default'     => 'logo',
+			'default'     => 'fpx_only',
 			'options'     => array(
 				'logo'                    => 'CHIP Logo',
 				'fpx'                     => 'FPX B2C',
