@@ -427,7 +427,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		$icon = '<img class="chip-for-woocommerce-' . esc_attr( $this->id ) . '" src="' . esc_url( WC_HTTPS::force_https_url( $this->icon ) ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
 
 		if ( has_filter( 'woocommerce_gateway_icon' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'woocommerce_gateway_icon', '1.9.0', 'chip_gateway_icon' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$icon = apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
@@ -2671,7 +2670,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 
 		$filtered_fields = $default_fields;
 		if ( has_filter( 'woocommerce_credit_card_form_fields' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'woocommerce_credit_card_form_fields', '1.9.0', 'chip_credit_card_form_fields' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$filtered_fields = apply_filters( 'woocommerce_credit_card_form_fields', $filtered_fields, $this->id );
@@ -2683,7 +2681,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
 		<?php
 		if ( has_action( 'woocommerce_credit_card_form_start' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'woocommerce_credit_card_form_start', '1.9.0', 'chip_credit_card_form_start' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'woocommerce_credit_card_form_start', $this->id );
@@ -2723,7 +2720,6 @@ class WC_Gateway_Chip extends WC_Payment_Gateway {
 		?>
 		<?php
 		if ( has_action( 'woocommerce_credit_card_form_end' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'woocommerce_credit_card_form_end', '1.9.0', 'chip_credit_card_form_end' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'woocommerce_credit_card_form_end', $this->id );
