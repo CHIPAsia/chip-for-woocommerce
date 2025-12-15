@@ -34,8 +34,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	 * @return void
 	 */
 	public function initialize() {
-		$this->gateway  = Chip_Woocommerce::get_chip_gateway_class( $this->name );
-		$this->settings = $this->gateway->settings;
+		$this->gateway = Chip_Woocommerce::get_chip_gateway_class( $this->name );
+		if ( $this->gateway ) {
+			$this->settings = $this->gateway->settings;
+		}
 	}
 
 	/**
@@ -44,7 +46,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	 * @return bool
 	 */
 	public function is_active() {
-		return $this->gateway->is_available();
+		return $this->gateway && $this->gateway->is_available();
 	}
 
 	/**
@@ -53,6 +55,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
+		if ( ! $this->gateway ) {
+			return array();
+		}
+
 		$script_path       = 'assets/js/frontend/blocks_' . $this->name . '.js';
 		$script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_' . $this->name . '.asset.php';
 		$script_asset      = file_exists( $script_asset_path )
@@ -114,6 +120,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	 * @return array
 	 */
 	public function get_payment_method_data() {
+		if ( ! $this->gateway ) {
+			return array();
+		}
+
 		$pm_whitelist = $this->get_setting( 'payment_method_whitelist' );
 		$bypass_chip  = $this->get_setting( 'bypass_chip' );
 		$js_display   = '';
