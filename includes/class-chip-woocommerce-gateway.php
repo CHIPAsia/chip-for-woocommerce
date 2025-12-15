@@ -1304,8 +1304,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$payment = $chip->create_payment( $params );
 
-		if ( ! array_key_exists( 'id', $payment ) ) {
-			if ( array_key_exists( '__all__', $payment ) ) {
+		if ( ! is_array( $payment ) || ! array_key_exists( 'id', $payment ) ) {
+			if ( is_array( $payment ) && array_key_exists( '__all__', $payment ) ) {
 				foreach ( $payment['__all__'] as $all_error ) {
 					wc_add_notice( $all_error['message'], 'error' );
 					wc_add_notice( 'Brand ID: ' . $params['brand_id'], 'error' );
