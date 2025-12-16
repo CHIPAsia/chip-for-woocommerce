@@ -387,6 +387,48 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		add_action( 'woocommerce_subscription_change_payment_method_via_pay_shortcode', array( $this, 'handle_change_payment_method_shortcode' ), 10, 1 );
 
 		add_action( 'init', array( $this, 'register_script' ) );
+
+		// WooCommerce Blocks payment processing.
+		add_action( 'woocommerce_rest_checkout_process_payment_with_context', array( $this, 'process_payment_with_context' ), 10, 2 );
+	}
+
+	/**
+	 * Process payment with context for WooCommerce Blocks.
+	 *
+	 * This hook allows us to modify the payment result for blocks checkout,
+	 * specifically to add direct_post_url for card payments.
+	 *
+	 * @param \Automattic\WooCommerce\StoreApi\Payments\PaymentContext $context Payment context.
+	 * @param \Automattic\WooCommerce\StoreApi\Payments\PaymentResult  $result  Payment result.
+	 * @return void
+	 */
+	public function process_payment_with_context( $context, &$result ) {
+		// Only process for this gateway.
+		if ( $context->payment_method !== $this->id ) {
+			return;
+		}
+
+		$order = $context->order;
+		if ( ! $order ) {
+			return;
+		}
+
+		// Get direct_post_url from order meta (set during process_payment).
+		$direct_post_url = $order->get_meta( '_' . $this->id . '_direct_post_url' );
+
+		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+			// Add direct_post_url to payment details for JS to access.
+			$result->set_payment_details(
+				array_merge(
+					$result->payment_details,
+					array( 'chip_direct_post_url' => esc_url_raw( $direct_post_url ) )
+				)
+			);
+
+			// Clear redirect URL so WooCommerce Blocks doesn't redirect.
+			// JS will handle the POST to direct_post_url.
+			$result->set_redirect_url( '' );
+		}
 	}
 
 	/**
@@ -1370,6 +1412,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
+		// Store direct_post_url in order meta for blocks checkout.
+		// This will be retrieved in process_payment_with_context hook.
+		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+			$order->update_meta_data( '_' . $this->id . '_direct_post_url', $direct_post_url );
+			$order->save();
+		}
+
 		if ( has_action( 'wc_' . $this->id . '_after_process_payment' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'wc_' . $this->id . '_after_process_payment', '1.9.0', 'chip_' . $this->id . '_after_process_payment' );
@@ -1378,26 +1427,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 		do_action( 'chip_' . $this->id . '_after_process_payment', $order_id, $this );
 
-		$response = array(
+		return array(
 			'result'   => 'success',
 			'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
 			'messages' => '<div class="woocommerce-info"><a href="' . esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ) . '">' . __( 'Click here to pay', 'chip-for-woocommerce' ) . '</a></div>',
 		);
-
-		// For blocks checkout with direct post card payments.
-		// Include direct_post_url so JS can POST card data directly to CHIP.
-		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
-			$response['payment_details'] = array(
-				'chip_direct_post_url' => esc_url_raw( $direct_post_url ),
-			);
-			// Remove redirect for blocks - JS will handle the POST.
-			// WooCommerce Blocks will not redirect when redirect is empty.
-			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-				$response['redirect'] = '';
-			}
-		}
-
-		return $response;
 	}
 
 	/**
@@ -2365,8 +2399,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		WC()->session->set( 'chip_payment_method_change_' . $order_id, $payment['id'] );
 
-		$redirect_url    = $payment['checkout_url'];
-		$direct_post_url = '';
+		$redirect_url = $payment['checkout_url'];
 
 		if ( is_array( $payment['payment_method_whitelist'] ) && ! empty( $payment['payment_method_whitelist'] ) ) {
 			foreach ( $payment['payment_method_whitelist'] as $pm ) {
@@ -2375,27 +2408,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					break;
 				}
 
-				$redirect_url    = $payment['direct_post_url'];
-				$direct_post_url = $payment['direct_post_url'];
+				$redirect_url = $payment['direct_post_url'];
 			}
 		}
 
-		$response = array(
+		return array(
 			'result'   => 'success',
 			'redirect' => $redirect_url,
 		);
-
-		// For blocks checkout with direct post card payments.
-		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
-			$response['payment_details'] = array(
-				'chip_direct_post_url' => esc_url_raw( $direct_post_url ),
-			);
-			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-				$response['redirect'] = '';
-			}
-		}
-
-		return $response;
 	}
 
 	/**
