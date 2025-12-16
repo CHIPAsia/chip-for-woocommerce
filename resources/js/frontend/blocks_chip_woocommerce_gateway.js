@@ -67,7 +67,7 @@ const CardForm = (props) => {
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
   
-  const { eventRegistration, emitResponse, shouldSavePaymentMethod } = props;
+  const { eventRegistration, emitResponse, shouldSavePayment } = props;
   const { onPaymentSetup, onCheckoutSuccess } = eventRegistration;
 
   // Validate cardholder name - only allow [a-zA-Z \'\.\-]
@@ -207,7 +207,7 @@ const CardForm = (props) => {
           card_number: cleanCardNumber,
           expires: cleanExpiry,
           cvc: cardCvc,
-          remember_card: shouldSavePaymentMethod ? 'on' : 'off',
+          remember_card: shouldSavePayment ? 'on' : 'off',
         };
 
         Object.keys(fields).forEach((key) => {
@@ -233,7 +233,7 @@ const CardForm = (props) => {
     return () => {
       unsubscribeCheckoutSuccess();
     };
-  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, shouldSavePaymentMethod, emitResponse.responseTypes]);
+  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, shouldSavePayment, emitResponse.responseTypes]);
 
   return (
     <div className="wc-block-components-card-form">
