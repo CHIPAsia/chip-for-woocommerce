@@ -418,11 +418,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
 			// Add direct_post_url to payment details for JS to access.
+			// Use set_payment_details with a clean array to avoid serialization issues.
 			$result->set_payment_details(
-				array_merge(
-					$result->payment_details,
-					array( 'chip_direct_post_url' => esc_url_raw( $direct_post_url ) )
-				)
+				array( 'chip_direct_post_url' => esc_url_raw( $direct_post_url ) )
 			);
 
 			// Clear redirect URL so WooCommerce Blocks doesn't redirect.

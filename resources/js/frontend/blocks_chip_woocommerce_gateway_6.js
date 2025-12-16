@@ -308,18 +308,31 @@ const CardForm = (props) => {
     };
   }, [onPaymentSetup, onSubmit]);
 
+  // Helper function to get payment detail value from array format.
+  const getPaymentDetail = (paymentDetails, key) => {
+    if (!paymentDetails || !Array.isArray(paymentDetails)) {
+      return null;
+    }
+    const detail = paymentDetails.find(item => item.key === key);
+    return detail ? detail.value : null;
+  };
+
   useEffect(() => {
     const unsubscribeCheckoutSuccess = onCheckoutSuccess((data) => {
       const { processingResponse } = data;
       
-      if (processingResponse?.paymentDetails?.chip_direct_post_url) {
-        const redirectUrl = processingResponse.paymentDetails.chip_direct_post_url;
+      const directPostUrl = getPaymentDetail(
+        processingResponse?.paymentDetails,
+        'chip_direct_post_url'
+      );
+
+      if (directPostUrl) {
         const cleanExpiry = cardExpiry.replace(/\s/g, '');
         const cleanCardNumber = cardNumber.replace(/\s/g, '');
 
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = redirectUrl;
+        form.action = directPostUrl;
         form.style.display = 'none';
 
         const fields = {

@@ -160,20 +160,35 @@ const CardForm = (props) => {
     };
   }, [onPaymentSetup, onSubmit]);
 
+  // Helper function to get payment detail value from array format.
+  // WooCommerce Blocks returns payment_details as array of {key, value} objects.
+  const getPaymentDetail = (paymentDetails, key) => {
+    if (!paymentDetails || !Array.isArray(paymentDetails)) {
+      return null;
+    }
+    const detail = paymentDetails.find(item => item.key === key);
+    return detail ? detail.value : null;
+  };
+
   // Handle checkout success - redirect with POST data like direct-post.js
   useEffect(() => {
     const unsubscribeCheckoutSuccess = onCheckoutSuccess((data) => {
       const { processingResponse } = data;
       
-      if (processingResponse?.paymentDetails?.chip_direct_post_url) {
-        const redirectUrl = processingResponse.paymentDetails.chip_direct_post_url;
+      // Extract chip_direct_post_url from payment_details array.
+      const directPostUrl = getPaymentDetail(
+        processingResponse?.paymentDetails,
+        'chip_direct_post_url'
+      );
+
+      if (directPostUrl) {
         const cleanExpiry = cardExpiry.replace(/\s/g, '');
         const cleanCardNumber = cardNumber.replace(/\s/g, '');
 
         // Create and submit form like direct-post.js
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = redirectUrl;
+        form.action = directPostUrl;
         form.style.display = 'none';
 
         const fields = {
