@@ -1355,7 +1355,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$this->schedule_requery( $payment['id'], $order_id );
 		}
 
-		$redirect_url = $payment['checkout_url'];
+		$redirect_url    = $payment['checkout_url'];
+		$direct_post_url = '';
 
 		if ( is_array( $payment['payment_method_whitelist'] ) && ! empty( $payment['payment_method_whitelist'] ) ) {
 			foreach ( $payment['payment_method_whitelist'] as $pm ) {
@@ -1364,7 +1365,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					break;
 				}
 
-				$redirect_url = $payment['direct_post_url'];
+				$redirect_url    = $payment['direct_post_url'];
+				$direct_post_url = $payment['direct_post_url'];
 			}
 		}
 
@@ -1376,11 +1378,26 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 		do_action( 'chip_' . $this->id . '_after_process_payment', $order_id, $this );
 
-		return array(
+		$response = array(
 			'result'   => 'success',
 			'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
 			'messages' => '<div class="woocommerce-info"><a href="' . esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ) . '">' . __( 'Click here to pay', 'chip-for-woocommerce' ) . '</a></div>',
 		);
+
+		// For blocks checkout with direct post card payments.
+		// Include direct_post_url so JS can POST card data directly to CHIP.
+		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+			$response['payment_details'] = array(
+				'chip_direct_post_url' => esc_url_raw( $direct_post_url ),
+			);
+			// Remove redirect for blocks - JS will handle the POST.
+			// WooCommerce Blocks will not redirect when redirect is empty.
+			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+				$response['redirect'] = '';
+			}
+		}
+
+		return $response;
 	}
 
 	/**
@@ -2348,7 +2365,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		WC()->session->set( 'chip_payment_method_change_' . $order_id, $payment['id'] );
 
-		$redirect_url = $payment['checkout_url'];
+		$redirect_url    = $payment['checkout_url'];
+		$direct_post_url = '';
 
 		if ( is_array( $payment['payment_method_whitelist'] ) && ! empty( $payment['payment_method_whitelist'] ) ) {
 			foreach ( $payment['payment_method_whitelist'] as $pm ) {
@@ -2357,14 +2375,27 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					break;
 				}
 
-				$redirect_url = $payment['direct_post_url'];
+				$redirect_url    = $payment['direct_post_url'];
+				$direct_post_url = $payment['direct_post_url'];
 			}
 		}
 
-		return array(
+		$response = array(
 			'result'   => 'success',
 			'redirect' => $redirect_url,
 		);
+
+		// For blocks checkout with direct post card payments.
+		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+			$response['payment_details'] = array(
+				'chip_direct_post_url' => esc_url_raw( $direct_post_url ),
+			);
+			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+				$response['redirect'] = '';
+			}
+		}
+
+		return $response;
 	}
 
 	/**
