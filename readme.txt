@@ -51,10 +51,7 @@ The plugins do includes support for WooCommerce Subscription products.
 * Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
 * Improved - Code quality with PHPCS compliance fixes.
 * Fixed - Saved card payments in WooCommerce Blocks checkout.
-* Removed - Metabox AJAX handler, Update client information, Disable clients API, Force tokenization, and Webhook public key options.
-
-= 1.8.5 2025-12-08 =
-* Fixed - Fix issue when card set with Google Pay together with Bypass CHIP payment page option for add card.
+* Removed - Metabox AJAX handler, Update client information, Disable clients API, Force tokenization, Webhook public key options, and Receipt link buttons.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
@@ -102,23 +99,25 @@ You can visit our [API documentation](https://docs.chip-in.asia/) for your refer
 This plugin rely on CHIP API ([CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
 
   - **/payment_methods/**
-    - This is for getting available payment method specific to your account
+    - This is for getting available payment methods specific to your account
   - **/purchases/**
-    - This is for accepting payment
+    - This is for creating a payment/purchase
   - **/purchases/<id\>/**
     - This is for getting payment status from CHIP
   - **/purchases/<id\>/refund/**
     - This is for refunding payment
   - **/purchases/<id\>/charge/**
-    - This is for charging payment with token
+    - This is for charging payment with saved card token
+  - **/purchases/<id\>/capture/**
+    - This is for capturing pre-authorized payment
+  - **/purchases/<id\>/release/**
+    - This is for releasing pre-authorized payment
   - **/purchases/<id\>/delete_recurring_token/**
-    - This is for deleting card token
+    - This is for deleting saved card token
   - **/clients/**
     - This is for creating clients in CHIP
-  - **/clients/?q=<email\>**
-    - This is for getting client in CHIP with email
-  - **/clients/<id\>/**
-    - This to get client and patch client information
+  - **/public_key/**
+    - This is for getting public key for webhook verification
 
 Additionally, for FPX Bank status, this plugin rely on CHIP API ([CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
 

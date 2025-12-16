@@ -28,6 +28,7 @@
 * Removed - Force tokenization setting.
 * Removed - Webhook public key option and related webhook handling.
 * Removed - get_client_by_email function (now relies on automatic client creation).
+* Removed - CHIP Invoice, Receipt, and Feed buttons from order admin page.
 
 = 1.8.5 2025-12-08 =
 * Fixed - Fix issue when card set with Google Pay together with Bypass CHIP payment page option for add card.
