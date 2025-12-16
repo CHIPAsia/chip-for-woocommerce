@@ -474,22 +474,17 @@ const ContentContainer = (props) => {
  * @param {Object} data Cart and checkout data.
  * @return {boolean} Whether payment method is available.
  */
-const canMakePayment = ( { cartTotals, paymentRequirements } ) => {
+const canMakePayment = ( { cartTotals } ) => {
   // Check if cart currency is supported.
   const supportedCurrencies = settings.supported_currencies || ['MYR'];
   const cartCurrency = cartTotals?.currency_code || '';
   
-  if ( ! supportedCurrencies.includes( cartCurrency ) ) {
-    return false;
+  // If no currency set yet, allow payment method to show.
+  if ( ! cartCurrency ) {
+    return true;
   }
-
-  // Check if payment requirements are met.
-  const gatewayFeatures = settings.supports || [];
-  const hasRequiredFeatures = paymentRequirements.every( 
-    requirement => gatewayFeatures.includes( requirement ) 
-  );
-
-  return hasRequiredFeatures;
+  
+  return supportedCurrencies.includes( cartCurrency );
 };
 
 const chip_woocommerce_gateway_3 = {
