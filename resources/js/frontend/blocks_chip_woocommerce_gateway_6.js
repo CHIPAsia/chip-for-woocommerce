@@ -17,11 +17,12 @@ const cardFormStyles = `
     margin-bottom: 16px;
   }
   .wc-block-components-card-form__row {
-    display: flex;
-    gap: 16px;
+    display: flex !important;
+    gap: 16px !important;
   }
-  .wc-block-components-card-form__row .wc-block-components-text-input {
-    flex: 1;
+  .wc-block-components-card-form__row > .wc-block-components-text-input {
+    flex: 1 1 0% !important;
+    width: 50% !important;
     margin-bottom: 0;
   }
 `;
