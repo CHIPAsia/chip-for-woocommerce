@@ -139,11 +139,14 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				$js_display = 'fpx';
 			} elseif ( 1 === count( $pm_whitelist ) && 'fpx_b2b1' === $pm_whitelist[0] ) {
 				$js_display = 'fpx_b2b1';
-			} elseif ( 0 === count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) ) {
+			} elseif ( count( $pm_whitelist ) > 0 && 0 === count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) ) {
 				// All whitelisted methods are razer e-wallets.
 				$js_display = 'razer';
+			} elseif ( count( $pm_whitelist ) > 0 && 0 === count( array_diff( $pm_whitelist, $card_methods ) ) ) {
+				// All whitelisted methods are card methods - show card form.
+				$js_display = 'card';
 			} elseif ( count( $pm_whitelist ) >= 2 && count( array_intersect( $pm_whitelist, $card_methods ) ) > 0 ) {
-				// Multiple payment methods with at least one card method - show card form.
+				// Mixed payment methods with at least one card method - show card form.
 				$js_display = 'card';
 			}
 		}
