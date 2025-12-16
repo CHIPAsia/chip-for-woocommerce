@@ -128,11 +128,11 @@ Additionally, for FPX Bank status, this plugin rely on CHIP API ([CHIP_FPX_ROOT_
 
 = How to clone CHIP for WooCommerce? =
 
-Create new class and extend **Chip_Woocommerce_Gateway** or **Chip_Woocommerce_Gateway_Subscription** with own class.
+Create a new class that extends **Chip_Woocommerce_Gateway** with your own customizations.
 
-Then, hook it with filter **woocommerce_payment_gateways** and pass the method own class name to it.
+Then, hook it with filter **woocommerce_payment_gateways** and pass your class name to it.
 
-You may refer to **includes/clone-wc-gateway-chip.php** file for example.
+You may refer to **includes/class-chip-woocommerce-gateway-2.php** file for an example of how to extend the base gateway class.
 
 = How to remove the additional payment method? =
 
