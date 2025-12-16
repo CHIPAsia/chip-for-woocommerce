@@ -133,6 +133,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $debug;
 
 	/**
+	 * Direct post URL for current payment.
+	 *
+	 * Used to pass the URL from process_payment to process_payment_with_context
+	 * to avoid database timing issues with order meta.
+	 *
+	 * @var string
+	 */
+	protected $current_direct_post_url = '';
+
+	/**
 	 * Enable additional charges setting.
 	 *
 	 * @var string
@@ -411,13 +421,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		$order = $context->order;
-		if ( ! $order ) {
-			return;
-		}
-
-		// Get direct_post_url from order meta (set during process_payment).
-		$direct_post_url = $order->get_meta( '_' . $this->id . '_direct_post_url' );
+		// Use class property set during process_payment to avoid database timing issues.
+		$direct_post_url = $this->current_direct_post_url;
 
 		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
 			// IMPORTANT: Setting status will skip legacy payment processing.
@@ -433,6 +438,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			// Clear redirect URL so WooCommerce Blocks doesn't redirect.
 			// JS will handle the POST to direct_post_url.
 			$result->set_redirect_url( '' );
+
+			// Clear the property after use.
+			$this->current_direct_post_url = '';
 		}
 	}
 
@@ -1417,11 +1425,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
-		// Store direct_post_url in order meta for blocks checkout.
-		// This will be retrieved in process_payment_with_context hook.
+		// Store direct_post_url for blocks checkout.
+		// Use class property to avoid database timing issues with order meta.
 		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
-			$order->update_meta_data( '_' . $this->id . '_direct_post_url', $direct_post_url );
-			$order->save();
+			$this->current_direct_post_url = $direct_post_url;
 		}
 
 		if ( has_action( 'wc_' . $this->id . '_after_process_payment' ) ) {
