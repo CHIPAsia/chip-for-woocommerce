@@ -2736,7 +2736,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$filtered_fields = $default_fields;
 		if ( has_filter( 'woocommerce_credit_card_form_fields' ) ) {
-			_deprecated_hook( 'woocommerce_credit_card_form_fields', '1.9.0', 'chip_credit_card_form_fields' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$filtered_fields = apply_filters( 'woocommerce_credit_card_form_fields', $filtered_fields, $this->id );
 		}
