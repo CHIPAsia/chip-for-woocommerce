@@ -91,6 +91,35 @@ class Chip_Woocommerce {
 	public function add_actions() {
 		add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
+
+		// Register backward compatibility callbacks for old gateway IDs.
+		// This ensures payments initiated with old plugin version still receive callbacks.
+		$this->register_legacy_callbacks();
+	}
+
+	/**
+	 * Register legacy callback handlers for backward compatibility.
+	 *
+	 * Old callback URLs used class names like WC_Gateway_Chip, which are now
+	 * renamed to Chip_Woocommerce_Gateway. This ensures payments created before
+	 * the update still receive their callbacks correctly.
+	 *
+	 * @return void
+	 */
+	private function register_legacy_callbacks() {
+		$legacy_map = Chip_Woocommerce_Migration::get_gateway_id_map();
+
+		foreach ( $legacy_map as $old_id => $new_id ) {
+			add_action(
+				'woocommerce_api_' . $old_id,
+				function () use ( $new_id ) {
+					$gateway = self::get_chip_gateway_class( $new_id );
+					if ( $gateway ) {
+						$gateway->handle_callback();
+					}
+				}
+			);
+		}
 	}
 
 	/**
