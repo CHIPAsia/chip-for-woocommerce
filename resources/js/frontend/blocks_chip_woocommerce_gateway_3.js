@@ -413,36 +413,40 @@ const CardForm = (props) => {
         </label>
       </div>
       <div className="wc-block-components-card-form__row" style={{ display: 'flex', gap: '16px' }}>
-        <div className={`wc-block-components-text-input is-active ${cardExpiry ? 'has-value' : ''}`} style={{ flex: '1 1 50%' }}>
-          <input
-            type="text"
-            id="chip-card-expiry-3"
-            className="wc-block-components-text-input__input"
-            value={cardExpiry}
-            onChange={(e) => handleExpiryChange(e.target.value)}
-            autoComplete="cc-exp"
-            inputMode="numeric"
-            aria-label={__("Expiry (MM/YY)", "chip-for-woocommerce")}
-          />
-          <label htmlFor="chip-card-expiry-3" className="wc-block-components-text-input__label">
-            {__("Expiry (MM/YY)", "chip-for-woocommerce")}
-          </label>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={`wc-block-components-text-input is-active ${cardExpiry ? 'has-value' : ''}`}>
+            <input
+              type="text"
+              id="chip-card-expiry-3"
+              className="wc-block-components-text-input__input"
+              value={cardExpiry}
+              onChange={(e) => handleExpiryChange(e.target.value)}
+              autoComplete="cc-exp"
+              inputMode="numeric"
+              aria-label={__("Expiry (MM/YY)", "chip-for-woocommerce")}
+            />
+            <label htmlFor="chip-card-expiry-3" className="wc-block-components-text-input__label">
+              {__("Expiry (MM/YY)", "chip-for-woocommerce")}
+            </label>
+          </div>
         </div>
-        <div className={`wc-block-components-text-input is-active ${cardCvc ? 'has-value' : ''}`} style={{ flex: '1 1 50%' }}>
-          <input
-            type="password"
-            id="chip-card-cvc-3"
-            className="wc-block-components-text-input__input"
-            value={cardCvc}
-            onChange={(e) => handleCvcChange(e.target.value)}
-            autoComplete="cc-csc"
-            inputMode="numeric"
-            maxLength="4"
-            aria-label={__("CVC", "chip-for-woocommerce")}
-          />
-          <label htmlFor="chip-card-cvc-3" className="wc-block-components-text-input__label">
-            {__("CVC", "chip-for-woocommerce")}
-          </label>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={`wc-block-components-text-input is-active ${cardCvc ? 'has-value' : ''}`}>
+            <input
+              type="password"
+              id="chip-card-cvc-3"
+              className="wc-block-components-text-input__input"
+              value={cardCvc}
+              onChange={(e) => handleCvcChange(e.target.value)}
+              autoComplete="cc-csc"
+              inputMode="numeric"
+              maxLength="4"
+              aria-label={__("CVC", "chip-for-woocommerce")}
+            />
+            <label htmlFor="chip-card-cvc-3" className="wc-block-components-text-input__label">
+              {__("CVC", "chip-for-woocommerce")}
+            </label>
+          </div>
         </div>
       </div>
     </div>
