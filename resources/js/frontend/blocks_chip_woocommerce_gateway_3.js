@@ -48,9 +48,7 @@ const Icon = () => {
 		: ''
 }
 
-const Label = (props) => {
-  const { PaymentMethodLabel } = props.components;
-
+const Label = () => {
   return (
     <span style={{ width: '100%' }}>
         {label}
@@ -495,7 +493,7 @@ const canMakePayment = ( { cartTotals, paymentRequirements } ) => {
 const chip_woocommerce_gateway_3 = {
   name: PAYMENT_METHOD_NAME,
   paymentMethodId: PAYMENT_METHOD_NAME,
-  label: (props) => <Label {...props} />,
+  label: <Label />,
   content: (props) => <ContentContainer {...props} />,
   edit: (props) => <ContentContainer {...props} />,
   canMakePayment: canMakePayment,
