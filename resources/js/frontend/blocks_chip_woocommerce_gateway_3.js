@@ -308,15 +308,6 @@ const CardForm = (props) => {
     };
   }, [onPaymentSetup, onSubmit]);
 
-  // Helper function to get payment detail value from array format.
-  const getPaymentDetail = (paymentDetails, key) => {
-    if (!paymentDetails || !Array.isArray(paymentDetails)) {
-      return null;
-    }
-    const detail = paymentDetails.find(item => item.key === key);
-    return detail ? detail.value : null;
-  };
-
   useEffect(() => {
     const unsubscribeCheckoutSuccess = onCheckoutSuccess((data) => {
       console.log('CHIP: onCheckoutSuccess triggered', data);
@@ -324,10 +315,8 @@ const CardForm = (props) => {
       console.log('CHIP: processingResponse', processingResponse);
       console.log('CHIP: paymentDetails', processingResponse?.paymentDetails);
       
-      const directPostUrl = getPaymentDetail(
-        processingResponse?.paymentDetails,
-        'chip_direct_post_url'
-      );
+      // WooCommerce Blocks converts payment_details array to plain object.
+      const directPostUrl = processingResponse?.paymentDetails?.chip_direct_post_url;
       console.log('CHIP: directPostUrl', directPostUrl);
 
       if (directPostUrl) {

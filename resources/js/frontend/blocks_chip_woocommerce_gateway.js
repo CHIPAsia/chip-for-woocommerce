@@ -160,26 +160,13 @@ const CardForm = (props) => {
     };
   }, [onPaymentSetup, onSubmit]);
 
-  // Helper function to get payment detail value from array format.
-  // WooCommerce Blocks returns payment_details as array of {key, value} objects.
-  const getPaymentDetail = (paymentDetails, key) => {
-    if (!paymentDetails || !Array.isArray(paymentDetails)) {
-      return null;
-    }
-    const detail = paymentDetails.find(item => item.key === key);
-    return detail ? detail.value : null;
-  };
-
   // Handle checkout success - redirect with POST data like direct-post.js
   useEffect(() => {
     const unsubscribeCheckoutSuccess = onCheckoutSuccess((data) => {
       const { processingResponse } = data;
       
-      // Extract chip_direct_post_url from payment_details array.
-      const directPostUrl = getPaymentDetail(
-        processingResponse?.paymentDetails,
-        'chip_direct_post_url'
-      );
+      // WooCommerce Blocks converts payment_details array to plain object.
+      const directPostUrl = processingResponse?.paymentDetails?.chip_direct_post_url;
 
       if (directPostUrl) {
         const cleanExpiry = cardExpiry.replace(/\s/g, '');
