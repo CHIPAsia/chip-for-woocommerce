@@ -2,8 +2,8 @@ import { registerPaymentMethod } from "@woocommerce/blocks-registry";
 import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
-import { TreeSelect } from "@wordpress/components";
-import { useState, useEffect } from "@wordpress/element";
+import { TreeSelect, TextControl } from "@wordpress/components";
+import { useState, useEffect, useCallback } from "@wordpress/element";
 
 const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_4';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
@@ -195,16 +195,228 @@ const RazerEWalletList = (props) => {
   );
 };
 
+/**
+ * Card Form Component for direct post card payments.
+ */
+const CardForm = (props) => {
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
+  
+  const { eventRegistration, emitResponse } = props;
+  const { onPaymentSetup, onCheckoutSuccess } = eventRegistration;
+
+  const validateCardName = (name) => {
+    const illegalCharacter = /[^a-zA-Z \'\.\-]/;
+    return !illegalCharacter.test(name);
+  };
+
+  const formatCardNumber = (value) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    const matches = v.match(/\d{4,16}/g);
+    const match = (matches && matches[0]) || '';
+    const parts = [];
+    for (let i = 0, len = match.length; i < len; i += 4) {
+      parts.push(match.substring(i, i + 4));
+    }
+    return parts.length ? parts.join(' ') : v;
+  };
+
+  const formatExpiry = (value) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    if (v.length >= 2) {
+      return v.substring(0, 2) + '/' + v.substring(2, 4);
+    }
+    return v;
+  };
+
+  const handleCardNameChange = (value) => {
+    const filtered = value.replace(/[^a-zA-Z \'\.\-]/g, '');
+    setCardName(filtered);
+  };
+
+  const handleCardNumberChange = (value) => {
+    const formatted = formatCardNumber(value);
+    if (formatted.replace(/\s/g, '').length <= 16) {
+      setCardNumber(formatted);
+    }
+  };
+
+  const handleExpiryChange = (value) => {
+    const cleaned = value.replace(/\//g, '').replace(/[^0-9]/g, '');
+    if (cleaned.length <= 4) {
+      setCardExpiry(formatExpiry(cleaned));
+    }
+  };
+
+  const handleCvcChange = (value) => {
+    const cleaned = value.replace(/[^0-9]/g, '');
+    if (cleaned.length <= 4) {
+      setCardCvc(cleaned);
+    }
+  };
+
+  const onSubmit = useCallback(() => {
+    if (cardName.trim() === '') {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __("Cardholder Name cannot be empty", "chip-for-woocommerce"),
+      };
+    }
+
+    if (!validateCardName(cardName)) {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __("Cardholder Name contains illegal character", "chip-for-woocommerce"),
+      };
+    }
+
+    if (cardNumber.trim() === '') {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __("Card Number cannot be empty", "chip-for-woocommerce"),
+      };
+    }
+
+    if (cardExpiry.trim() === '') {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __("Expiry (MM/YY) cannot be empty", "chip-for-woocommerce"),
+      };
+    }
+
+    if (cardCvc.trim() === '') {
+      return {
+        type: emitResponse.responseTypes.ERROR,
+        message: __("CVC cannot be empty", "chip-for-woocommerce"),
+      };
+    }
+
+    const cleanCardNumber = cardNumber.replace(/\s/g, '');
+    const cleanExpiry = cardExpiry.replace(/\s/g, '');
+
+    return {
+      type: emitResponse.responseTypes.SUCCESS,
+      meta: {
+        paymentMethodData: {
+          chip_card_name: cardName,
+          chip_card_number: cleanCardNumber,
+          chip_card_expiry: cleanExpiry,
+          chip_card_cvc: cardCvc,
+        },
+      },
+    };
+  }, [cardName, cardNumber, cardExpiry, cardCvc, emitResponse.responseTypes]);
+
+  useEffect(() => {
+    const unsubscribePaymentSetup = onPaymentSetup(onSubmit);
+    return () => {
+      unsubscribePaymentSetup();
+    };
+  }, [onPaymentSetup, onSubmit]);
+
+  useEffect(() => {
+    const unsubscribeCheckoutSuccess = onCheckoutSuccess((data) => {
+      const { processingResponse } = data;
+      
+      if (processingResponse?.paymentDetails?.chip_direct_post_url) {
+        const redirectUrl = processingResponse.paymentDetails.chip_direct_post_url;
+        const cleanExpiry = cardExpiry.replace(/\s/g, '');
+        const cleanCardNumber = cardNumber.replace(/\s/g, '');
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = redirectUrl;
+        form.style.display = 'none';
+
+        const fields = {
+          cardholder_name: cardName,
+          card_number: cleanCardNumber,
+          expires: cleanExpiry,
+          cvc: cardCvc,
+        };
+
+        Object.keys(fields).forEach((key) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = fields[key];
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+
+        return {
+          type: emitResponse.responseTypes.SUCCESS,
+        };
+      }
+
+      return true;
+    });
+
+    return () => {
+      unsubscribeCheckoutSuccess();
+    };
+  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, emitResponse.responseTypes]);
+
+  return (
+    <div className="wc-block-components-card-form">
+      <TextControl
+        label={__("Cardholder Name", "chip-for-woocommerce")}
+        value={cardName}
+        onChange={handleCardNameChange}
+        placeholder={__("Name on card", "chip-for-woocommerce")}
+        autoComplete="cc-name"
+      />
+      <TextControl
+        label={__("Card Number", "chip-for-woocommerce")}
+        value={cardNumber}
+        onChange={handleCardNumberChange}
+        placeholder="•••• •••• •••• ••••"
+        autoComplete="cc-number"
+        inputMode="numeric"
+      />
+      <div style={{ display: 'flex', gap: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <TextControl
+            label={__("Expiry (MM/YY)", "chip-for-woocommerce")}
+            value={cardExpiry}
+            onChange={handleExpiryChange}
+            placeholder="MM/YY"
+            autoComplete="cc-exp"
+            inputMode="numeric"
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <TextControl
+            label={__("CVC", "chip-for-woocommerce")}
+            value={cardCvc}
+            onChange={handleCvcChange}
+            placeholder="•••"
+            autoComplete="cc-csc"
+            inputMode="numeric"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ContentContainer = (props) => {
   return (
     <>
       <Content />
-      {settings.js_display == "fpx" ? <FpxBankList {...props} /> : null}
-      {settings.js_display == "fpx_b2b1" ? (
+      {settings.js_display === "fpx" ? <FpxBankList {...props} /> : null}
+      {settings.js_display === "fpx_b2b1" ? (
         <Fpxb2b1BankList {...props} />
         ) : null}
-      {settings.js_display == "razer" ? (
+      {settings.js_display === "razer" ? (
         <RazerEWalletList {...props} /> 
+        ) : null}
+      {settings.js_display === "card" ? (
+        <CardForm {...props} /> 
         ) : null}
     </>
   );

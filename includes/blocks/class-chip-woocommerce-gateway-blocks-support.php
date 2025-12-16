@@ -130,14 +130,21 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		$bypass_chip  = $this->get_setting( 'bypass_chip' );
 		$js_display   = '';
 
-		if ( is_array( $pm_whitelist ) && 1 === count( $pm_whitelist ) && 'fpx' === $pm_whitelist[0] && 'yes' === $bypass_chip ) {
-			$js_display = 'fpx';
-		} elseif ( is_array( $pm_whitelist ) && 1 === count( $pm_whitelist ) && 'fpx_b2b1' === $pm_whitelist[0] && 'yes' === $bypass_chip ) {
-			$js_display = 'fpx_b2b1';
-		} elseif ( is_array( $pm_whitelist ) && 'yes' === $bypass_chip ) {
-			$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
-			if ( 0 === count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) ) {
+		// Card payment methods that support direct post.
+		$card_methods       = array( 'visa', 'mastercard', 'maestro' );
+		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
+
+		if ( is_array( $pm_whitelist ) && 'yes' === $bypass_chip ) {
+			if ( 1 === count( $pm_whitelist ) && 'fpx' === $pm_whitelist[0] ) {
+				$js_display = 'fpx';
+			} elseif ( 1 === count( $pm_whitelist ) && 'fpx_b2b1' === $pm_whitelist[0] ) {
+				$js_display = 'fpx_b2b1';
+			} elseif ( 0 === count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) ) {
+				// All whitelisted methods are razer e-wallets.
 				$js_display = 'razer';
+			} elseif ( count( $pm_whitelist ) >= 2 && count( array_intersect( $pm_whitelist, $card_methods ) ) > 0 ) {
+				// Multiple payment methods with at least one card method - show card form.
+				$js_display = 'card';
 			}
 		}
 
