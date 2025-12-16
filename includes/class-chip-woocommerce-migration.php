@@ -131,8 +131,8 @@ class Chip_Woocommerce_Migration {
 		global $wpdb;
 
 		// Check if HPOS is enabled.
-		if ( class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' ) 
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled() 
+		if ( class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()
 		) {
 			// HPOS is enabled, update orders table directly.
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
@@ -148,7 +148,7 @@ class Chip_Woocommerce_Migration {
 		} else {
 			// Legacy post meta storage.
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
 				$wpdb->update(
 					$wpdb->postmeta,
 					array( 'meta_value' => $new_id ),
@@ -159,6 +159,7 @@ class Chip_Woocommerce_Migration {
 					array( '%s' ),
 					array( '%s', '%s' )
 				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 			}
 		}
 	}
@@ -177,8 +178,8 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Check if HPOS is enabled.
-		if ( class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' ) 
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled() 
+		if ( class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()
 		) {
 			// HPOS is enabled, update orders table for subscriptions.
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
@@ -223,4 +224,3 @@ class Chip_Woocommerce_Migration {
 		return self::$gateway_id_map;
 	}
 }
-
