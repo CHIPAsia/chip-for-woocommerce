@@ -2,7 +2,7 @@ import { registerPaymentMethod } from "@woocommerce/blocks-registry";
 import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
-import { TreeSelect, TextControl, CheckboxControl } from "@wordpress/components";
+import { TreeSelect, TextControl } from "@wordpress/components";
 import { useState, useEffect, useCallback } from "@wordpress/element";
 
 const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_4';
@@ -203,9 +203,8 @@ const CardForm = (props) => {
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
-  const [saveCard, setSaveCard] = useState(false);
   
-  const { eventRegistration, emitResponse } = props;
+  const { eventRegistration, emitResponse, shouldSavePaymentMethod } = props;
   const { onPaymentSetup, onCheckoutSuccess } = eventRegistration;
 
   const validateCardName = (name) => {
@@ -330,7 +329,7 @@ const CardForm = (props) => {
           card_number: cleanCardNumber,
           expires: cleanExpiry,
           cvc: cardCvc,
-          remember_card: saveCard ? 'on' : 'off',
+          remember_card: shouldSavePaymentMethod ? 'on' : 'off',
         };
 
         Object.keys(fields).forEach((key) => {
@@ -355,7 +354,7 @@ const CardForm = (props) => {
     return () => {
       unsubscribeCheckoutSuccess();
     };
-  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, saveCard, emitResponse.responseTypes]);
+  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, shouldSavePaymentMethod, emitResponse.responseTypes]);
 
   return (
     <div className="wc-block-components-card-form">
@@ -404,16 +403,6 @@ const CardForm = (props) => {
           />
         </div>
       </div>
-      {settings.save_option && (
-        <div style={{ marginTop: '16px' }}>
-          <CheckboxControl
-            label={__("Save card for future payments", "chip-for-woocommerce")}
-            checked={saveCard}
-            onChange={setSaveCard}
-            __nextHasNoMarginBottom
-          />
-        </div>
-      )}
     </div>
   );
 };
