@@ -470,8 +470,8 @@ const chip_woocommerce_gateway = {
   name: PAYMENT_METHOD_NAME,
   paymentMethodId: PAYMENT_METHOD_NAME,
   label: <Label />,
-  content: <ContentContainer />,
-  edit: <ContentContainer />,
+  content: (props) => <ContentContainer {...props} />,
+  edit: (props) => <ContentContainer {...props} />,
   canMakePayment: canMakePayment,
   ariaLabel: label,
   supports: {
