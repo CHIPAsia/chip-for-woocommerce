@@ -37,17 +37,21 @@ The plugins do includes support for WooCommerce Subscription products.
 = 1.9.0 2025-12-31 =
 * Changed - Renamed gateway classes from WC_Gateway_Chip to Chip_Woocommerce_Gateway for WordPress compliance.
 * Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
-* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility.
+* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility using _deprecated_hook().
+* Changed - CVC input now hidden (password type) in both legacy and blocks checkout.
 * Added - Migration system for seamless upgrade from previous versions.
 * Added - Backward compatibility for legacy callback URLs.
 * Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
+* Added - REST API endpoint for lazy loading FPX banks and e-wallets.
+* Added - Direct POST card payments support for WooCommerce Blocks checkout.
+* Added - Card form with validation for WooCommerce Blocks.
+* Added - Save card option (remember_card) for both legacy and blocks checkout.
+* Added - PostgreSQL compatibility for database locking.
 * Improved - WooCommerce Blocks integration with recommended patterns.
-* Improved - canMakePayment now checks currency support and payment requirements.
-* Removed - Metabox AJAX handler and related features.
-* Removed - Update client information option.
-* Removed - Disable clients API option.
-* Removed - Force tokenization setting.
-* Removed - Webhook public key option.
+* Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
+* Improved - Code quality with PHPCS compliance fixes.
+* Fixed - Saved card payments in WooCommerce Blocks checkout.
+* Removed - Metabox AJAX handler, Update client information, Disable clients API, Force tokenization, and Webhook public key options.
 
 = 1.8.5 2025-12-08 =
 * Fixed - Fix issue when card set with Google Pay together with Bypass CHIP payment page option for add card.
