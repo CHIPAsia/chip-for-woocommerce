@@ -21,15 +21,8 @@ const cardFormStyles = `
     gap: 16px;
   }
   .wc-block-components-card-form__row .wc-block-components-text-input {
-    margin-bottom: 0;
-  }
-  .wc-block-components-card-form__row .wc-block-components-text-input:first-child {
-    flex: 2;
-  }
-  .wc-block-components-card-form__row .wc-block-components-text-input:last-child {
     flex: 1;
-    min-width: 100px;
-    max-width: 120px;
+    margin-bottom: 0;
   }
 `;
 
