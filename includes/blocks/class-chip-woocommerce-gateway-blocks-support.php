@@ -77,37 +77,35 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			true
 		);
 
-		$localize_variable = array(
-			'id'       => $this->name,
-			'fpx_b2c'  => array( 'empty' => 'bank' ),
-			'fpx_b2b1' => array( 'empty' => 'bank' ),
-			'razer'    => array( 'empty' => 'ewallet' ),
-		);
-
 		$whitelisted_payment_method = $this->gateway->get_payment_method_whitelist();
 		$bypass_chip                = $this->gateway->get_bypass_chip();
 
 		// Exclude razer_atome.
 		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
 
+		// Determine which bank type is needed for lazy loading.
+		$bank_type = '';
 		if ( is_array( $whitelisted_payment_method ) && 'yes' === $bypass_chip ) {
 			if ( 1 === count( $whitelisted_payment_method ) ) {
 				if ( 'fpx' === $whitelisted_payment_method[0] ) {
-					$localize_variable['fpx_b2c'] = $this->gateway->list_fpx_banks();
-					unset( $localize_variable['fpx_b2c'][''] );
+					$bank_type = 'fpx_b2c';
 				} elseif ( 'fpx_b2b1' === $whitelisted_payment_method[0] ) {
-					$localize_variable['fpx_b2b1'] = $this->gateway->list_fpx_b2b1_banks();
-					unset( $localize_variable['fpx_b2b1'][''] );
+					$bank_type = 'fpx_b2b1';
 				} elseif ( count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0 ) {
-					// Checker when whitelist one e-wallet only (razer).
-					$localize_variable['razer'] = $this->gateway->list_razer_ewallets();
-					unset( $localize_variable['razer'][''] );
+					$bank_type = 'razer';
 				}
 			} elseif ( 0 === count( array_diff( $whitelisted_payment_method, $razer_ewallet_list ) ) ) {
-				$localize_variable['razer'] = $this->gateway->list_razer_ewallets();
-				unset( $localize_variable['razer'][''] );
+				$bank_type = 'razer';
 			}
 		}
+
+		// Provide API URL for lazy loading banks instead of embedding data.
+		$localize_variable = array(
+			'id'        => $this->name,
+			'bank_type' => $bank_type,
+			'banks_api' => ! empty( $bank_type ) ? rest_url( "chip/v1/banks/{$bank_type}/{$this->name}" ) : '',
+			'nonce'     => wp_create_nonce( 'wp_rest' ),
+		);
 
 		wp_localize_script( "wc-{$this->name}-blocks", 'gateway_' . $this->name, $localize_variable );
 

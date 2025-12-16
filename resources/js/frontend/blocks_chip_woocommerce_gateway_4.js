@@ -60,8 +60,32 @@ const Label = () => {
 
 const FpxBankList = (props) => {
   const [bankId, setBankId] = useState(undefined);
+  const [banks, setBanks] = useState({});
+  const [loading, setLoading] = useState(true);
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
+
+  // Lazy load banks from API.
+  useEffect(() => {
+    const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+    const banksApi = gatewayConfig.banks_api;
+
+    if (banksApi) {
+      fetch(banksApi, {
+        headers: { 'X-WP-Nonce': gatewayConfig.nonce }
+      })
+        .then(response => response.json())
+        .then(data => {
+          setBanks(data);
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const onSubmit = () => {
     if (undefined === bankId) {
@@ -91,13 +115,14 @@ const FpxBankList = (props) => {
     };
   }, [onPaymentSetup, bankId]);
 
-  const fpx_b2c = window['gateway_' + PAYMENT_METHOD_NAME]?.fpx_b2c || {};
-
-  let fpx_b2c_array = [];
-
-  Object.keys(fpx_b2c).forEach(key => {
-    fpx_b2c_array.push({name: fpx_b2c[key], id: key});
+  let banksArray = [];
+  Object.keys(banks).forEach(key => {
+    banksArray.push({name: banks[key], id: key});
   });
+
+  if (loading) {
+    return <p>{__("Loading banks...", "chip-for-woocommerce")}</p>;
+  }
 
   return (
     <TreeSelect
@@ -107,15 +132,39 @@ const FpxBankList = (props) => {
         setBankId(selected_bank_id);
       }}
       selectedId={bankId}
-      tree={fpx_b2c_array}
+      tree={banksArray}
     />
   );
 };
 
 const Fpxb2b1BankList = (props) => {
   const [bankIdB2b, setBankIdB2b] = useState(undefined);
+  const [banks, setBanks] = useState({});
+  const [loading, setLoading] = useState(true);
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
+
+  // Lazy load banks from API.
+  useEffect(() => {
+    const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+    const banksApi = gatewayConfig.banks_api;
+
+    if (banksApi) {
+      fetch(banksApi, {
+        headers: { 'X-WP-Nonce': gatewayConfig.nonce }
+      })
+        .then(response => response.json())
+        .then(data => {
+          setBanks(data);
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const onSubmit = () => {
     if (undefined === bankIdB2b) {
@@ -145,13 +194,14 @@ const Fpxb2b1BankList = (props) => {
     };
   }, [onPaymentSetup, bankIdB2b]);
 
-  const fpx_b2b1 = window['gateway_' + PAYMENT_METHOD_NAME]?.fpx_b2b1 || {};
-
-  let fpx_b2b1_array = [];
-
-  Object.keys(fpx_b2b1).forEach(key => {
-    fpx_b2b1_array.push({name: fpx_b2b1[key], id: key});
+  let banksArray = [];
+  Object.keys(banks).forEach(key => {
+    banksArray.push({name: banks[key], id: key});
   });
+
+  if (loading) {
+    return <p>{__("Loading banks...", "chip-for-woocommerce")}</p>;
+  }
 
   return (
     <TreeSelect
@@ -161,18 +211,42 @@ const Fpxb2b1BankList = (props) => {
         setBankIdB2b(selected_bank_id);
       }}
       selectedId={bankIdB2b}
-      tree={fpx_b2b1_array}
+      tree={banksArray}
     />
   );
 };
 
 const RazerEWalletList = (props) => {
   const [walletId, setWalletId] = useState(undefined);
+  const [wallets, setWallets] = useState({});
+  const [loading, setLoading] = useState(true);
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
 
+  // Lazy load ewallets from API.
+  useEffect(() => {
+    const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+    const banksApi = gatewayConfig.banks_api;
+
+    if (banksApi) {
+      fetch(banksApi, {
+        headers: { 'X-WP-Nonce': gatewayConfig.nonce }
+      })
+        .then(response => response.json())
+        .then(data => {
+          setWallets(data);
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
   const onSubmit = () => {
-    if (undefined === walletId) {      
+    if (undefined === walletId) {
       return {
         type: emitResponse.responseTypes.ERROR,
         message: __(
@@ -199,13 +273,14 @@ const RazerEWalletList = (props) => {
     };
   }, [onPaymentSetup, walletId]);
 
-  const razer_ewallets = window['gateway_' + PAYMENT_METHOD_NAME]?.razer || {};
-
-  let razer_ewallets_array = [];
-
-  Object.keys(razer_ewallets).forEach(key => {
-    razer_ewallets_array.push({name: razer_ewallets[key], id: key});
+  let walletsArray = [];
+  Object.keys(wallets).forEach(key => {
+    walletsArray.push({name: wallets[key], id: key});
   });
+
+  if (loading) {
+    return <p>{__("Loading e-wallets...", "chip-for-woocommerce")}</p>;
+  }
 
   return (
     <TreeSelect
@@ -215,7 +290,7 @@ const RazerEWalletList = (props) => {
         setWalletId(selected_wallet_id);
       }}
       selectedId={walletId}
-      tree={razer_ewallets_array}
+      tree={walletsArray}
     />
   );
 };

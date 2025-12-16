@@ -91,10 +91,78 @@ class Chip_Woocommerce {
 	public function add_actions() {
 		add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 
 		// Register backward compatibility callbacks for old gateway IDs.
 		// This ensures payments initiated with old plugin version still receive callbacks.
 		$this->register_legacy_callbacks();
+	}
+
+	/**
+	 * Register REST API routes.
+	 *
+	 * @return void
+	 */
+	public function register_rest_routes() {
+		register_rest_route(
+			'chip/v1',
+			'/banks/(?P<type>[a-z0-9_]+)/(?P<gateway_id>[a-z0-9_]+)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_banks_endpoint' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'type'       => array(
+						'required'          => true,
+						'validate_callback' => function ( $param ) {
+							return in_array( $param, array( 'fpx_b2c', 'fpx_b2b1', 'razer' ), true );
+						},
+					),
+					'gateway_id' => array(
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * REST API endpoint to get bank/ewallet list.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_banks_endpoint( $request ) {
+		$type       = $request->get_param( 'type' );
+		$gateway_id = $request->get_param( 'gateway_id' );
+
+		// Get the gateway instance.
+		$gateways         = WC()->payment_gateways()->payment_gateways();
+		$gateway_instance = isset( $gateways[ $gateway_id ] ) ? $gateways[ $gateway_id ] : null;
+
+		if ( ! $gateway_instance || ! ( $gateway_instance instanceof Chip_Woocommerce_Gateway ) ) {
+			return new WP_REST_Response( array( 'error' => 'Invalid gateway' ), 400 );
+		}
+
+		$banks = array();
+
+		switch ( $type ) {
+			case 'fpx_b2c':
+				$banks = $gateway_instance->list_fpx_banks();
+				unset( $banks[''] );
+				break;
+			case 'fpx_b2b1':
+				$banks = $gateway_instance->list_fpx_b2b1_banks();
+				unset( $banks[''] );
+				break;
+			case 'razer':
+				$banks = $gateway_instance->list_razer_ewallets();
+				unset( $banks[''] );
+				break;
+		}
+
+		return new WP_REST_Response( $banks, 200 );
 	}
 
 	/**
