@@ -283,7 +283,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->icon = plugins_url( "assets/{$logo}.{$file_extension}", WC_CHIP_FILE );
 		if ( has_filter( 'wc_' . $this->id . '_load_icon' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_load_icon', '1.9.0', 'chip_' . $this->id . '_load_icon' );
+			_deprecated_hook( 'wc_' . $this->id . '_load_icon', '2.0.0', 'chip_' . $this->id . '_load_icon' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', $this->icon );
 		}
@@ -329,7 +329,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$supported_currencies = array( 'MYR' );
 		if ( has_filter( 'wc_' . $this->id . '_supported_currencies' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_supported_currencies', '1.9.0', 'chip_' . $this->id . '_supported_currencies' );
+			_deprecated_hook( 'wc_' . $this->id . '_supported_currencies', '2.0.0', 'chip_' . $this->id . '_supported_currencies' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$supported_currencies = apply_filters( 'wc_' . $this->id . '_supported_currencies', $supported_currencies, $this );
 		}
@@ -524,7 +524,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_get_icon_style' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_get_icon_style', '1.9.0', 'chip_' . $this->id . '_get_icon_style' );
+			_deprecated_hook( 'wc_' . $this->id . '_get_icon_style', '2.0.0', 'chip_' . $this->id . '_get_icon_style' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$style = apply_filters( 'wc_' . $this->id . '_get_icon_style', $style, $this );
 		}
@@ -533,7 +533,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$icon = '<img class="chip-for-woocommerce-' . esc_attr( $this->id ) . '" src="' . esc_url( WC_HTTPS::force_https_url( $this->icon ) ) . '" alt="' . esc_attr( $this->get_title() ) . '" style="' . esc_attr( $style ) . '" />';
 
 		if ( has_filter( 'woocommerce_gateway_icon' ) ) {
-			_deprecated_hook( 'woocommerce_gateway_icon', '1.9.0', 'chip_gateway_icon' );
+			_deprecated_hook( 'woocommerce_gateway_icon', '2.0.0', 'chip_gateway_icon' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$icon = apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
 		}
@@ -698,7 +698,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( has_action( 'wc_' . $this->id . '_before_handle_callback_order' ) || has_action( 'chip_' . $this->id . '_before_handle_callback_order' ) ) {
 			if ( has_action( 'wc_' . $this->id . '_before_handle_callback_order' ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-				_deprecated_hook( 'wc_' . $this->id . '_before_handle_callback_order', '1.9.0', 'chip_' . $this->id . '_before_handle_callback_order' );
+				_deprecated_hook( 'wc_' . $this->id . '_before_handle_callback_order', '2.0.0', 'chip_' . $this->id . '_before_handle_callback_order' );
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 				do_action( 'wc_' . $this->id . '_before_handle_callback_order', $order, $payment, $this );
 			}
@@ -749,7 +749,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( has_action( 'wc_' . $this->id . '_after_handle_callback_order' ) || has_action( 'chip_' . $this->id . '_after_handle_callback_order' ) ) {
 			if ( has_action( 'wc_' . $this->id . '_after_handle_callback_order' ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-				_deprecated_hook( 'wc_' . $this->id . '_after_handle_callback_order', '1.9.0', 'chip_' . $this->id . '_after_handle_callback_order' );
+				_deprecated_hook( 'wc_' . $this->id . '_after_handle_callback_order', '2.0.0', 'chip_' . $this->id . '_after_handle_callback_order' );
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 				do_action( 'wc_' . $this->id . '_after_handle_callback_order', $order, $payment, $this );
 			}
@@ -764,7 +764,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_order_redirect_url' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_order_redirect_url', '1.9.0', 'chip_' . $this->id . '_order_redirect_url' );
+			_deprecated_hook( 'wc_' . $this->id . '_order_redirect_url', '2.0.0', 'chip_' . $this->id . '_order_redirect_url' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$redirect_url = apply_filters( 'wc_' . $this->id . '_order_redirect_url', $redirect_url, $this );
 		}
@@ -1037,7 +1037,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( has_action( 'wc_' . $this->id . '_payment_fields' ) || has_action( 'chip_' . $this->id . '_payment_fields' ) ) {
 			if ( has_action( 'wc_' . $this->id . '_payment_fields' ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-				_deprecated_hook( 'wc_' . $this->id . '_payment_fields', '1.9.0', 'chip_' . $this->id . '_payment_fields' );
+				_deprecated_hook( 'wc_' . $this->id . '_payment_fields', '2.0.0', 'chip_' . $this->id . '_payment_fields' );
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 				do_action( 'wc_' . $this->id . '_payment_fields', $this );
 			}
@@ -1198,7 +1198,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function process_payment( $order_id ) {
 		if ( has_action( 'wc_' . $this->id . '_before_process_payment' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_before_process_payment', '1.9.0', 'chip_' . $this->id . '_before_process_payment' );
+			_deprecated_hook( 'wc_' . $this->id . '_before_process_payment', '2.0.0', 'chip_' . $this->id . '_before_process_payment' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_before_process_payment', $order_id, $this );
 		}
@@ -1397,7 +1397,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_purchase_params' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '1.9.0', 'chip_' . $this->id . '_purchase_params' );
+			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '2.0.0', 'chip_' . $this->id . '_purchase_params' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 		}
@@ -1451,7 +1451,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_action( 'wc_' . $this->id . '_chip_purchase' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '1.9.0', 'chip_' . $this->id . '_chip_purchase' );
+			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '2.0.0', 'chip_' . $this->id . '_chip_purchase' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
 		}
@@ -1485,7 +1485,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_action( 'wc_' . $this->id . '_after_process_payment' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_after_process_payment', '1.9.0', 'chip_' . $this->id . '_after_process_payment' );
+			_deprecated_hook( 'wc_' . $this->id . '_after_process_payment', '2.0.0', 'chip_' . $this->id . '_after_process_payment' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_after_process_payment', $order_id, $this );
 		}
@@ -1523,7 +1523,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_can_refund_order' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_can_refund_order', '1.9.0', 'chip_' . $this->id . '_can_refund_order' );
+			_deprecated_hook( 'wc_' . $this->id . '_can_refund_order', '2.0.0', 'chip_' . $this->id . '_can_refund_order' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$can_refund_order = apply_filters( 'wc_' . $this->id . '_can_refund_order', $can_refund_order, $order, $this );
 		}
@@ -1620,7 +1620,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$woocommerce_currency = get_woocommerce_currency();
 		if ( has_filter( 'wc_' . $this->id . '_purchase_currency' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_purchase_currency', '1.9.0', 'chip_' . $this->id . '_purchase_currency' );
+			_deprecated_hook( 'wc_' . $this->id . '_purchase_currency', '2.0.0', 'chip_' . $this->id . '_purchase_currency' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$woocommerce_currency = apply_filters( 'wc_' . $this->id . '_purchase_currency', $woocommerce_currency, $this );
 		}
@@ -1706,7 +1706,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_purchase_params' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '1.9.0', 'chip_' . $this->id . '_purchase_params' );
+			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '2.0.0', 'chip_' . $this->id . '_purchase_params' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 		}
@@ -1720,7 +1720,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_action( 'wc_' . $this->id . '_chip_purchase' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '1.9.0', 'chip_' . $this->id . '_chip_purchase' );
+			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '2.0.0', 'chip_' . $this->id . '_chip_purchase' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $renewal_order_id );
 		}
@@ -2192,7 +2192,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_list_fpx_banks' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_list_fpx_banks', '1.9.0', 'chip_' . $this->id . '_list_fpx_banks' );
+			_deprecated_hook( 'wc_' . $this->id . '_list_fpx_banks', '2.0.0', 'chip_' . $this->id . '_list_fpx_banks' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$default_fpx = apply_filters( 'wc_' . $this->id . '_list_fpx_banks', $default_fpx );
 		}
@@ -2281,7 +2281,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_list_fpx_b2b1_banks' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_list_fpx_b2b1_banks', '1.9.0', 'chip_' . $this->id . '_list_fpx_b2b1_banks' );
+			_deprecated_hook( 'wc_' . $this->id . '_list_fpx_b2b1_banks', '2.0.0', 'chip_' . $this->id . '_list_fpx_b2b1_banks' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$default_fpx = apply_filters( 'wc_' . $this->id . '_list_fpx_b2b1_banks', $default_fpx );
 		}
@@ -2343,7 +2343,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_list_razer_ewallets' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_list_razer_ewallets', '1.9.0', 'chip_' . $this->id . '_list_razer_ewallets' );
+			_deprecated_hook( 'wc_' . $this->id . '_list_razer_ewallets', '2.0.0', 'chip_' . $this->id . '_list_razer_ewallets' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$ewallet_list = apply_filters( 'wc_' . $this->id . '_list_razer_ewallets', $ewallet_list );
 		}
@@ -2741,7 +2741,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
 		<?php
 		if ( has_action( 'woocommerce_credit_card_form_start' ) ) {
-			_deprecated_hook( 'woocommerce_credit_card_form_start', '1.9.0', 'chip_credit_card_form_start' );
+			_deprecated_hook( 'woocommerce_credit_card_form_start', '2.0.0', 'chip_credit_card_form_start' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'woocommerce_credit_card_form_start', $this->id );
 		}
@@ -2780,7 +2780,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		?>
 		<?php
 		if ( has_action( 'woocommerce_credit_card_form_end' ) ) {
-			_deprecated_hook( 'woocommerce_credit_card_form_end', '1.9.0', 'chip_credit_card_form_end' );
+			_deprecated_hook( 'woocommerce_credit_card_form_end', '2.0.0', 'chip_credit_card_form_end' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'woocommerce_credit_card_form_end', $this->id );
 		}
@@ -2835,7 +2835,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_action( 'wc_' . $this->id . '_before_add_item_order_fee' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_before_add_item_order_fee', '1.9.0', 'chip_' . $this->id . '_before_add_item_order_fee' );
+			_deprecated_hook( 'wc_' . $this->id . '_before_add_item_order_fee', '2.0.0', 'chip_' . $this->id . '_before_add_item_order_fee' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
 		}
@@ -2871,7 +2871,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_action( 'wc_' . $this->id . '_after_add_item_order_fee' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_after_add_item_order_fee', '1.9.0', 'chip_' . $this->id . '_after_add_item_order_fee' );
+			_deprecated_hook( 'wc_' . $this->id . '_after_add_item_order_fee', '2.0.0', 'chip_' . $this->id . '_after_add_item_order_fee' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_after_add_item_order_fee', $order, $this );
 		}
@@ -3029,7 +3029,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_filter( 'wc_' . $this->id . '_purchase_params' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '1.9.0', 'chip_' . $this->id . '_purchase_params' );
+			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '2.0.0', 'chip_' . $this->id . '_purchase_params' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$params = apply_filters( 'wc_' . $this->id . '_purchase_params', $params, $this );
 		}
@@ -3048,7 +3048,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( has_action( 'wc_' . $this->id . '_chip_purchase' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
-			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '1.9.0', 'chip_' . $this->id . '_chip_purchase' );
+			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '2.0.0', 'chip_' . $this->id . '_chip_purchase' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
 		}

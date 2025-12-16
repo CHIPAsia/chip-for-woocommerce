@@ -20,7 +20,7 @@ class Chip_Woocommerce_Migration {
 	/**
 	 * Current migration version.
 	 */
-	const CURRENT_VERSION = '1.9.0';
+	const CURRENT_VERSION = '2.0.0';
 
 	/**
 	 * Gateway ID mapping from old to new.

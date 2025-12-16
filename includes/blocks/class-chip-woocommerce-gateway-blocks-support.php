@@ -171,7 +171,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		 * This filter allows plugins to modify the payment method data
 		 * that is passed to the JavaScript client side via getSetting().
 		 *
-		 * @since 1.9.0
+		 * @since 2.0.0
 		 *
 		 * @param array                      $payment_method_data The payment method data array.
 		 * @param string                     $name                The payment method name/ID.

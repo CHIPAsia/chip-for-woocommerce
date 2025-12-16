@@ -93,7 +93,7 @@ class Chip_Woocommerce_Bulk_Action {
 	public function handle_bulk_actions( $redirect_to, $action, $ids ) {
 		$ids = array_reverse( array_map( 'absint', $ids ) );
 		if ( has_filter( 'wc_chip_bulk_action_ids' ) ) {
-			_deprecated_hook( 'wc_chip_bulk_action_ids', '1.9.0', 'chip_bulk_action_ids' );
+			_deprecated_hook( 'wc_chip_bulk_action_ids', '2.0.0', 'chip_bulk_action_ids' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			$ids = apply_filters( 'wc_chip_bulk_action_ids', $ids, $action, 'order' );
 		}
@@ -114,7 +114,7 @@ class Chip_Woocommerce_Bulk_Action {
 
 						WC()->queue()->schedule_single( time(), 'wc_chip_check_order_status', array( $purchase['id'], $id, 8, $gateway_id ), "{$gateway_id}_bulk_requery" );
 						if ( has_action( 'wc_chip_bulk_order_requery' ) ) {
-							_deprecated_hook( 'wc_chip_bulk_order_requery', '1.9.0', 'chip_bulk_order_requery' );
+							_deprecated_hook( 'wc_chip_bulk_order_requery', '2.0.0', 'chip_bulk_order_requery' );
 							// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 							do_action( 'wc_chip_bulk_order_requery', $id );
 						}
