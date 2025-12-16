@@ -363,6 +363,8 @@ const CardForm = (props) => {
         onChange={handleCardNameChange}
         placeholder={__("Name on card", "chip-for-woocommerce")}
         autoComplete="cc-name"
+        __next40pxDefaultSize
+        __nextHasNoMarginBottom
       />
       <TextControl
         label={__("Card Number", "chip-for-woocommerce")}
@@ -371,6 +373,8 @@ const CardForm = (props) => {
         placeholder="•••• •••• •••• ••••"
         autoComplete="cc-number"
         inputMode="numeric"
+        __next40pxDefaultSize
+        __nextHasNoMarginBottom
       />
       <div style={{ display: 'flex', gap: '16px' }}>
         <div style={{ flex: 1 }}>
@@ -381,6 +385,8 @@ const CardForm = (props) => {
             placeholder="MM/YY"
             autoComplete="cc-exp"
             inputMode="numeric"
+            __next40pxDefaultSize
+            __nextHasNoMarginBottom
           />
         </div>
         <div style={{ flex: 1 }}>
@@ -391,6 +397,8 @@ const CardForm = (props) => {
             placeholder="•••"
             autoComplete="cc-csc"
             inputMode="numeric"
+            __next40pxDefaultSize
+            __nextHasNoMarginBottom
           />
         </div>
       </div>
