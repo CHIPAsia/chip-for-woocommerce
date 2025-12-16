@@ -30,9 +30,9 @@
  * #5 https://stackoverflow.com/questions/22843504/how-can-i-get-customer-details-from-an-order-in-woocommerce
  * #6 https://stackoverflow.com/questions/16813220/how-can-i-override-inline-styles-with-external-css
  * #7 https://developer.woocommerce.com/2022/07/07/exposing-payment-options-in-the-checkout-block/
- * #8 https://github.com/woocommerce/woocommerce-blocks/blob/trunk/docs/third-party-developers/extensibility/checkout-payment-methods/payment-method-integration.md
  * #9 https://github.com/woocommerce/woocommerce-gateway-dummy/issues/12#issuecomment-1464898655
  * #10 https://developer.woocommerce.com/2022/05/20/hiding-shipping-and-payment-options-in-the-cart-and-checkout-blocks/
+ * #11 https://github.com/woocommerce/woocommerce/blob/trunk/docs/block-development/extensible-blocks/cart-and-checkout-blocks/checkout-payment-methods/payment-method-integration.md
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
