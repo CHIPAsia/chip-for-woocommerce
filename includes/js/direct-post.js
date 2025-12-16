@@ -150,6 +150,11 @@ jQuery(($) => {
         form += '<input type="hidden" name="expires" value="'+card_no_space_expiry+'">';
         form += '<input type="hidden" name="cvc" value="'+$('#' + gateway_option.id + '-card-cvc').val()+'">';
         
+        // Check if customer wants to save the card.
+        var save_card_checkbox = $('#wc-' + gateway_option.id + '-new-payment-method');
+        var remember_card = (save_card_checkbox.length && save_card_checkbox.is(':checked')) ? 'on' : 'off';
+        form += '<input type="hidden" name="remember_card" value="'+remember_card+'">';
+        
         $('<form action="'+redirect_location+'" method="POST">'+form+'</form>').appendTo('body').submit();
       }
       return false;

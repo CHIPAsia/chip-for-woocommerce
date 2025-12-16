@@ -1331,13 +1331,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$params['payment_method_whitelist'] = $this->payment_met;
 		}
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		$new_payment_method = isset( $_POST[ "wc-{$this->id}-new-payment-method" ] ) ? sanitize_text_field( wp_unslash( $_POST[ "wc-{$this->id}-new-payment-method" ] ) ) : '';
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
-		if ( in_array( $new_payment_method, array( 'true', '1' ), true ) ) {
-			$params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
-			$params['force_recurring']          = true;
-		}
+		// Note: When customer ticks "save card" checkbox, remember_card parameter is
+		// passed via direct-post.js instead of setting force_recurring here.
 
 		if ( function_exists( 'wcs_order_contains_subscription' ) ) {
 			if ( $this->supports( 'tokenization' ) && wcs_order_contains_subscription( $order ) ) {
