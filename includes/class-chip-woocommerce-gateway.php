@@ -133,14 +133,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $debug;
 
 	/**
-	 * Direct post URL for current payment.
+	 * Direct post URLs for current payments, keyed by gateway ID.
 	 *
+	 * Static property to persist across different gateway instances.
 	 * Used to pass the URL from process_payment to process_payment_with_context
 	 * to avoid database timing issues with order meta.
 	 *
-	 * @var string
+	 * @var array
 	 */
-	protected $current_direct_post_url = '';
+	protected static $direct_post_urls = array();
 
 	/**
 	 * Enable additional charges setting.
@@ -421,16 +422,50 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		// Use class property set during process_payment to avoid database timing issues.
-		$direct_post_url = $this->current_direct_post_url;
+		// Check if bypass_chip is enabled and payment methods are card-only.
+		if ( 'yes' !== $this->bypass_chip ) {
+			return;
+		}
 
-		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+		// Check if payment methods include card methods that support direct post.
+		$card_methods = array( 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' );
+		$pm_whitelist = $this->get_payment_method_whitelist();
+
+		if ( ! is_array( $pm_whitelist ) || empty( $pm_whitelist ) ) {
+			return;
+		}
+
+		// Check if all whitelisted methods are card methods.
+		$is_card_only = true;
+		foreach ( $pm_whitelist as $pm ) {
+			if ( ! in_array( $pm, $card_methods, true ) ) {
+				$is_card_only = false;
+				break;
+			}
+		}
+
+		if ( ! $is_card_only ) {
+			return;
+		}
+
+		// Call process_payment to create the CHIP payment.
+		// This hook fires BEFORE legacy process_payment, so we need to call it ourselves.
+		$order_id       = $context->order->get_id();
+		$payment_result = $this->process_payment( $order_id );
+
+		if ( 'success' !== $payment_result['result'] ) {
+			return;
+		}
+
+		// Get the direct_post_url from the static property (set during process_payment).
+		$direct_post_url = isset( self::$direct_post_urls[ $this->id ] ) ? self::$direct_post_urls[ $this->id ] : '';
+
+		if ( ! empty( $direct_post_url ) ) {
 			// IMPORTANT: Setting status will skip legacy payment processing.
 			// This prevents WooCommerce from doing a GET redirect to the checkout URL.
 			$result->set_status( 'success' );
 
 			// Add direct_post_url to payment details for JS to access.
-			// Use set_payment_details with a clean array to avoid serialization issues.
 			$result->set_payment_details(
 				array( 'chip_direct_post_url' => esc_url_raw( $direct_post_url ) )
 			);
@@ -440,7 +475,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$result->set_redirect_url( '' );
 
 			// Clear the property after use.
-			$this->current_direct_post_url = '';
+			unset( self::$direct_post_urls[ $this->id ] );
 		}
 	}
 
@@ -1403,7 +1438,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '1.9.0', 'chip_' . $this->id . '_chip_purchase' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
-		}
+		}  		
 		do_action( 'chip_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
 
 		if ( 'paid' !== $payment_requery_status ) {
@@ -1426,9 +1461,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		// Store direct_post_url for blocks checkout.
-		// Use class property to avoid database timing issues with order meta.
+		// Use static property to persist across different gateway instances.
 		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
-			$this->current_direct_post_url = $direct_post_url;
+			self::$direct_post_urls[ $this->id ] = $direct_post_url;
 		}
 
 		if ( has_action( 'wc_' . $this->id . '_after_process_payment' ) ) {
