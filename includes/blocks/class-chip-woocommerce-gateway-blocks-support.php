@@ -151,13 +151,18 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			}
 		}
 
+		// Show save card checkbox if tokenization is supported, user is logged in, and card form is displayed.
+		$show_save_option = $this->gateway->supports( 'tokenization' )
+			&& is_user_logged_in()
+			&& 'card' === $js_display;
+
 		$payment_method_data = array(
 			'title'                => $this->get_setting( 'title' ),
 			'description'          => $this->get_setting( 'description' ),
 			'supports'             => array_filter( $this->gateway->supports, array( $this->gateway, 'supports' ) ),
 			'method_name'          => $this->name,
 			'saved_option'         => $this->gateway->supports( 'tokenization' ),
-			'save_option'          => false,
+			'save_option'          => $show_save_option,
 			'js_display'           => $js_display,
 			'icon'                 => $this->gateway->icon,
 			'supported_currencies' => array( 'MYR' ),
