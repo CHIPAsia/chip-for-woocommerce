@@ -2,17 +2,11 @@ import { registerPaymentMethod } from "@woocommerce/blocks-registry";
 import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
-import { TreeSelect } from "@wordpress/components";
-import { useState, useEffect } from "@wordpress/element";
 
-const settings = getSetting(gateway_chip_woocommerce_gateway_5.id + "_data", {});
+const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_5';
+const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
 const defaultLabel = __("CHIP", "chip-for-woocommerce");
-
-/**
- * console.log(wc.wcSettings);
- * wc.wcSettings.allSettings;
- */
 
 const label = decodeEntities(settings.title) || defaultLabel;
 
@@ -35,13 +29,37 @@ const Label = (props) => {
         <Icon />
     </span>
   )
-  // return <PaymentMethodLabel text={label} />;
 };
 
-const chip_woocommerce_gateway = {
-  name: settings.method_name,
+/**
+ * Check if payment method can be used.
+ * 
+ * @param {Object} data Cart and checkout data.
+ * @return {boolean} Whether payment method is available.
+ */
+const canMakePayment = ( { cartTotals, paymentRequirements } ) => {
+  // Check if cart currency is supported.
+  const supportedCurrencies = settings.supported_currencies || ['MYR'];
+  const cartCurrency = cartTotals?.currency_code || '';
+  
+  if ( ! supportedCurrencies.includes( cartCurrency ) ) {
+    return false;
+  }
+
+  // Check if payment requirements are met.
+  const gatewayFeatures = settings.supports || [];
+  const hasRequiredFeatures = paymentRequirements.every( 
+    requirement => gatewayFeatures.includes( requirement ) 
+  );
+
+  return hasRequiredFeatures;
+};
+
+const chip_woocommerce_gateway_5 = {
+  name: PAYMENT_METHOD_NAME,
+  paymentMethodId: PAYMENT_METHOD_NAME,
   label: <Label />,
-  canMakePayment: () => true,
+  canMakePayment: canMakePayment,
   content: <Content />,
   edit: <Content />,
   ariaLabel: label,
@@ -52,4 +70,4 @@ const chip_woocommerce_gateway = {
   },
 };
 
-registerPaymentMethod(chip_woocommerce_gateway);
+registerPaymentMethod(chip_woocommerce_gateway_5);

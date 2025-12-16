@@ -117,6 +117,8 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	/**
 	 * Get payment method data.
 	 *
+	 * Data returned here is passed to the JavaScript client side via getSetting().
+	 *
 	 * @return array
 	 */
 	public function get_payment_method_data() {
@@ -139,15 +141,30 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			}
 		}
 
-		return array(
-			'title'        => $this->get_setting( 'title' ),
-			'description'  => $this->get_setting( 'description' ),
-			'supports'     => array_filter( $this->gateway->supports, array( $this->gateway, 'supports' ) ),
-			'method_name'  => $this->name,
-			'saved_option' => $this->gateway->supports( 'tokenization' ),
-			'save_option'  => false,
-			'js_display'   => $js_display,
-			'icon'         => $this->gateway->icon,
+		$payment_method_data = array(
+			'title'                => $this->get_setting( 'title' ),
+			'description'          => $this->get_setting( 'description' ),
+			'supports'             => array_filter( $this->gateway->supports, array( $this->gateway, 'supports' ) ),
+			'method_name'          => $this->name,
+			'saved_option'         => $this->gateway->supports( 'tokenization' ),
+			'save_option'          => false,
+			'js_display'           => $js_display,
+			'icon'                 => $this->gateway->icon,
+			'supported_currencies' => array( 'MYR' ),
 		);
+
+		/**
+		 * Filter the payment method data passed to WooCommerce Blocks.
+		 *
+		 * This filter allows plugins to modify the payment method data
+		 * that is passed to the JavaScript client side via getSetting().
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param array                      $payment_method_data The payment method data array.
+		 * @param string                     $name                The payment method name/ID.
+		 * @param Chip_Woocommerce_Gateway   $gateway             The gateway instance.
+		 */
+		return apply_filters( 'chip_blocks_payment_method_data', $payment_method_data, $this->name, $this->gateway );
 	}
 }

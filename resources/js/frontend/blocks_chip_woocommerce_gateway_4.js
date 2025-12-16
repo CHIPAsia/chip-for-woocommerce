@@ -5,14 +5,10 @@ import { getSetting } from "@woocommerce/settings";
 import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect } from "@wordpress/element";
 
-const settings = getSetting(gateway_chip_woocommerce_gateway_4.id + "_data", {});
+const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_4';
+const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
 const defaultLabel = __("CHIP", "chip-for-woocommerce");
-
-/**
- * console.log(wc.wcSettings);
- * wc.wcSettings.allSettings;
- */
 
 const label = decodeEntities(settings.title) || defaultLabel;
 
@@ -35,7 +31,6 @@ const Label = (props) => {
         <Icon />
     </span>
   )
-  // return <PaymentMethodLabel text={label} />;
 };
 
 const FpxBankList = (props) => {
@@ -71,7 +66,7 @@ const FpxBankList = (props) => {
     };
   }, [onPaymentSetup, bankId]);
 
-  const fpx_b2c = gateway_chip_woocommerce_gateway_4.fpx_b2c
+  const fpx_b2c = window['gateway_' + PAYMENT_METHOD_NAME]?.fpx_b2c || {};
 
   let fpx_b2c_array = [];
 
@@ -125,7 +120,7 @@ const Fpxb2b1BankList = (props) => {
     };
   }, [onPaymentSetup, bankIdB2b]);
 
-  const fpx_b2b1 = gateway_chip_woocommerce_gateway_4.fpx_b2b1
+  const fpx_b2b1 = window['gateway_' + PAYMENT_METHOD_NAME]?.fpx_b2b1 || {};
 
   let fpx_b2b1_array = [];
 
@@ -179,7 +174,7 @@ const RazerEWalletList = (props) => {
     };
   }, [onPaymentSetup, walletId]);
 
-  const razer_ewallets = gateway_chip_woocommerce_gateway_4.razer
+  const razer_ewallets = window['gateway_' + PAYMENT_METHOD_NAME]?.razer || {};
 
   let razer_ewallets_array = [];
 
@@ -208,19 +203,44 @@ const ContentContainer = (props) => {
       {settings.js_display == "fpx_b2b1" ? (
         <Fpxb2b1BankList {...props} />
         ) : null}
-     {settings.js_display == "razer" ? (
+      {settings.js_display == "razer" ? (
         <RazerEWalletList {...props} /> 
         ) : null}
     </>
   );
 };
 
-const chip_woocommerce_gateway = {
-  name: settings.method_name,
+/**
+ * Check if payment method can be used.
+ * 
+ * @param {Object} data Cart and checkout data.
+ * @return {boolean} Whether payment method is available.
+ */
+const canMakePayment = ( { cartTotals, paymentRequirements } ) => {
+  // Check if cart currency is supported.
+  const supportedCurrencies = settings.supported_currencies || ['MYR'];
+  const cartCurrency = cartTotals?.currency_code || '';
+  
+  if ( ! supportedCurrencies.includes( cartCurrency ) ) {
+    return false;
+  }
+
+  // Check if payment requirements are met.
+  const gatewayFeatures = settings.supports || [];
+  const hasRequiredFeatures = paymentRequirements.every( 
+    requirement => gatewayFeatures.includes( requirement ) 
+  );
+
+  return hasRequiredFeatures;
+};
+
+const chip_woocommerce_gateway_4 = {
+  name: PAYMENT_METHOD_NAME,
+  paymentMethodId: PAYMENT_METHOD_NAME,
   label: <Label />,
   content: <ContentContainer />,
   edit: <ContentContainer />,
-  canMakePayment: () => true,
+  canMakePayment: canMakePayment,
   ariaLabel: label,
   supports: {
     showSavedCards: settings.saved_option,
@@ -229,4 +249,4 @@ const chip_woocommerce_gateway = {
   },
 };
 
-registerPaymentMethod(chip_woocommerce_gateway);
+registerPaymentMethod(chip_woocommerce_gateway_4);
