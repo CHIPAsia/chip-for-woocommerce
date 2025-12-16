@@ -4,6 +4,7 @@ jQuery(($) => {
 		return false;
 	}
 
+  // Cardholder name validation - only allow [a-zA-Z \'\.\-]
   $('body').on('keypress', 'input.wc-credit-card-form-card-name', function(e) {
     var $target, card, digit, length, re, upperLength, value;
     digit = String.fromCharCode(e.which);
@@ -12,6 +13,76 @@ jQuery(($) => {
       e.preventDefault();
     }
 	});
+
+  // Expiry field formatting - auto-format as MM/YY
+  $('body').on('input', 'input.wc-credit-card-form-card-expiry', function(e) {
+    var $target = $(this);
+    var value = $target.val();
+    
+    // Remove all non-digits and slashes
+    var cleaned = value.replace(/[^\d]/g, '');
+    
+    // Limit to 4 digits (MMYY)
+    if (cleaned.length > 4) {
+      cleaned = cleaned.substring(0, 4);
+    }
+    
+    // Format as MM/YY
+    var formatted = '';
+    if (cleaned.length >= 2) {
+      formatted = cleaned.substring(0, 2) + ' / ' + cleaned.substring(2);
+    } else {
+      formatted = cleaned;
+    }
+    
+    // Only update if different to avoid cursor issues
+    if ($target.val() !== formatted) {
+      $target.val(formatted);
+    }
+  });
+
+  // Prevent non-numeric input on expiry field
+  $('body').on('keypress', 'input.wc-credit-card-form-card-expiry', function(e) {
+    var charCode = e.which ? e.which : e.keyCode;
+    // Allow: backspace, delete, tab, escape, enter, and numbers
+    if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) {
+      return true;
+    }
+    // Allow numbers only
+    if (charCode < 48 || charCode > 57) {
+      e.preventDefault();
+      return false;
+    }
+    return true;
+  });
+
+  // CVC field - only allow numeric input
+  $('body').on('keypress', 'input.wc-credit-card-form-card-cvc', function(e) {
+    var charCode = e.which ? e.which : e.keyCode;
+    // Allow: backspace, delete, tab, escape, enter, and numbers
+    if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) {
+      return true;
+    }
+    // Allow numbers only
+    if (charCode < 48 || charCode > 57) {
+      e.preventDefault();
+      return false;
+    }
+    return true;
+  });
+
+  // CVC field - remove non-numeric characters on input
+  $('body').on('input', 'input.wc-credit-card-form-card-cvc', function(e) {
+    var $target = $(this);
+    var value = $target.val();
+    var cleaned = value.replace(/[^\d]/g, '');
+    if (cleaned.length > 4) {
+      cleaned = cleaned.substring(0, 4);
+    }
+    if ($target.val() !== cleaned) {
+      $target.val(cleaned);
+    }
+  });
 
   $('form.checkout').on('checkout_place_order_'+gateway_option.id, function(event, wc_checkout_form) {
     // if ($('input[name="wc-' + gateway_option.id + '-payment-token"]:checked').val() != 'new') {
@@ -68,7 +139,8 @@ jQuery(($) => {
     }
 
     var card_expiry = $('#' + gateway_option.id + '-card-expiry').val();
-    var card_no_space_expiry = card_expiry.replaceAll(' ', '');
+    // Remove spaces only, keeping slash for MM/YY format
+    var card_no_space_expiry = card_expiry.replace(/\s/g, '');
 
     if (wc_checkout_form.get_payment_method() == gateway_option.id && $('.wc-payment-form').is(":visible")) {
       if(result.result == 'success') {
