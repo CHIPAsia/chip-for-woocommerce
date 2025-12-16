@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 6.9
-Stable tag: 1.8.5
+Stable tag: 1.9.0
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -33,6 +33,21 @@ The plugins do includes support for WooCommerce Subscription products.
 * WooCommerce refund order
 
 == Changelog ==
+
+= 1.9.0 2025-12-31 =
+* Changed - Renamed gateway classes from WC_Gateway_Chip to Chip_Woocommerce_Gateway for WordPress compliance.
+* Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
+* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility.
+* Added - Migration system for seamless upgrade from previous versions.
+* Added - Backward compatibility for legacy callback URLs.
+* Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
+* Improved - WooCommerce Blocks integration with recommended patterns.
+* Improved - canMakePayment now checks currency support and payment requirements.
+* Removed - Metabox AJAX handler and related features.
+* Removed - Update client information option.
+* Removed - Disable clients API option.
+* Removed - Force tokenization setting.
+* Removed - Webhook public key option.
 
 = 1.8.5 2025-12-08 =
 * Fixed - Fix issue when card set with Google Pay together with Bypass CHIP payment page option for add card.
