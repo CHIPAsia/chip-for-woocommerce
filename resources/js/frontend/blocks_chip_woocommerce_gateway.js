@@ -267,8 +267,8 @@ const CardForm = (props) => {
           {__("Card Number", "chip-for-woocommerce")}
         </label>
       </div>
-      <div className="wc-block-components-card-form__row">
-        <div className={`wc-block-components-text-input is-active ${cardExpiry ? 'has-value' : ''}`}>
+      <div className="wc-block-components-card-form__row" style={{ display: 'flex', gap: '16px' }}>
+        <div className={`wc-block-components-text-input is-active ${cardExpiry ? 'has-value' : ''}`} style={{ flex: '1 1 50%' }}>
           <input
             type="text"
             id="chip-card-expiry"
@@ -283,7 +283,7 @@ const CardForm = (props) => {
             {__("Expiry (MM/YY)", "chip-for-woocommerce")}
           </label>
         </div>
-        <div className={`wc-block-components-text-input is-active ${cardCvc ? 'has-value' : ''}`}>
+        <div className={`wc-block-components-text-input is-active ${cardCvc ? 'has-value' : ''}`} style={{ flex: '1 1 50%' }}>
           <input
             type="password"
             id="chip-card-cvc"
