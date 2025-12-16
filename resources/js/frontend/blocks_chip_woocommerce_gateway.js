@@ -5,7 +5,7 @@ import { getSetting } from "@woocommerce/settings";
 import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect } from "@wordpress/element";
 
-const settings = getSetting(gateway_wc_gateway_chip.id + "_data", {});
+const settings = getSetting(gateway_chip_woocommerce_gateway.id + "_data", {});
 
 const defaultLabel = __("CHIP", "chip-for-woocommerce");
 
@@ -71,7 +71,7 @@ const FpxBankList = (props) => {
     };
   }, [onPaymentSetup, bankId]);
 
-  const fpx_b2c = gateway_wc_gateway_chip.fpx_b2c
+  const fpx_b2c = gateway_chip_woocommerce_gateway.fpx_b2c
 
   let fpx_b2c_array = [];
 
@@ -125,7 +125,7 @@ const Fpxb2b1BankList = (props) => {
     };
   }, [onPaymentSetup, bankIdB2b]);
 
-  const fpx_b2b1 = gateway_wc_gateway_chip.fpx_b2b1
+  const fpx_b2b1 = gateway_chip_woocommerce_gateway.fpx_b2b1
 
   let fpx_b2b1_array = [];
 
@@ -179,7 +179,7 @@ const RazerEWalletList = (props) => {
     };
   }, [onPaymentSetup, walletId]);
 
-  const razer_ewallets = gateway_wc_gateway_chip.razer
+  const razer_ewallets = gateway_chip_woocommerce_gateway.razer
 
   let razer_ewallets_array = [];
 
@@ -215,7 +215,7 @@ const ContentContainer = (props) => {
   );
 };
 
-const wc_gateway_chip = {
+const chip_woocommerce_gateway = {
   name: settings.method_name,
   label: <Label />,
   content: <ContentContainer />,
@@ -229,4 +229,4 @@ const wc_gateway_chip = {
   },
 };
 
-registerPaymentMethod(wc_gateway_chip);
+registerPaymentMethod(chip_woocommerce_gateway);

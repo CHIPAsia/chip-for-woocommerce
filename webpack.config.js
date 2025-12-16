@@ -28,12 +28,12 @@ const requestToHandle = (request) => {
 module.exports = {
 	...defaultConfig,
 	entry: {
-		'frontend/blocks_wc_gateway_chip': '/resources/js/frontend/blocks_wc_gateway_chip.js',
-    'frontend/blocks_wc_gateway_chip_2': '/resources/js/frontend/blocks_wc_gateway_chip_2.js',
-    'frontend/blocks_wc_gateway_chip_3': '/resources/js/frontend/blocks_wc_gateway_chip_3.js',
-    'frontend/blocks_wc_gateway_chip_4': '/resources/js/frontend/blocks_wc_gateway_chip_4.js',
-    'frontend/blocks_wc_gateway_chip_5': '/resources/js/frontend/blocks_wc_gateway_chip_5.js',
-    'frontend/blocks_wc_gateway_chip_6': '/resources/js/frontend/blocks_wc_gateway_chip_6.js',
+		'frontend/blocks_chip_woocommerce_gateway': '/resources/js/frontend/blocks_chip_woocommerce_gateway.js',
+    'frontend/blocks_chip_woocommerce_gateway_2': '/resources/js/frontend/blocks_chip_woocommerce_gateway_2.js',
+    'frontend/blocks_chip_woocommerce_gateway_3': '/resources/js/frontend/blocks_chip_woocommerce_gateway_3.js',
+    'frontend/blocks_chip_woocommerce_gateway_4': '/resources/js/frontend/blocks_chip_woocommerce_gateway_4.js',
+    'frontend/blocks_chip_woocommerce_gateway_5': '/resources/js/frontend/blocks_chip_woocommerce_gateway_5.js',
+    'frontend/blocks_chip_woocommerce_gateway_6': '/resources/js/frontend/blocks_chip_woocommerce_gateway_6.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'assets/js' ),

@@ -17,5 +17,5 @@ class Chip_Woocommerce_Gateway_6_Blocks_Support extends Chip_Woocommerce_Gateway
 	 *
 	 * @var string
 	 */
-	protected $name = 'wc_gateway_chip_6';
+	protected $name = 'chip_woocommerce_gateway_6';
 }

@@ -26,7 +26,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	 *
 	 * @var string
 	 */
-	protected $name = 'wc_gateway_chip';
+	protected $name = 'chip_woocommerce_gateway';
 
 	/**
 	 * Initialize the payment method.

@@ -5,7 +5,7 @@ import { getSetting } from "@woocommerce/settings";
 import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect } from "@wordpress/element";
 
-const settings = getSetting(gateway_wc_gateway_chip_5.id + "_data", {});
+const settings = getSetting(gateway_chip_woocommerce_gateway_5.id + "_data", {});
 
 const defaultLabel = __("CHIP", "chip-for-woocommerce");
 
@@ -38,7 +38,7 @@ const Label = (props) => {
   // return <PaymentMethodLabel text={label} />;
 };
 
-const wc_gateway_chip = {
+const chip_woocommerce_gateway = {
   name: settings.method_name,
   label: <Label />,
   canMakePayment: () => true,
@@ -52,4 +52,4 @@ const wc_gateway_chip = {
   },
 };
 
-registerPaymentMethod(wc_gateway_chip);
+registerPaymentMethod(chip_woocommerce_gateway);

@@ -51,9 +51,12 @@ class Chip_Woocommerce {
 		include $includes_dir . 'class-chip-woocommerce-api.php';
 		include $includes_dir . 'class-chip-woocommerce-api-fpx.php';
 		include $includes_dir . 'class-chip-woocommerce-logger.php';
-		include $includes_dir . 'class-chip-woocommerce-gateway.php';
 		include $includes_dir . 'class-chip-woocommerce-migration.php';
+		include $includes_dir . 'class-chip-woocommerce-gateway.php';
 		include $includes_dir . 'class-chip-woocommerce-queue.php';
+
+		// Run migration if needed.
+		Chip_Woocommerce_Migration::maybe_migrate();
 
 		if ( ! defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
 			include $includes_dir . 'class-chip-woocommerce-gateway-2.php';
@@ -158,7 +161,7 @@ class Chip_Woocommerce {
 		);
 
 		if ( defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
-			$url_params['section'] = 'wc_gateway_chip';
+			$url_params['section'] = 'chip_woocommerce_gateway';
 		}
 
 		$url = add_query_arg( $url_params, admin_url( 'admin.php' ) );
