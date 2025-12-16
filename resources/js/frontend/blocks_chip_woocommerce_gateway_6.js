@@ -257,6 +257,8 @@ const CardForm = (props) => {
     }
   };
 
+  // Validation on payment setup - card data is NOT sent to server
+  // It will be posted directly to CHIP on checkout success
   const onSubmit = useCallback(() => {
     if (cardName.trim() === '') {
       return {
@@ -293,19 +295,9 @@ const CardForm = (props) => {
       };
     }
 
-    const cleanCardNumber = cardNumber.replace(/\s/g, '');
-    const cleanExpiry = cardExpiry.replace(/\s/g, '');
-
+    // Return SUCCESS without card data - card data will be POSTed directly to CHIP
     return {
       type: emitResponse.responseTypes.SUCCESS,
-      meta: {
-        paymentMethodData: {
-          chip_card_name: cardName,
-          chip_card_number: cleanCardNumber,
-          chip_card_expiry: cleanExpiry,
-          chip_card_cvc: cardCvc,
-        },
-      },
     };
   }, [cardName, cardNumber, cardExpiry, cardCvc, emitResponse.responseTypes]);
 
