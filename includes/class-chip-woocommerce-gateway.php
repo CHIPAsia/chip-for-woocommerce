@@ -448,6 +448,27 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
+		// Check if a saved token is being used.
+		// In Blocks checkout, payment_data contains the token selection.
+		$payment_data   = $context->payment_data;
+		$token_key      = 'wc-' . $this->id . '-payment-token';
+		$using_new_card = true;
+
+		if ( isset( $payment_data[ $token_key ] ) && ! empty( $payment_data[ $token_key ] ) && 'new' !== $payment_data[ $token_key ] ) {
+			$using_new_card = false;
+		}
+
+		// Also check the 'token' key used by some WooCommerce versions.
+		if ( isset( $payment_data['token'] ) && ! empty( $payment_data['token'] ) && 'new' !== $payment_data['token'] ) {
+			$using_new_card = false;
+		}
+
+		// If using saved token, let legacy process_payment handle everything.
+		// WooCommerce Blocks will redirect to the checkout_url returned.
+		if ( ! $using_new_card ) {
+			return;
+		}
+
 		// Call process_payment to create the CHIP payment.
 		// This hook fires BEFORE legacy process_payment, so we need to call it ourselves.
 		$order_id       = $context->order->get_id();
@@ -462,10 +483,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( ! empty( $direct_post_url ) ) {
 			// IMPORTANT: Setting status will skip legacy payment processing.
-			// This prevents WooCommerce from doing a GET redirect to the checkout URL.
 			$result->set_status( 'success' );
 
-			// Add direct_post_url to payment details for JS to access.
+			// New card entry - redirect to CHIP direct post URL via JS.
 			$result->set_payment_details(
 				array( 'chip_direct_post_url' => esc_url_raw( $direct_post_url ) )
 			);
@@ -477,6 +497,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			// Clear the property after use.
 			unset( self::$direct_post_urls[ $this->id ] );
 		}
+		// If no direct_post_url (shouldn't happen for new card), let legacy processing handle it.
 	}
 
 	/**
@@ -1438,7 +1459,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			_deprecated_hook( 'wc_' . $this->id . '_chip_purchase', '1.9.0', 'chip_' . $this->id . '_chip_purchase' );
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Deprecated hook for backward compatibility.
 			do_action( 'wc_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
-		}  		
+		}
 		do_action( 'chip_' . $this->id . '_chip_purchase', $payment, $order->get_id() );
 
 		if ( 'paid' !== $payment_requery_status ) {
@@ -1460,9 +1481,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
-		// Store direct_post_url for blocks checkout.
+		// Store direct_post_url for blocks checkout (only for new card, not saved tokens).
 		// Use static property to persist across different gateway instances.
-		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+		// When using a saved token, payment is charged directly - no redirect needed.
+		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip && empty( $token_id ) ) {
 			self::$direct_post_urls[ $this->id ] = $direct_post_url;
 		}
 
