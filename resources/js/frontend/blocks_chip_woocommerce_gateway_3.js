@@ -310,20 +310,14 @@ const CardForm = (props) => {
 
   useEffect(() => {
     const unsubscribeCheckoutSuccess = onCheckoutSuccess((data) => {
-      console.log('CHIP: onCheckoutSuccess triggered', data);
       const { processingResponse } = data;
-      console.log('CHIP: processingResponse', processingResponse);
-      console.log('CHIP: paymentDetails', processingResponse?.paymentDetails);
       
       // WooCommerce Blocks converts payment_details array to plain object.
       const directPostUrl = processingResponse?.paymentDetails?.chip_direct_post_url;
-      console.log('CHIP: directPostUrl', directPostUrl);
 
       if (directPostUrl) {
         const cleanExpiry = cardExpiry.replace(/\s/g, '');
         const cleanCardNumber = cardNumber.replace(/\s/g, '');
-        console.log('CHIP: Creating form to POST to', directPostUrl);
-        console.log('CHIP: Card data', { cardName, cleanCardNumber, cleanExpiry, cardCvc: '***' });
 
         const form = document.createElement('form');
         form.method = 'POST';
@@ -346,14 +340,11 @@ const CardForm = (props) => {
         });
 
         document.body.appendChild(form);
-        console.log('CHIP: Submitting form...');
         form.submit();
 
         return {
           type: emitResponse.responseTypes.SUCCESS,
         };
-      } else {
-        console.log('CHIP: No directPostUrl found, returning true');
       }
 
       return true;
