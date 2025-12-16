@@ -398,6 +398,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * This hook allows us to modify the payment result for blocks checkout,
 	 * specifically to add direct_post_url for card payments.
 	 *
+	 * Setting a status on PaymentResult will skip legacy payment processing,
+	 * preventing the default GET redirect behavior.
+	 *
 	 * @param \Automattic\WooCommerce\StoreApi\Payments\PaymentContext $context Payment context.
 	 * @param \Automattic\WooCommerce\StoreApi\Payments\PaymentResult  $result  Payment result.
 	 * @return void
@@ -417,6 +420,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$direct_post_url = $order->get_meta( '_' . $this->id . '_direct_post_url' );
 
 		if ( ! empty( $direct_post_url ) && 'yes' === $this->bypass_chip ) {
+			// IMPORTANT: Setting status will skip legacy payment processing.
+			// This prevents WooCommerce from doing a GET redirect to the checkout URL.
+			$result->set_status( 'success' );
+
 			// Add direct_post_url to payment details for JS to access.
 			// Use set_payment_details with a clean array to avoid serialization issues.
 			$result->set_payment_details(
