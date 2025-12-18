@@ -8,7 +8,7 @@ Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-CHIP - Digital Finance Platform. Securely accept one-time and subscription payment with CHIP for WooCommerce.
+CHIP - Digital Finance Platform. Securely accept one-time and subscription payments with CHIP for WooCommerce.
 
 == Description ==
 
@@ -20,9 +20,9 @@ Our aim is to help businesses streamline their financial processes, reduce opera
 
 With CHIP, you gain a financial partner committed to simplifying, digitizing, and enhancing your financial operations for ultimate success.
 
-This plugin will enable your WooCommerce site to be integrated with CHIP as per documented in [API Documentation](https://docs.chip-in.asia).
+This plugin will enable your WooCommerce site to be integrated with CHIP as documented in [API Documentation](https://docs.chip-in.asia).
 
-The plugins do includes support for WooCommerce Subscription products.
+This plugin includes support for WooCommerce Subscriptions.
 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
@@ -68,9 +68,9 @@ The plugins do includes support for WooCommerce Subscription products.
 
 = Automatic installation =
 
-Automatic installation is the easiest option -- WordPress will handle the file transfer, and you won’t need to leave your web browser. To do an automatic install of WooCommerce, log in to your WordPress dashboard, navigate to the Plugins menu, and click “Add New.”
+Automatic installation is the easiest option -- WordPress will handle the file transfer, and you won't need to leave your web browser. To do an automatic install of CHIP for WooCommerce, log in to your WordPress dashboard, navigate to the Plugins menu, and click "Add New."
 
-In the search field type “CHIP for WooCommerce,” then click “Search Plugins.” Once you’ve found us,  you can view details about it such as the point release, rating, and description. Most importantly of course, you can install it by! Click “Install Now,” and WordPress will take it from there.
+In the search field type "CHIP for WooCommerce," then click "Search Plugins." Once you've found us, you can view details about it such as the point release, rating, and description. Most importantly of course, you can install it! Click "Install Now," and WordPress will take it from there.
 
 = Manual installation =
 
@@ -84,19 +84,19 @@ Automatic updates should work smoothly, but we still recommend you back up your 
 
 = Where is the Brand ID and Secret Key located? =
 
-Brand ID and Secret Key available through our merchant dashboard.
+Brand ID and Secret Key are available through our merchant dashboard.
 
-= Do I need to set public key for webhook? =
+= Do I need to set the public key for webhook? =
 
-Optional. You may set the public key for webhook to synchronize the card token availability.
+Optional. You may set the public key for webhook to synchronize card token availability.
 
 = Where can I find documentation? =
 
 You can visit our [API documentation](https://docs.chip-in.asia/) for your reference.
 
-= What CHIP API services used in this plugin? =
+= What CHIP API services are used in this plugin? =
 
-This plugin rely on CHIP API ([CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
+This plugin relies on CHIP API ([CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
 
   - **/payment_methods/**
     - This is for getting available payment methods specific to your account
@@ -119,7 +119,7 @@ This plugin rely on CHIP API ([CHIP_ROOT_URL](https://gate.chip-in.asia)) as fol
   - **/public_key/**
     - This is for getting public key for webhook verification
 
-Additionally, for FPX Bank status, this plugin rely on CHIP API ([CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
+Additionally, for FPX bank status, this plugin relies on CHIP API ([CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
 
   - **/fpx_b2c**
     - This is for getting FPX B2C status
@@ -134,7 +134,7 @@ Then, hook it with filter **woocommerce_payment_gateways** and pass your class n
 
 You may refer to **includes/class-chip-woocommerce-gateway-2.php** file for an example of how to extend the base gateway class.
 
-= How to remove the additional payment method? =
+= How to remove additional payment methods? =
 
 Create a PHP constant in your wp-config.php file with the following code:
 
