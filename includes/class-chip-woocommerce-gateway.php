@@ -982,10 +982,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		$this->form_fields['enable_auto_clear_cart'] = array(
-			'title'       => __( 'Auto Clear Cart', 'chip-for-woocommerce' ),
-			'type'        => 'checkbox',
-			'label'       => __( 'Clear cart when customer proceeds to checkout', 'chip-for-woocommerce' ),
-			'default'     => 'no',
+			'title'   => __( 'Auto Clear Cart', 'chip-for-woocommerce' ),
+			'type'    => 'checkbox',
+			'label'   => __( 'Clear cart when customer proceeds to checkout', 'chip-for-woocommerce' ),
+			'default' => 'no',
 		);
 
 		// ══════════════════════════════════════════════════════════════════════
