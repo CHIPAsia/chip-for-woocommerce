@@ -22,7 +22,7 @@ class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 	 */
 	public function __construct() {
 		parent::__construct();
-		$this->payment_met = array( 'razer_atome' );
+		$this->payment_method_whitelist = array( 'razer_atome' );
 	}
 
 	/**
@@ -80,6 +80,7 @@ class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 		unset( $this->form_fields['display_logo'] );
 		unset( $this->form_fields['disable_recurring_support'] );
 		unset( $this->form_fields['payment_method_whitelist'] );
+		unset( $this->form_fields['payment_action'] );
 		unset( $this->form_fields['bypass_chip'] );
 	}
 }

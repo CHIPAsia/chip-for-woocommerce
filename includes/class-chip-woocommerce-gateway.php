@@ -172,6 +172,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $cancel_order_flow;
 
 	/**
+	 * Payment action setting (sale or authorize).
+	 *
+	 * @var string
+	 */
+	protected $payment_action;
+
+	/**
 	 * Email fallback setting.
 	 *
 	 * @var string
@@ -229,6 +236,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->system_url_scheme         = $this->get_option( 'system_url_scheme', 'https' );
 		$this->disable_recurring_support = $this->get_option( 'disable_recurring_support' );
 		$this->cancel_order_flow         = $this->get_option( 'cancel_order_flow' );
+		$this->payment_action            = $this->get_option( 'payment_action', 'sale' );
 		$this->enable_auto_clear_cart    = $this->get_option( 'enable_auto_clear_cart' );
 
 		// Checkout experience settings.
@@ -981,6 +989,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'default'     => 'no',
 		);
 
+		// Payment action field - only available for card-only whitelists.
+		$card_only_whitelist    = $this->is_card_only_whitelist();
+		$payment_action_options = array(
+			'sale'      => __( 'Sale (Immediate Capture)', 'chip-for-woocommerce' ),
+			'authorize' => __( 'Authorize (Delayed Capture)', 'chip-for-woocommerce' ),
+		);
+
+		$this->form_fields['payment_action'] = array(
+			'title'       => __( 'Payment Action', 'chip-for-woocommerce' ),
+			'type'        => 'select',
+			'class'       => 'wc-enhanced-select',
+			'description' => $card_only_whitelist
+				? __( 'Choose whether to capture payment immediately (Sale) or authorize first and capture later (Authorize). Authorize allows you to capture or void the payment from the order page.', 'chip-for-woocommerce' )
+				: __( 'Payment action is only available when Payment Method Whitelist contains only card methods (Visa, Mastercard, Maestro).', 'chip-for-woocommerce' ),
+			'default'     => 'sale',
+			'options'     => $payment_action_options,
+			'disabled'    => ! $card_only_whitelist,
+		);
+
 		$this->form_fields['enable_auto_clear_cart'] = array(
 			'title'   => __( 'Auto Clear Cart', 'chip-for-woocommerce' ),
 			'type'    => 'checkbox',
@@ -1064,6 +1091,33 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		return $formatted_time_zones;
+	}
+
+	/**
+	 * Check if payment method whitelist contains only card methods.
+	 *
+	 * Payment action (authorize/sale) is only available when the whitelist
+	 * contains only Visa, Mastercard, and/or Maestro.
+	 *
+	 * @return bool True if whitelist contains only card methods.
+	 */
+	private function is_card_only_whitelist() {
+		$allowed_card_methods = array( 'visa', 'mastercard', 'maestro' );
+		$whitelist            = $this->payment_method_whitelist;
+
+		// If whitelist is empty or not an array, return false.
+		if ( empty( $whitelist ) || ! is_array( $whitelist ) ) {
+			return false;
+		}
+
+		// Check if all items in whitelist are allowed card methods.
+		foreach ( $whitelist as $method ) {
+			if ( ! in_array( $method, $allowed_card_methods, true ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
