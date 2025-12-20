@@ -417,6 +417,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		add_action( 'init', array( $this, 'register_script' ) );
 
+		// Admin scripts for logo preview.
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+
 		// WooCommerce Blocks payment processing.
 		add_action( 'woocommerce_rest_checkout_process_payment_with_context', array( $this, 'process_payment_with_context' ), 10, 2 );
 	}
@@ -883,25 +886,33 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->form_fields['display_logo'] = array(
 			'title'       => __( 'Display Logo', 'chip-for-woocommerce' ),
 			'type'        => 'select',
-			'class'       => 'wc-enhanced-select',
-			/* translators: %1$s: Logo URL, %2$s: FPX B2C URL, %3$s: FPX B2B1 URL, %4$s: E-Wallet URL, %5$s: Card URL */
-			'description' => sprintf( __( 'This controls which logo appears on the checkout page. <a target="_blank" href="%1$s">Logo</a>. <a target="_blank" href="%2$s">FPX B2C</a>. <a target="_blank" href="%3$s">FPX B2B1</a>. <a target="_blank" href="%4$s">E-Wallet</a>. <a target="_blank" href="%5$s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
+			'class'       => 'wc-enhanced-select chip-display-logo-select',
+			'description' => __( 'Select which logo appears on the checkout page.', 'chip-for-woocommerce' )
+				. '<div id="chip-logo-preview-' . esc_attr( $this->id ) . '" style="margin-top: 10px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; text-align: center; min-height: 60px;">'
+				. '<img id="chip-logo-preview-img-' . esc_attr( $this->id ) . '" src="" alt="' . esc_attr__( 'Logo Preview', 'chip-for-woocommerce' ) . '" style="max-height: 50px; max-width: 100%;" />'
+				. '</div>',
 			'default'     => 'fpx_only',
 			'options'     => array(
-				'logo'                    => 'CHIP Logo',
-				'fpx'                     => 'FPX B2C',
-				'fpx_b2b1'                => 'FPX B2B1',
-				'ewallet'                 => 'E-Wallet',
-				'card'                    => 'Card',
-				'fpx_only'                => 'FPX Only',
-				'ewallet_only'            => 'E-Wallet Only',
-				'card_only'               => 'Card Only',
-				'card_international'      => 'Card with Maestro',
-				'card_international_only' => 'Card with Maestro Only',
-				'paywithchip_all'         => 'Pay with CHIP (All)',
-				'paywithchip_fpx'         => 'Pay with CHIP (FPX)',
-				'duitnow'                 => 'DuitNow QR',
-				'duitnow_only'            => 'DuitNow QR Only',
+				// Combined Logos (Shows CHIP branding with payment method).
+				__( 'Combined Logos', 'chip-for-woocommerce' ) => array(
+					'logo'               => __( 'CHIP Logo — CHIP branding only', 'chip-for-woocommerce' ),
+					'fpx'                => __( 'FPX B2C — FPX logo with CHIP branding', 'chip-for-woocommerce' ),
+					'fpx_b2b1'           => __( 'FPX B2B1 — Corporate FPX with CHIP branding', 'chip-for-woocommerce' ),
+					'ewallet'            => __( 'E-Wallet — E-Wallet logos with CHIP branding', 'chip-for-woocommerce' ),
+					'card'               => __( 'Card — Card logos with CHIP branding', 'chip-for-woocommerce' ),
+					'card_international' => __( 'Card with Maestro — Includes Maestro with CHIP branding', 'chip-for-woocommerce' ),
+					'duitnow'            => __( 'DuitNow QR — DuitNow logo with CHIP branding', 'chip-for-woocommerce' ),
+					'paywithchip_all'    => __( 'Pay with CHIP (All) — All methods with CHIP branding', 'chip-for-woocommerce' ),
+					'paywithchip_fpx'    => __( 'Pay with CHIP (FPX) — FPX with CHIP branding', 'chip-for-woocommerce' ),
+				),
+				// Standalone Logos (Payment method logo only, no CHIP branding).
+				__( 'Standalone Logos (No CHIP Branding)', 'chip-for-woocommerce' ) => array(
+					'fpx_only'                => __( 'FPX Only — FPX logo without CHIP branding', 'chip-for-woocommerce' ),
+					'ewallet_only'            => __( 'E-Wallet Only — E-Wallet logo without CHIP branding', 'chip-for-woocommerce' ),
+					'card_only'               => __( 'Card Only — Card logo without CHIP branding', 'chip-for-woocommerce' ),
+					'card_international_only' => __( 'Card with Maestro Only — Includes Maestro, no CHIP branding', 'chip-for-woocommerce' ),
+					'duitnow_only'            => __( 'DuitNow QR Only — DuitNow logo without CHIP branding', 'chip-for-woocommerce' ),
+				),
 			),
 		);
 
@@ -1118,6 +1129,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get logo URLs for display logo preview.
+	 *
+	 * @return array Associative array of logo key => URL.
+	 */
+	private function get_logo_urls() {
+		$base_url = WC_CHIP_URL . 'assets/';
+
+		return array(
+			'logo'                    => $base_url . 'logo.png',
+			'fpx'                     => $base_url . 'fpx.png',
+			'fpx_b2b1'                => $base_url . 'fpx_b2b1.png',
+			'ewallet'                 => $base_url . 'ewallet.png',
+			'card'                    => $base_url . 'card.png',
+			'fpx_only'                => $base_url . 'fpx_only.png',
+			'ewallet_only'            => $base_url . 'ewallet_only.png',
+			'card_only'               => $base_url . 'card_only.png',
+			'card_international'      => $base_url . 'card_international.png',
+			'card_international_only' => $base_url . 'card_international_only.png',
+			'paywithchip_all'         => $base_url . 'paywithchip_all.png',
+			'paywithchip_fpx'         => $base_url . 'paywithchip_fpx.png',
+			'duitnow'                 => $base_url . 'duitnow.svg',
+			'duitnow_only'            => $base_url . 'duitnow_only.svg',
+		);
 	}
 
 	/**
@@ -2785,6 +2822,42 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		wp_localize_script( "wc-{$this->id}-direct-post", 'gateway_option', array( 'id' => $this->id ) );
+	}
+
+	/**
+	 * Enqueue admin scripts for gateway settings page.
+	 *
+	 * @param string $hook The current admin page hook.
+	 * @return void
+	 */
+	public function enqueue_admin_scripts( $hook ) {
+		// Only load on WooCommerce settings pages.
+		if ( 'woocommerce_page_wc-settings' !== $hook ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking page context.
+		$section = isset( $_GET['section'] ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
+
+		// Only load for this gateway's settings page.
+		if ( $section !== $this->id ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'chip-admin-logo-preview',
+			trailingslashit( WC_CHIP_URL ) . 'includes/js/admin-logo-preview.js',
+			array( 'jquery' ),
+			WC_CHIP_MODULE_VERSION,
+			true
+		);
+
+		// Pass logo URLs to JavaScript.
+		wp_localize_script(
+			'chip-admin-logo-preview',
+			'chipLogoUrls_' . $this->id,
+			$this->get_logo_urls()
+		);
 	}
 
 	/**
