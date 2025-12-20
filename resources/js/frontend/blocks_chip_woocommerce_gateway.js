@@ -27,51 +27,6 @@ const cardFormStyles = `
   .chip-bank-select {
     margin-top: 16px;
   }
-  .chip-bank-select .wc-block-components-combobox .wc-block-components-combobox-control {
-    position: relative;
-  }
-  .chip-bank-select .wc-block-components-combobox-control input[type="text"] {
-    display: none;
-  }
-  .chip-bank-select select {
-    width: 100%;
-    padding: 1.5em 3em 0.5em 1em;
-    font-size: 1em;
-    font-family: inherit;
-    line-height: 1.375;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    background-color: #fff;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    cursor: pointer;
-    min-height: 3.5em;
-    color: inherit;
-  }
-  .chip-bank-select select:focus {
-    outline: none;
-    border-color: #000;
-    box-shadow: 0 0 0 1px #000;
-  }
-  .chip-bank-select .chip-select-label {
-    position: absolute;
-    top: 0.75em;
-    left: 1em;
-    font-size: 0.75em;
-    font-weight: 400;
-    color: #757575;
-    pointer-events: none;
-    z-index: 1;
-  }
-  .chip-bank-select .chip-select-chevron {
-    position: absolute;
-    right: 1em;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    fill: currentColor;
-  }
 `;
 
 // Inject styles once.
@@ -418,31 +373,35 @@ const FpxBankList = (props) => {
 
   return (
     <div className="chip-bank-select">
-      <div className="wc-block-components-combobox wc-block-components-combobox-control" style={{ position: 'relative' }}>
-        <span className="chip-select-label">
-          {__("Internet Banking", "chip-for-woocommerce")}
-        </span>
-        <select
-          id="chip-fpx-bank"
-          value={bankId}
-          onChange={(e) => setBankId(e.target.value)}
-          aria-label={__("Internet Banking", "chip-for-woocommerce")}
-        >
-          <option value="">{__("Choose your bank", "chip-for-woocommerce")}</option>
-          {Object.keys(banks).map((key) => (
-            <option key={key} value={key}>{banks[key]}</option>
-          ))}
-        </select>
-        <svg 
-          className="chip-select-chevron" 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 24 24" 
-          width="18" 
-          height="18" 
-          aria-hidden="true"
-        >
-          <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
-        </svg>
+      <div className="wc-blocks-components-select">
+        <div className="wc-blocks-components-select__container">
+          <label htmlFor="chip-fpx-bank" className="wc-blocks-components-select__label">
+            {__("Internet Banking", "chip-for-woocommerce")}
+          </label>
+          <select
+            id="chip-fpx-bank"
+            className="wc-blocks-components-select__select"
+            value={bankId}
+            onChange={(e) => setBankId(e.target.value)}
+            aria-invalid="false"
+          >
+            <option value="" disabled>{__("Choose your bank", "chip-for-woocommerce")}</option>
+            {Object.keys(banks).map((key) => (
+              <option key={key} value={key}>{banks[key]}</option>
+            ))}
+          </select>
+          <svg 
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            className="wc-blocks-components-select__expand"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+          </svg>
+        </div>
       </div>
     </div>
   );
@@ -511,31 +470,35 @@ const Fpxb2b1BankList = (props) => {
 
   return (
     <div className="chip-bank-select">
-      <div className="wc-block-components-combobox wc-block-components-combobox-control" style={{ position: 'relative' }}>
-        <span className="chip-select-label">
-          {__("Corporate Internet Banking", "chip-for-woocommerce")}
-        </span>
-        <select
-          id="chip-fpx-b2b1-bank"
-          value={bankIdB2b}
-          onChange={(e) => setBankIdB2b(e.target.value)}
-          aria-label={__("Corporate Internet Banking", "chip-for-woocommerce")}
-        >
-          <option value="">{__("Choose your bank", "chip-for-woocommerce")}</option>
-          {Object.keys(banks).map((key) => (
-            <option key={key} value={key}>{banks[key]}</option>
-          ))}
-        </select>
-        <svg 
-          className="chip-select-chevron" 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 24 24" 
-          width="18" 
-          height="18" 
-          aria-hidden="true"
-        >
-          <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
-        </svg>
+      <div className="wc-blocks-components-select">
+        <div className="wc-blocks-components-select__container">
+          <label htmlFor="chip-fpx-b2b1-bank" className="wc-blocks-components-select__label">
+            {__("Corporate Internet Banking", "chip-for-woocommerce")}
+          </label>
+          <select
+            id="chip-fpx-b2b1-bank"
+            className="wc-blocks-components-select__select"
+            value={bankIdB2b}
+            onChange={(e) => setBankIdB2b(e.target.value)}
+            aria-invalid="false"
+          >
+            <option value="" disabled>{__("Choose your bank", "chip-for-woocommerce")}</option>
+            {Object.keys(banks).map((key) => (
+              <option key={key} value={key}>{banks[key]}</option>
+            ))}
+          </select>
+          <svg 
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            className="wc-blocks-components-select__expand"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+          </svg>
+        </div>
       </div>
     </div>
   );
@@ -604,31 +567,35 @@ const RazerEWalletList = (props) => {
 
   return (
     <div className="chip-bank-select">
-      <div className="wc-block-components-combobox wc-block-components-combobox-control" style={{ position: 'relative' }}>
-        <span className="chip-select-label">
-          {__("E-Wallet", "chip-for-woocommerce")}
-        </span>
-        <select
-          id="chip-razer-ewallet"
-          value={walletId}
-          onChange={(e) => setWalletId(e.target.value)}
-          aria-label={__("E-Wallet", "chip-for-woocommerce")}
-        >
-          <option value="">{__("Choose your e-wallet", "chip-for-woocommerce")}</option>
-          {Object.keys(wallets).map((key) => (
-            <option key={key} value={key}>{wallets[key]}</option>
-          ))}
-        </select>
-        <svg 
-          className="chip-select-chevron" 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 24 24" 
-          width="18" 
-          height="18" 
-          aria-hidden="true"
-        >
-          <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
-        </svg>
+      <div className="wc-blocks-components-select">
+        <div className="wc-blocks-components-select__container">
+          <label htmlFor="chip-razer-ewallet" className="wc-blocks-components-select__label">
+            {__("E-Wallet", "chip-for-woocommerce")}
+          </label>
+          <select
+            id="chip-razer-ewallet"
+            className="wc-blocks-components-select__select"
+            value={walletId}
+            onChange={(e) => setWalletId(e.target.value)}
+            aria-invalid="false"
+          >
+            <option value="" disabled>{__("Choose your e-wallet", "chip-for-woocommerce")}</option>
+            {Object.keys(wallets).map((key) => (
+              <option key={key} value={key}>{wallets[key]}</option>
+            ))}
+          </select>
+          <svg 
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            className="wc-blocks-components-select__expand"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+          </svg>
+        </div>
       </div>
     </div>
   );
