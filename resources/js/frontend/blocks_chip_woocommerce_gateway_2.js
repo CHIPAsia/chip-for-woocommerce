@@ -2,13 +2,12 @@ import { registerPaymentMethod } from "@woocommerce/blocks-registry";
 import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
-import { TreeSelect } from "@wordpress/components";
 import { useState, useEffect, useCallback } from "@wordpress/element";
 
 const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_2';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
-// Add card form styles to match WooCommerce Blocks styling.
+// Add card form and select input styles to match WooCommerce Blocks styling.
 const cardFormStyles = `
   .wc-block-components-card-form {
     margin-top: 16px;
@@ -24,6 +23,48 @@ const cardFormStyles = `
     flex: 1 1 0% !important;
     width: 50% !important;
     margin-bottom: 0;
+  }
+  .chip-select-container {
+    margin-top: 16px;
+  }
+  .chip-select-container .wc-block-components-select-input {
+    position: relative;
+    margin-top: 0;
+  }
+  .chip-select-container .wc-block-components-select-input__select {
+    width: 100%;
+    padding: 1.5em 2.5em 0.25em 1em;
+    font-size: 1em;
+    line-height: 1.375;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    background-color: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    min-height: 3em;
+  }
+  .chip-select-container .wc-block-components-select-input__select:focus {
+    outline: none;
+    border-color: #000;
+    box-shadow: 0 0 0 1px #000;
+  }
+  .chip-select-container .wc-block-components-select-input__label {
+    position: absolute;
+    top: 0.75em;
+    left: 1em;
+    font-size: 0.75em;
+    color: #757575;
+    pointer-events: none;
+    transition: all 0.2s ease;
+  }
+  .chip-select-container .wc-block-components-select-input__chevron {
+    position: absolute;
+    right: 1em;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
   }
 `;
 
@@ -59,7 +100,7 @@ const Label = () => {
 };
 
 const FpxBankList = (props) => {
-  const [bankId, setBankId] = useState(undefined);
+  const [bankId, setBankId] = useState('');
   const [banks, setBanks] = useState({});
   const [loading, setLoading] = useState(true);
   const { eventRegistration, emitResponse } = props;
@@ -88,7 +129,7 @@ const FpxBankList = (props) => {
   }, []);
 
   const onSubmit = () => {
-    if (undefined === bankId) {
+    if ('' === bankId) {
       return {
         type: emitResponse.responseTypes.ERROR,
         message: __(
@@ -115,30 +156,48 @@ const FpxBankList = (props) => {
     };
   }, [onPaymentSetup, bankId]);
 
-  let banksArray = [];
-  Object.keys(banks).forEach(key => {
-    banksArray.push({name: banks[key], id: key});
-  });
-
   if (loading) {
     return <p>{__("Loading banks...", "chip-for-woocommerce")}</p>;
   }
 
   return (
-    <TreeSelect
-      label={__("Internet Banking", "chip-for-woocommerce")}
-      noOptionLabel={__("Choose your bank", "chip-for-woocommerce")}
-      onChange={(selected_bank_id) => {
-        setBankId(selected_bank_id);
-      }}
-      selectedId={bankId}
-      tree={banksArray}
-    />
+    <div className="chip-select-container">
+      <div className="wc-block-components-select-input">
+        <label 
+          htmlFor="chip-fpx-bank-2" 
+          className="wc-block-components-select-input__label"
+        >
+          {__("Internet Banking", "chip-for-woocommerce")}
+        </label>
+        <select
+          id="chip-fpx-bank-2"
+          className="wc-block-components-select-input__select"
+          value={bankId}
+          onChange={(e) => setBankId(e.target.value)}
+          aria-label={__("Internet Banking", "chip-for-woocommerce")}
+        >
+          <option value="">{__("Choose your bank", "chip-for-woocommerce")}</option>
+          {Object.keys(banks).map((key) => (
+            <option key={key} value={key}>{banks[key]}</option>
+          ))}
+        </select>
+        <svg 
+          className="wc-block-components-select-input__chevron" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          width="18" 
+          height="18" 
+          aria-hidden="true"
+        >
+          <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+        </svg>
+      </div>
+    </div>
   );
 };
 
 const Fpxb2b1BankList = (props) => {
-  const [bankIdB2b, setBankIdB2b] = useState(undefined);
+  const [bankIdB2b, setBankIdB2b] = useState('');
   const [banks, setBanks] = useState({});
   const [loading, setLoading] = useState(true);
   const { eventRegistration, emitResponse } = props;
@@ -167,7 +226,7 @@ const Fpxb2b1BankList = (props) => {
   }, []);
 
   const onSubmit = () => {
-    if (undefined === bankIdB2b) {
+    if ('' === bankIdB2b) {
       return {
         type: emitResponse.responseTypes.ERROR,
         message: __(
@@ -194,30 +253,48 @@ const Fpxb2b1BankList = (props) => {
     };
   }, [onPaymentSetup, bankIdB2b]);
 
-  let banksArray = [];
-  Object.keys(banks).forEach(key => {
-    banksArray.push({name: banks[key], id: key});
-  });
-
   if (loading) {
     return <p>{__("Loading banks...", "chip-for-woocommerce")}</p>;
   }
 
   return (
-    <TreeSelect
-      label={__("Internet Banking", "chip-for-woocommerce")}
-      noOptionLabel={__("Choose your bank", "chip-for-woocommerce")}
-      onChange={(selected_bank_id) => {
-        setBankIdB2b(selected_bank_id);
-      }}
-      selectedId={bankIdB2b}
-      tree={banksArray}
-    />
+    <div className="chip-select-container">
+      <div className="wc-block-components-select-input">
+        <label 
+          htmlFor="chip-fpx-b2b1-bank-2" 
+          className="wc-block-components-select-input__label"
+        >
+          {__("Corporate Internet Banking", "chip-for-woocommerce")}
+        </label>
+        <select
+          id="chip-fpx-b2b1-bank-2"
+          className="wc-block-components-select-input__select"
+          value={bankIdB2b}
+          onChange={(e) => setBankIdB2b(e.target.value)}
+          aria-label={__("Corporate Internet Banking", "chip-for-woocommerce")}
+        >
+          <option value="">{__("Choose your bank", "chip-for-woocommerce")}</option>
+          {Object.keys(banks).map((key) => (
+            <option key={key} value={key}>{banks[key]}</option>
+          ))}
+        </select>
+        <svg 
+          className="wc-block-components-select-input__chevron" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          width="18" 
+          height="18" 
+          aria-hidden="true"
+        >
+          <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+        </svg>
+      </div>
+    </div>
   );
 };
 
 const RazerEWalletList = (props) => {
-  const [walletId, setWalletId] = useState(undefined);
+  const [walletId, setWalletId] = useState('');
   const [wallets, setWallets] = useState({});
   const [loading, setLoading] = useState(true);
   const { eventRegistration, emitResponse } = props;
@@ -246,7 +323,7 @@ const RazerEWalletList = (props) => {
   }, []);
 
   const onSubmit = () => {
-    if (undefined === walletId) {
+    if ('' === walletId) {
       return {
         type: emitResponse.responseTypes.ERROR,
         message: __(
@@ -273,25 +350,43 @@ const RazerEWalletList = (props) => {
     };
   }, [onPaymentSetup, walletId]);
 
-  let walletsArray = [];
-  Object.keys(wallets).forEach(key => {
-    walletsArray.push({name: wallets[key], id: key});
-  });
-
   if (loading) {
     return <p>{__("Loading e-wallets...", "chip-for-woocommerce")}</p>;
   }
 
   return (
-    <TreeSelect
-      label={__("E-Wallet", "chip-for-woocommerce")}
-      noOptionLabel={__("Choose your e-wallet", "chip-for-woocommerce")}
-      onChange={(selected_wallet_id) => {
-        setWalletId(selected_wallet_id);
-      }}
-      selectedId={walletId}
-      tree={walletsArray}
-    />
+    <div className="chip-select-container">
+      <div className="wc-block-components-select-input">
+        <label 
+          htmlFor="chip-razer-ewallet-2" 
+          className="wc-block-components-select-input__label"
+        >
+          {__("E-Wallet", "chip-for-woocommerce")}
+        </label>
+        <select
+          id="chip-razer-ewallet-2"
+          className="wc-block-components-select-input__select"
+          value={walletId}
+          onChange={(e) => setWalletId(e.target.value)}
+          aria-label={__("E-Wallet", "chip-for-woocommerce")}
+        >
+          <option value="">{__("Choose your e-wallet", "chip-for-woocommerce")}</option>
+          {Object.keys(wallets).map((key) => (
+            <option key={key} value={key}>{wallets[key]}</option>
+          ))}
+        </select>
+        <svg 
+          className="wc-block-components-select-input__chevron" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          width="18" 
+          height="18" 
+          aria-hidden="true"
+        >
+          <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+        </svg>
+      </div>
+    </div>
   );
 };
 

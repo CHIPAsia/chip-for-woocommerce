@@ -6,7 +6,7 @@ import { getSetting } from "@woocommerce/settings";
 const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_5';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
-const defaultLabel = __("CHIP", "chip-for-woocommerce");
+const defaultLabel = __("Atome", "chip-for-woocommerce");
 
 const label = decodeEntities(settings.title) || defaultLabel;
 
