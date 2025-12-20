@@ -244,13 +244,13 @@ const CardForm = (props) => {
         <input
           type="text"
           id="chip-cardholder-name"
-          className="wc-block-components-text-input__input"
           value={cardName}
           onChange={(e) => handleCardNameChange(e.target.value)}
           autoComplete="cc-name"
           aria-label={__("Cardholder Name", "chip-for-woocommerce")}
+          aria-invalid="false"
         />
-        <label htmlFor="chip-cardholder-name" className="wc-block-components-text-input__label">
+        <label htmlFor="chip-cardholder-name">
           {__("Cardholder Name", "chip-for-woocommerce")}
         </label>
       </div>
@@ -258,14 +258,14 @@ const CardForm = (props) => {
         <input
           type="text"
           id="chip-card-number"
-          className="wc-block-components-text-input__input"
           value={cardNumber}
           onChange={(e) => handleCardNumberChange(e.target.value)}
           autoComplete="cc-number"
           inputMode="numeric"
           aria-label={__("Card Number", "chip-for-woocommerce")}
+          aria-invalid="false"
         />
-        <label htmlFor="chip-card-number" className="wc-block-components-text-input__label">
+        <label htmlFor="chip-card-number">
           {__("Card Number", "chip-for-woocommerce")}
         </label>
       </div>
@@ -275,14 +275,14 @@ const CardForm = (props) => {
             <input
               type="text"
               id="chip-card-expiry"
-              className="wc-block-components-text-input__input"
               value={cardExpiry}
               onChange={(e) => handleExpiryChange(e.target.value)}
               autoComplete="cc-exp"
               inputMode="numeric"
               aria-label={__("Expiry (MM/YY)", "chip-for-woocommerce")}
+              aria-invalid="false"
             />
-            <label htmlFor="chip-card-expiry" className="wc-block-components-text-input__label">
+            <label htmlFor="chip-card-expiry">
               {__("Expiry (MM/YY)", "chip-for-woocommerce")}
             </label>
           </div>
@@ -292,15 +292,15 @@ const CardForm = (props) => {
             <input
               type="password"
               id="chip-card-cvc"
-              className="wc-block-components-text-input__input"
               value={cardCvc}
               onChange={(e) => handleCvcChange(e.target.value)}
               autoComplete="cc-csc"
               inputMode="numeric"
               maxLength="4"
               aria-label={__("CVC", "chip-for-woocommerce")}
+              aria-invalid="false"
             />
-            <label htmlFor="chip-card-cvc" className="wc-block-components-text-input__label">
+            <label htmlFor="chip-card-cvc">
               {__("CVC", "chip-for-woocommerce")}
             </label>
           </div>
