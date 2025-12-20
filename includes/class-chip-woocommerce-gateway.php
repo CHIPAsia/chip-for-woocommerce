@@ -42,60 +42,60 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $due_strict;
 
 	/**
-	 * Due strict timing.
+	 * Due strict timing in minutes.
 	 *
 	 * @var int
 	 */
-	protected $due_str_t;
+	protected $due_strict_timing;
 
 	/**
 	 * Purchase timezone.
 	 *
 	 * @var string
 	 */
-	protected $purchase_tz;
+	protected $purchase_time_zone;
 
 	/**
 	 * System URL scheme.
 	 *
 	 * @var string
 	 */
-	protected $system_url_;
+	protected $system_url_scheme;
 
 	/**
 	 * Disable recurring support setting.
 	 *
 	 * @var string
 	 */
-	protected $disable_rec;
+	protected $disable_recurring_support;
 
 	/**
 	 * Payment method whitelist.
 	 *
 	 * @var array
 	 */
-	protected $payment_met;
+	protected $payment_method_whitelist;
 
 	/**
 	 * Disable redirect setting.
 	 *
 	 * @var string
 	 */
-	protected $disable_red;
+	protected $disable_redirect;
 
 	/**
 	 * Disable callback setting.
 	 *
 	 * @var string
 	 */
-	protected $disable_cal;
+	protected $disable_callback;
 
 	/**
 	 * Enable auto clear cart setting.
 	 *
 	 * @var string
 	 */
-	protected $enable_auto;
+	protected $enable_auto_clear_cart;
 
 	/**
 	 * Public key for verification.
@@ -109,14 +109,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	protected $arecuring_p;
+	protected $available_recurring;
 
 	/**
-	 * Payment method list.
+	 * Available payment methods list.
 	 *
 	 * @var array
 	 */
-	protected $a_payment_m;
+	protected $available_payment_methods;
 
 	/**
 	 * Bypass CHIP payment page setting.
@@ -148,21 +148,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 *
 	 * @var string
 	 */
-	protected $add_charges;
+	protected $enable_additional_charges;
 
 	/**
-	 * Fixed charges amount.
+	 * Fixed charges amount in cents.
 	 *
 	 * @var int
 	 */
-	protected $fix_charges;
+	protected $fixed_charges;
 
 	/**
 	 * Percent charges amount.
 	 *
 	 * @var float
 	 */
-	protected $per_charges;
+	protected $percent_charges;
 
 	/**
 	 * Cancel order flow setting.
@@ -217,29 +217,39 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->init_supports();
 		$this->init_has_fields();
 
+		// API credentials.
 		$this->secret_key = $this->get_option( 'secret_key' );
 		$this->brand_id   = $this->get_option( 'brand_id' );
-		$this->due_strict = $this->get_option( 'due_strict', 'yes' );
-		$this->due_str_t  = $this->get_option( 'due_strict_timing', 60 );
+		$this->public_key = $this->get_option( 'public_key' );
 
-		$this->purchase_tz       = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
-		$this->system_url_       = $this->get_option( 'system_url_scheme', 'https' );
-		$this->disable_rec       = $this->get_option( 'disable_recurring_support' );
-		$this->payment_met       = $this->get_option( 'payment_method_whitelist' );
-		$this->disable_red       = $this->get_option( 'disable_redirect' );
-		$this->disable_cal       = $this->get_option( 'disable_callback' );
-		$this->enable_auto       = $this->get_option( 'enable_auto_clear_cart' );
-		$this->debug             = $this->get_option( 'debug' );
-		$this->public_key        = $this->get_option( 'public_key' );
-		$this->arecuring_p       = $this->get_option( 'available_recurring_payment_method' );
-		$this->a_payment_m       = $this->get_payment_method_list();
-		$this->description       = $this->get_option( 'description' );
-		$this->bypass_chip       = $this->get_option( 'bypass_chip' );
-		$this->add_charges       = $this->get_option( 'enable_additional_charges' );
-		$this->fix_charges       = $this->get_option( 'fixed_charges', 100 );
-		$this->per_charges       = $this->get_option( 'percent_charges', 0 );
-		$this->cancel_order_flow = $this->get_option( 'cancel_order_flow' );
-		$this->email_fallback    = $this->get_option( 'email_fallback' );
+		// Payment behavior settings.
+		$this->due_strict                = $this->get_option( 'due_strict', 'yes' );
+		$this->due_strict_timing         = $this->get_option( 'due_strict_timing', 60 );
+		$this->purchase_time_zone        = $this->get_option( 'purchase_time_zone', 'Asia/Kuala_Lumpur' );
+		$this->system_url_scheme         = $this->get_option( 'system_url_scheme', 'https' );
+		$this->disable_recurring_support = $this->get_option( 'disable_recurring_support' );
+		$this->cancel_order_flow         = $this->get_option( 'cancel_order_flow' );
+		$this->enable_auto_clear_cart    = $this->get_option( 'enable_auto_clear_cart' );
+
+		// Checkout experience settings.
+		$this->description              = $this->get_option( 'description' );
+		$this->bypass_chip              = $this->get_option( 'bypass_chip' );
+		$this->payment_method_whitelist = $this->get_option( 'payment_method_whitelist' );
+		$this->email_fallback           = $this->get_option( 'email_fallback' );
+
+		// Payment method availability.
+		$this->available_recurring       = $this->get_option( 'available_recurring_payment_method' );
+		$this->available_payment_methods = $this->get_payment_method_list();
+
+		// Additional charges settings.
+		$this->enable_additional_charges = $this->get_option( 'enable_additional_charges' );
+		$this->fixed_charges             = $this->get_option( 'fixed_charges', 100 );
+		$this->percent_charges           = $this->get_option( 'percent_charges', 0 );
+
+		// Troubleshooting settings.
+		$this->disable_redirect = $this->get_option( 'disable_redirect' );
+		$this->disable_callback = $this->get_option( 'disable_callback' );
+		$this->debug            = $this->get_option( 'debug' );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -367,9 +377,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected function init_one_time_gateway() {
 		$one_time_gateway = false;
 
-		if ( is_array( $this->payment_met ) && ! empty( $this->payment_met ) ) {
+		if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
 			foreach ( array( 'visa', 'mastercard', 'maestro' ) as $card_network ) {
-				if ( in_array( $card_network, $this->payment_met, true ) ) {
+				if ( in_array( $card_network, $this->payment_method_whitelist, true ) ) {
 					$one_time_gateway = false;
 					break;
 				}
@@ -377,7 +387,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( $one_time_gateway || 'yes' === $this->disable_rec ) {
+		if ( $one_time_gateway || 'yes' === $this->disable_recurring_support ) {
 			$this->supports = array( 'products', 'refunds' );
 		}
 	}
@@ -900,8 +910,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'class'       => 'wc-enhanced-select',
 			'description' => __( 'Select which payment methods to allow. Leave empty to allow all available methods.', 'chip-for-woocommerce' ),
 			'default'     => array( 'fpx' ),
-			'options'     => $this->a_payment_m,
-			'disabled'    => empty( $this->a_payment_m ),
+			'options'     => $this->available_payment_methods,
+			'disabled'    => empty( $this->available_payment_methods ),
 		);
 
 		$this->form_fields['email_fallback'] = array(
@@ -1086,15 +1096,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$is_razer = false;
 
 			// Check if payment_met empty.
-			if ( is_array( $this->payment_met ) ) {
-				$output = preg_grep( $pattern, $this->payment_met );
+			if ( is_array( $this->payment_method_whitelist ) ) {
+				$output = preg_grep( $pattern, $this->payment_method_whitelist );
 
 				if ( count( $output ) > 0 ) {
 					$is_razer = true;
 				}
 			}
 
-			if ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'fpx' === $this->payment_met[0] && 'yes' === $this->bypass_chip ) {
+			if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
 				woocommerce_form_field(
 					'chip_fpx_bank',
 					array(
@@ -1104,7 +1114,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						'options'  => $this->list_fpx_banks(),
 					)
 				);
-			} elseif ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'fpx_b2b1' === $this->payment_met[0] && 'yes' === $this->bypass_chip ) {
+			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx_b2b1' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
 				woocommerce_form_field(
 					'chip_fpx_b2b1_bank',
 					array(
@@ -1114,7 +1124,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						'options'  => $this->list_fpx_b2b1_banks(),
 					)
 				);
-			} elseif ( is_array( $this->payment_met ) && $is_razer && 'yes' === $this->bypass_chip ) {
+			} elseif ( is_array( $this->payment_method_whitelist ) && $is_razer && 'yes' === $this->bypass_chip ) {
 				woocommerce_form_field(
 					'chip_razer_ewallet',
 					array(
@@ -1129,8 +1139,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce verification handled by WooCommerce checkout.
-		if ( ! is_wc_endpoint_url( 'order-pay' ) && ! is_add_payment_method_page() && is_array( $this->payment_met ) && count( $this->payment_met ) >= 2 && 'yes' === $this->bypass_chip && ! isset( $_GET['change_payment_method'] ) ) {
-			foreach ( $this->payment_met as $pm ) {
+		if ( ! is_wc_endpoint_url( 'order-pay' ) && ! is_add_payment_method_page() && is_array( $this->payment_method_whitelist ) && count( $this->payment_method_whitelist ) >= 2 && 'yes' === $this->bypass_chip && ! isset( $_GET['change_payment_method'] ) ) {
+			foreach ( $this->payment_method_whitelist as $pm ) {
 				if ( in_array( $pm, array( 'visa', 'mastercard', 'maestro' ), true ) ) {
 					wp_enqueue_script( "wc-{$this->id}-direct-post" );
 					$this->form();
@@ -1187,10 +1197,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$fpx_bank      = isset( $_POST['chip_fpx_bank'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_fpx_bank'] ) ) : '';
 		$fpx_b2b1_bank = isset( $_POST['chip_fpx_b2b1_bank'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) ) : '';
 
-		if ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'yes' === $this->bypass_chip ) {
-			if ( 'fpx' === $this->payment_met[0] && 0 === strlen( $fpx_bank ) ) {
+		if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'yes' === $this->bypass_chip ) {
+			if ( 'fpx' === $this->payment_method_whitelist[0] && 0 === strlen( $fpx_bank ) ) {
 				throw new Exception( esc_html__( 'Internet Banking is a required field.', 'chip-for-woocommerce' ) );
-			} elseif ( 'fpx_b2b1' === $this->payment_met[0] && 0 === strlen( $fpx_b2b1_bank ) ) {
+			} elseif ( 'fpx_b2b1' === $this->payment_method_whitelist[0] && 0 === strlen( $fpx_b2b1_bank ) ) {
 				throw new Exception( esc_html__( 'Corporate Internet Banking is a required field.', 'chip-for-woocommerce' ) );
 			}
 		}
@@ -1200,8 +1210,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$is_razer = false;
 
 		// Check if payment_met empty.
-		if ( is_array( $this->payment_met ) ) {
-			$output = preg_grep( $pattern, $this->payment_met );
+		if ( is_array( $this->payment_method_whitelist ) ) {
+			$output = preg_grep( $pattern, $this->payment_method_whitelist );
 
 			if ( count( $output ) > 0 ) {
 				$is_razer = true;
@@ -1209,7 +1219,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		$razer_ewallet = isset( $_POST['chip_razer_ewallet'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) ) : '';
-		if ( is_array( $this->payment_met ) && 'yes' === $this->bypass_chip && $is_razer && 0 === strlen( $razer_ewallet ) ) {
+		if ( is_array( $this->payment_method_whitelist ) && 'yes' === $this->bypass_chip && $is_razer && 0 === strlen( $razer_ewallet ) ) {
 			throw new Exception( esc_html__( 'E-Wallet is a required field.', 'chip-for-woocommerce' ) );
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
@@ -1262,7 +1272,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( 'yes' === $this->add_charges ) {
+		if ( 'yes' === $this->enable_additional_charges ) {
 			$this->add_item_order_fee( $order );
 		}
 
@@ -1285,7 +1295,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'purchase'         => array(
 				'total_override' => round( $order->get_total() * 100 ),
 				'due_strict'     => 'yes' === $this->due_strict,
-				'timezone'       => $this->purchase_tz,
+				'timezone'       => $this->purchase_time_zone,
 				'currency'       => $order->get_currency(),
 				'language'       => $this->get_language(),
 				'products'       => array(),
@@ -1355,8 +1365,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$chip = $this->api();
 
-		if ( is_array( $this->payment_met ) && ! empty( $this->payment_met ) ) {
-			$params['payment_method_whitelist'] = $this->payment_met;
+		if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
+			$params['payment_method_whitelist'] = $this->payment_method_whitelist;
 		}
 
 		// Note: When customer ticks "save card" checkbox, remember_card parameter is
@@ -1373,15 +1383,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( 'https' === $this->system_url_ ) {
+		if ( 'https' === $this->system_url_scheme ) {
 			$params['success_callback'] = preg_replace( '/^http:/i', 'https:', $params['success_callback'] );
 		}
 
-		if ( 'yes' === $this->disable_cal ) {
+		if ( 'yes' === $this->disable_callback ) {
 			unset( $params['success_callback'] );
 		}
 
-		if ( 'yes' === $this->disable_red ) {
+		if ( 'yes' === $this->disable_redirect ) {
 			unset( $params['success_redirect'] );
 		}
 
@@ -1450,7 +1460,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			);
 		}
 
-		if ( 'yes' === $this->enable_auto ) {
+		if ( 'yes' === $this->enable_auto_clear_cart ) {
 			WC()->cart->empty_cart();
 		}
 
@@ -1532,8 +1542,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return int
 	 */
 	public function get_due_timestamp() {
-		$due_strict_timing = $this->due_str_t;
-		if ( empty( $this->due_str_t ) ) {
+		$due_strict_timing = $this->due_strict_timing;
+		if ( empty( $this->due_strict_timing ) ) {
 			$due_strict_timing = 60;
 		}
 		return time() + ( absint( $due_strict_timing ) * 60 );
@@ -1679,7 +1689,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	public function auto_charge( $total_amount, $renewal_order ) {
 
-		if ( 'yes' === $this->add_charges ) {
+		if ( 'yes' === $this->enable_additional_charges ) {
 			$this->add_item_order_fee( $renewal_order );
 		}
 
@@ -1706,7 +1716,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'brand_id'         => $this->brand_id,
 			'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
 			'purchase'         => array(
-				'timezone'       => $this->purchase_tz,
+				'timezone'       => $this->purchase_time_zone,
 				'currency'       => $renewal_order->get_currency(),
 				'language'       => $this->get_language(),
 				'due_strict'     => 'yes' === $this->due_strict,
@@ -1968,7 +1978,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$chip = $this->api();
 
-		if ( 'yes' === $this->disable_red ) {
+		if ( 'yes' === $this->disable_redirect ) {
 			unset( $params['success_redirect'] );
 		}
 
@@ -2346,26 +2356,26 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'' => __( 'Choose your e-wallet', 'chip-for-woocommerce' ),
 		);
 
-		if ( in_array( 'razer_atome', $this->payment_met, true ) ) {
+		if ( in_array( 'razer_atome', $this->payment_method_whitelist, true ) ) {
 			$ewallet_list['Atome'] = __( 'Atome', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_grabpay', $this->payment_met, true ) ) {
+		if ( in_array( 'razer_grabpay', $this->payment_method_whitelist, true ) ) {
 			$ewallet_list['GrabPay'] = __( 'GrabPay', 'chip-for-woocommerce' );
 		}
-		if ( in_array( 'razer_maybankqr', $this->payment_met, true ) ) {
+		if ( in_array( 'razer_maybankqr', $this->payment_method_whitelist, true ) ) {
 			$ewallet_list['MB2U_QRPay-Push'] = __( 'Maybank QRPay', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_shopeepay', $this->payment_met, true ) ) {
+		if ( in_array( 'razer_shopeepay', $this->payment_method_whitelist, true ) ) {
 			$ewallet_list['ShopeePay'] = __( 'ShopeePay', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_tng', $this->payment_met, true ) ) {
+		if ( in_array( 'razer_tng', $this->payment_method_whitelist, true ) ) {
 			$ewallet_list['TNG-EWALLET'] = __( 'Touch \'n Go eWallet', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'duitnow_qr', $this->payment_met, true ) ) {
+		if ( in_array( 'duitnow_qr', $this->payment_method_whitelist, true ) ) {
 			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
 		}
 
@@ -2416,7 +2426,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				}
 
 				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
-			} elseif ( is_array( $this->payment_met ) && 1 === count( $this->payment_met ) && 'duitnow_qr' === $this->payment_met[0] ) {
+			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'duitnow_qr' === $this->payment_method_whitelist[0] ) {
 				$url .= '?preferred=duitnow_qr';
 			}
 		} elseif ( 'chip_woocommerce_gateway_5' === $this->id ) {
@@ -2483,7 +2493,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$chip = $this->api();
 
-		if ( 'yes' === $this->disable_red ) {
+		if ( 'yes' === $this->disable_redirect ) {
 			unset( $params['success_redirect'] );
 		}
 
@@ -2868,12 +2878,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			do_action( 'wc_' . $this->id . '_before_add_item_order_fee', $order, $this );
 		}
 		do_action( 'chip_' . $this->id . '_before_add_item_order_fee', $order, $this );
-		if ( $this->fix_charges > 0 ) {
+		if ( $this->fixed_charges > 0 ) {
 			$item_fee = new WC_Order_Item_Fee();
 
 			$item_fee->set_name( 'Fixed Processing Fee' );
-			$item_fee->set_amount( $this->fix_charges / 100 );
-			$item_fee->set_total( $this->fix_charges / 100 );
+			$item_fee->set_amount( $this->fixed_charges / 100 );
+			$item_fee->set_total( $this->fixed_charges / 100 );
 			$item_fee->set_order_id( $order->get_id() );
 			$item_fee->save();
 			$order->add_item( $item_fee );
@@ -2881,12 +2891,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$order->update_meta_data( '_chip_fixed_processing_fee', $item_fee->get_id() );
 		}
 
-		if ( $this->per_charges > 0 ) {
+		if ( $this->percent_charges > 0 ) {
 			$item_fee = new WC_Order_Item_Fee();
 
 			$item_fee->set_name( 'Variable Processing Fee' );
-			$item_fee->set_amount( $order->get_total() * ( $this->per_charges / 100 ) / 100 );
-			$item_fee->set_total( $order->get_total() * ( $this->per_charges / 100 ) / 100 );
+			$item_fee->set_amount( $order->get_total() * ( $this->percent_charges / 100 ) / 100 );
+			$item_fee->set_total( $order->get_total() * ( $this->percent_charges / 100 ) / 100 );
 			$item_fee->set_order_id( $order->get_id() );
 			$item_fee->save();
 			$order->add_item( $item_fee );
@@ -2912,7 +2922,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function get_payment_method_whitelist() {
-		return $this->payment_met;
+		return $this->payment_method_whitelist;
 	}
 
 	/**
@@ -3029,7 +3039,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'brand_id'         => $this->brand_id,
 			'client_id'        => get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
 			'purchase'         => array(
-				'timezone'       => $this->purchase_tz,
+				'timezone'       => $this->purchase_time_zone,
 				'currency'       => $order->get_currency(),
 				'language'       => $this->get_language(),
 				'due_strict'     => 'yes' === $this->due_strict,
