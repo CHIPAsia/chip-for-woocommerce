@@ -781,6 +781,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function init_form_fields() {
+		// ══════════════════════════════════════════════════════════════════════
+		// SECTION 1: GENERAL
+		// Basic gateway setup and display settings.
+		// ══════════════════════════════════════════════════════════════════════
 		$this->form_fields['enabled'] = array(
 			'title'   => __( 'Enable/Disable', 'chip-for-woocommerce' ),
 			'label'   => sprintf( '%1$s %2$s', __( 'Enable', 'chip-for-woocommerce' ), $this->method_title ),
@@ -809,10 +813,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'default'     => __( 'Pay with Online Banking (FPX)', 'chip-for-woocommerce' ),
 		);
 
-		$this->form_fields['credentials'] = array(
-			'title'       => __( 'Credentials', 'chip-for-woocommerce' ),
+		// ══════════════════════════════════════════════════════════════════════
+		// SECTION 2: API CONFIGURATION
+		// CHIP API credentials and public key.
+		// ══════════════════════════════════════════════════════════════════════
+		$this->form_fields['api_configuration'] = array(
+			'title'       => __( 'API Configuration', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to set Brand ID and Secret Key.', 'chip-for-woocommerce' ),
+			'description' => __( 'Enter your CHIP API credentials to connect with your account.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['brand_id'] = array(
@@ -837,10 +845,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			},
 		);
 
-		$this->form_fields['miscellaneous'] = array(
-			'title'       => __( 'Miscellaneous', 'chip-for-woocommerce' ),
+		$this->form_fields['public_key'] = array(
+			'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
+			'type'        => 'textarea',
+			'description' => __( 'Public key for validating callback will be auto-filled upon successful configuration.', 'chip-for-woocommerce' ),
+			'disabled'    => true,
+		);
+
+		// ══════════════════════════════════════════════════════════════════════
+		// SECTION 3: CHECKOUT EXPERIENCE
+		// Settings that affect the customer checkout experience.
+		// ══════════════════════════════════════════════════════════════════════
+		$this->form_fields['checkout_experience'] = array(
+			'title'       => __( 'Checkout Experience', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to set display logo, due strict, time zone, and payment method whitelist.', 'chip-for-woocommerce' ),
+			'description' => __( 'Configure how the payment gateway appears and behaves during checkout.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['display_logo'] = array(
@@ -848,7 +867,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'type'        => 'select',
 			'class'       => 'wc-enhanced-select',
 			/* translators: %1$s: Logo URL, %2$s: FPX B2C URL, %3$s: FPX B2B1 URL, %4$s: E-Wallet URL, %5$s: Card URL */
-			'description' => sprintf( __( 'This controls which logo appeared on checkout page. <a target="_blank" href="%1$s">Logo</a>. <a target="_blank" href="%2$s">FPX B2C</a>. <a target="_blank" href="%3$s">FPX B2B1</a>. <a target="_blank" href="%4$s">E-Wallet</a>. <a target="_blank" href="%5$s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
+			'description' => sprintf( __( 'This controls which logo appears on the checkout page. <a target="_blank" href="%1$s">Logo</a>. <a target="_blank" href="%2$s">FPX B2C</a>. <a target="_blank" href="%3$s">FPX B2B1</a>. <a target="_blank" href="%4$s">E-Wallet</a>. <a target="_blank" href="%5$s">Card</a>.', 'chip-for-woocommerce' ), WC_CHIP_URL . 'assets/logo.png', WC_CHIP_URL . 'assets/fpx.png', WC_CHIP_URL . 'assets/fpx_b2b1.png', WC_CHIP_URL . 'assets/ewallet.png', WC_CHIP_URL . 'assets/card.png' ),
 			'default'     => 'fpx_only',
 			'options'     => array(
 				'logo'                    => 'CHIP Logo',
@@ -861,19 +880,51 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'card_only'               => 'Card Only',
 				'card_international'      => 'Card with Maestro',
 				'card_international_only' => 'Card with Maestro Only',
-
 				'paywithchip_all'         => 'Pay with CHIP (All)',
 				'paywithchip_fpx'         => 'Pay with CHIP (FPX)',
-
-				'duitnow'                 => 'Duitnow QR',
-				'duitnow_only'            => 'Duitnow QR Only',
+				'duitnow'                 => 'DuitNow QR',
+				'duitnow_only'            => 'DuitNow QR Only',
 			),
+		);
+
+		$this->form_fields['bypass_chip'] = array(
+			'title'       => __( 'Bypass CHIP Payment Page', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
+			'description' => __( 'Enable to skip the CHIP payment page and show payment options directly on checkout.', 'chip-for-woocommerce' ),
+			'default'     => 'yes',
+		);
+
+		$this->form_fields['payment_method_whitelist'] = array(
+			'title'       => __( 'Payment Method Whitelist', 'chip-for-woocommerce' ),
+			'type'        => 'multiselect',
+			'class'       => 'wc-enhanced-select',
+			'description' => __( 'Select which payment methods to allow. Leave empty to allow all available methods.', 'chip-for-woocommerce' ),
+			'default'     => array( 'fpx' ),
+			'options'     => $this->a_payment_m,
+			'disabled'    => empty( $this->a_payment_m ),
+		);
+
+		$this->form_fields['email_fallback'] = array(
+			'title'       => __( 'Email Fallback', 'chip-for-woocommerce' ),
+			'type'        => 'email',
+			'description' => __( 'Fallback email address used when customer email is not available. <strong>Not required</strong> if default WooCommerce checkout behavior is preserved (email field is mandatory).', 'chip-for-woocommerce' ),
+			'placeholder' => 'merchant@gmail.com',
+		);
+
+		// ══════════════════════════════════════════════════════════════════════
+		// SECTION 4: PAYMENT BEHAVIOR
+		// Settings that control payment processing behavior.
+		// ══════════════════════════════════════════════════════════════════════
+		$this->form_fields['payment_behavior'] = array(
+			'title'       => __( 'Payment Behavior', 'chip-for-woocommerce' ),
+			'type'        => 'title',
+			'description' => __( 'Configure payment timing, redirects, and order handling.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['due_strict'] = array(
 			'title'       => __( 'Due Strict', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Enforce due strict payment timeframe to block payment after due strict timing is passed.', 'chip-for-woocommerce' ),
+			'description' => __( 'Block payments after the due time has passed.', 'chip-for-woocommerce' ),
 			'default'     => 'yes',
 		);
 
@@ -881,7 +932,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'title'       => __( 'Due Strict Timing (minutes)', 'chip-for-woocommerce' ),
 			'type'        => 'number',
 			/* translators: %1$s: Default hold stock minutes value */
-			'description' => sprintf( __( 'Due strict timing in minutes. Default to hold stock minutes: <code>%1$s</code>. This will only be enforced if Due Strict option is activated.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ),
+			'description' => sprintf( __( 'Payment expiry time in minutes. Defaults to WooCommerce hold stock setting: <code>%1$s</code>. Only applies when Due Strict is enabled.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ),
 			'default'     => get_option( 'woocommerce_hold_stock_minutes', '60' ),
 		);
 
@@ -889,7 +940,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'title'       => __( 'Purchase Time Zone', 'chip-for-woocommerce' ),
 			'type'        => 'select',
 			'class'       => 'wc-enhanced-select',
-			'description' => __( 'Time zone setting for receipt page.', 'chip-for-woocommerce' ),
+			'description' => __( 'Time zone displayed on the receipt page.', 'chip-for-woocommerce' ),
 			'default'     => 'Asia/Kuala_Lumpur',
 			'options'     => $this->get_timezone_list(),
 		);
@@ -898,7 +949,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'title'       => __( 'System URL Scheme', 'chip-for-woocommerce' ),
 			'type'        => 'select',
 			'class'       => 'wc-enhanced-select',
-			'description' => __( 'Choose HTTPS if you are facing issues with payment status update due to HTTP to HTTPS redirection.', 'chip-for-woocommerce' ),
+			'description' => __( 'Choose HTTPS if you experience payment status update issues due to HTTP to HTTPS redirection.', 'chip-for-woocommerce' ),
 			'default'     => 'https',
 			'options'     => array(
 				'https'   => __( 'HTTPS', 'chip-for-woocommerce' ),
@@ -906,100 +957,77 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			),
 		);
 
-		$this->form_fields['bypass_chip'] = array(
-			'title'       => __( 'Bypass CHIP payment page', 'chip-for-woocommerce' ),
+		$this->form_fields['cancel_order_flow'] = array(
+			'title'       => __( 'Cancel Order Flow', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Tick to bypass CHIP payment page.', 'chip-for-woocommerce' ),
-			'default'     => 'yes',
+			'description' => __( 'Redirect customers to the cancel order page for failed or cancelled payments.', 'chip-for-woocommerce' ),
+			'default'     => 'no',
 		);
 
 		$this->form_fields['disable_recurring_support'] = array(
-			'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
+			'title'       => __( 'Disable Card Recurring Support', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code>, and <code>Maestro</code>.', 'chip-for-woocommerce' ),
+			'description' => __( 'Disable saved card functionality. Applies to <code>Visa</code>, <code>Mastercard</code>, and <code>Maestro</code>.', 'chip-for-woocommerce' ),
 			'default'     => 'no',
 		);
 
 		$this->form_fields['enable_auto_clear_cart'] = array(
-			'title'   => __( 'Enable auto clear Cart', 'chip-for-woocommerce' ),
-			'type'    => 'checkbox',
-			'label'   => __( 'Enable clear cart upon checkout', 'chip-for-woocommerce' ),
-			'default' => 'no',
-		);
-
-		$this->form_fields['payment_method_whitelist'] = array(
-			'title'       => __( 'Payment Method Whitelist', 'chip-for-woocommerce' ),
-			'type'        => 'multiselect',
-			'class'       => 'wc-enhanced-select',
-			'description' => __( 'Choose payment method to enforce payment method whitelisting if possible.', 'chip-for-woocommerce' ),
-			'default'     => array( 'fpx' ),
-			'options'     => $this->a_payment_m,
-			'disabled'    => empty( $this->a_payment_m ),
-		);
-
-		$this->form_fields['public_key'] = array(
-			'title'       => __( 'Public Key', 'chip-for-woocommerce' ),
-			'type'        => 'textarea',
-			'description' => __( 'Public key for validating callback will be auto-filled upon successful configuration.', 'chip-for-woocommerce' ),
-			'disabled'    => true,
-		);
-
-		$this->form_fields['cancel_order_flow'] = array(
-			'title'       => __( 'Cancel Order Flow', 'chip-for-woocommerce' ),
+			'title'       => __( 'Auto Clear Cart', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Tick to redirect customer to cancel order URL for unsuccessful payment.', 'chip-for-woocommerce' ),
+			'label'       => __( 'Clear cart when customer proceeds to checkout', 'chip-for-woocommerce' ),
 			'default'     => 'no',
 		);
 
-		$this->form_fields['email_fallback'] = array(
-			'title'       => __( 'Email Fallback', 'chip-for-woocommerce' ),
-			'type'        => 'email',
-			'description' => __( '<strong>Required</strong> if the merchant does not intend to request the customer\'s email address.', 'chip-for-woocommerce' ),
-			'placeholder' => 'merchant@gmail.com',
-		);
-
+		// ══════════════════════════════════════════════════════════════════════
+		// SECTION 5: ADDITIONAL CHARGES
+		// Configure additional fees applied at checkout.
+		// ══════════════════════════════════════════════════════════════════════
 		$this->form_fields['additional_charges'] = array(
 			'title'       => __( 'Additional Charges', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to add additional charges after checkout. This option does not apply to WooCommerce Pre-order fee.', 'chip-for-woocommerce' ),
+			'description' => __( 'Add extra fees to orders at checkout. Does not apply to WooCommerce Pre-order fees.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['enable_additional_charges'] = array(
 			'title'       => __( 'Enable Additional Charges', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Tick to activate additional charges.', 'chip-for-woocommerce' ),
+			'description' => __( 'Enable to apply additional charges to orders.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['fixed_charges'] = array(
 			'title'       => __( 'Fixed Charges (cents)', 'chip-for-woocommerce' ),
 			'type'        => 'number',
-			'description' => __( 'Fixed charges in cents. Default to: <code>100</code>. This will only be applied when additional charges are activated.', 'chip-for-woocommerce' ),
+			'description' => __( 'Fixed amount in cents to add to each order. Default: <code>100</code> (RM 1.00).', 'chip-for-woocommerce' ),
 			'default'     => '100',
 		);
 
 		$this->form_fields['percent_charges'] = array(
 			'title'       => __( 'Percentage Charges (%)', 'chip-for-woocommerce' ),
 			'type'        => 'number',
-			'description' => __( 'Percentage charges. Input <code>100</code> for 1%. Default to: <code>0</code>. This will only be applied when additional charges are activated.', 'chip-for-woocommerce' ),
+			'description' => __( 'Percentage of order total to add as a fee. Enter <code>100</code> for 1%. Default: <code>0</code>.', 'chip-for-woocommerce' ),
 			'default'     => '0',
 		);
 
+		// ══════════════════════════════════════════════════════════════════════
+		// SECTION 6: TROUBLESHOOTING
+		// Debug and diagnostic options.
+		// ══════════════════════════════════════════════════════════════════════
 		$this->form_fields['troubleshooting'] = array(
 			'title'       => __( 'Troubleshooting', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to disable redirect, disable callback, and turn on debugging.', 'chip-for-woocommerce' ),
+			'description' => __( 'Diagnostic options for debugging payment issues.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['disable_redirect'] = array(
 			'title'       => __( 'Disable Redirect', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Disable redirect for troubleshooting purposes.', 'chip-for-woocommerce' ),
+			'description' => __( 'Disable automatic redirect after payment. Use for testing only.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['disable_callback'] = array(
 			'title'       => __( 'Disable Callback', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Disable callback for troubleshooting purposes.', 'chip-for-woocommerce' ),
+			'description' => __( 'Disable payment callback processing. Use for testing only.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['debug'] = array(
@@ -1008,7 +1036,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'label'       => __( 'Enable logging', 'chip-for-woocommerce' ),
 			'default'     => 'no',
 			/* translators: %s: Log file URL */
-			'description' => sprintf( __( 'Log events to <code>%s</code>', 'chip-for-woocommerce' ), esc_url( admin_url( 'admin.php?page=wc-status&tab=logs&source=chip-for-woocommerce' ) ) ),
+			'description' => sprintf( __( 'Log payment events to <code>%s</code>.', 'chip-for-woocommerce' ), esc_url( admin_url( 'admin.php?page=wc-status&tab=logs&source=chip-for-woocommerce' ) ) ),
 		);
 	}
 
