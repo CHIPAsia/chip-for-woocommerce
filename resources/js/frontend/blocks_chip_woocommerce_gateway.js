@@ -24,47 +24,53 @@ const cardFormStyles = `
     width: 50% !important;
     margin-bottom: 0;
   }
-  .chip-select-container {
+  .chip-bank-select {
     margin-top: 16px;
   }
-  .chip-select-container .wc-block-components-select-input {
+  .chip-bank-select .wc-block-components-combobox .wc-block-components-combobox-control {
     position: relative;
-    margin-top: 0;
   }
-  .chip-select-container .wc-block-components-select-input__select {
+  .chip-bank-select .wc-block-components-combobox-control input[type="text"] {
+    display: none;
+  }
+  .chip-bank-select select {
     width: 100%;
-    padding: 1.5em 2.5em 0.25em 1em;
+    padding: 1.5em 3em 0.5em 1em;
     font-size: 1em;
+    font-family: inherit;
     line-height: 1.375;
-    border: 1px solid #8c8f94;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     background-color: #fff;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
-    min-height: 3em;
+    min-height: 3.5em;
+    color: inherit;
   }
-  .chip-select-container .wc-block-components-select-input__select:focus {
+  .chip-bank-select select:focus {
     outline: none;
     border-color: #000;
     box-shadow: 0 0 0 1px #000;
   }
-  .chip-select-container .wc-block-components-select-input__label {
+  .chip-bank-select .chip-select-label {
     position: absolute;
     top: 0.75em;
     left: 1em;
     font-size: 0.75em;
+    font-weight: 400;
     color: #757575;
     pointer-events: none;
-    transition: all 0.2s ease;
+    z-index: 1;
   }
-  .chip-select-container .wc-block-components-select-input__chevron {
+  .chip-bank-select .chip-select-chevron {
     position: absolute;
     right: 1em;
     top: 50%;
     transform: translateY(-50%);
     pointer-events: none;
+    fill: currentColor;
   }
 `;
 
@@ -411,17 +417,13 @@ const FpxBankList = (props) => {
   }
 
   return (
-    <div className="chip-select-container">
-      <div className="wc-block-components-select-input">
-        <label 
-          htmlFor="chip-fpx-bank" 
-          className="wc-block-components-select-input__label"
-        >
+    <div className="chip-bank-select">
+      <div className="wc-block-components-combobox wc-block-components-combobox-control" style={{ position: 'relative' }}>
+        <span className="chip-select-label">
           {__("Internet Banking", "chip-for-woocommerce")}
-        </label>
+        </span>
         <select
           id="chip-fpx-bank"
-          className="wc-block-components-select-input__select"
           value={bankId}
           onChange={(e) => setBankId(e.target.value)}
           aria-label={__("Internet Banking", "chip-for-woocommerce")}
@@ -432,7 +434,7 @@ const FpxBankList = (props) => {
           ))}
         </select>
         <svg 
-          className="wc-block-components-select-input__chevron" 
+          className="chip-select-chevron" 
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 24 24" 
           width="18" 
@@ -508,17 +510,13 @@ const Fpxb2b1BankList = (props) => {
   }
 
   return (
-    <div className="chip-select-container">
-      <div className="wc-block-components-select-input">
-        <label 
-          htmlFor="chip-fpx-b2b1-bank" 
-          className="wc-block-components-select-input__label"
-        >
+    <div className="chip-bank-select">
+      <div className="wc-block-components-combobox wc-block-components-combobox-control" style={{ position: 'relative' }}>
+        <span className="chip-select-label">
           {__("Corporate Internet Banking", "chip-for-woocommerce")}
-        </label>
+        </span>
         <select
           id="chip-fpx-b2b1-bank"
-          className="wc-block-components-select-input__select"
           value={bankIdB2b}
           onChange={(e) => setBankIdB2b(e.target.value)}
           aria-label={__("Corporate Internet Banking", "chip-for-woocommerce")}
@@ -529,7 +527,7 @@ const Fpxb2b1BankList = (props) => {
           ))}
         </select>
         <svg 
-          className="wc-block-components-select-input__chevron" 
+          className="chip-select-chevron" 
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 24 24" 
           width="18" 
@@ -605,17 +603,13 @@ const RazerEWalletList = (props) => {
   }
 
   return (
-    <div className="chip-select-container">
-      <div className="wc-block-components-select-input">
-        <label 
-          htmlFor="chip-razer-ewallet" 
-          className="wc-block-components-select-input__label"
-        >
+    <div className="chip-bank-select">
+      <div className="wc-block-components-combobox wc-block-components-combobox-control" style={{ position: 'relative' }}>
+        <span className="chip-select-label">
           {__("E-Wallet", "chip-for-woocommerce")}
-        </label>
+        </span>
         <select
           id="chip-razer-ewallet"
-          className="wc-block-components-select-input__select"
           value={walletId}
           onChange={(e) => setWalletId(e.target.value)}
           aria-label={__("E-Wallet", "chip-for-woocommerce")}
@@ -626,7 +620,7 @@ const RazerEWalletList = (props) => {
           ))}
         </select>
         <svg 
-          className="wc-block-components-select-input__chevron" 
+          className="chip-select-chevron" 
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 24 24" 
           width="18" 
