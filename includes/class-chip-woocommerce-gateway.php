@@ -812,13 +812,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->form_fields['credentials'] = array(
 			'title'       => __( 'Credentials', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to set Brand ID && Secret Key.', 'chip-for-woocommerce' ),
+			'description' => __( 'Options to set Brand ID and Secret Key.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['brand_id'] = array(
 			'title'             => __( 'Brand ID', 'chip-for-woocommerce' ),
 			'type'              => 'text',
-			'description'       => __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands', 'chip-for-woocommerce' ),
+			'description'       => __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands.', 'chip-for-woocommerce' ),
 			'sanitize_callback' => function ( $value ) {
 				$value = trim( $value );
 				$value = str_replace( ' ', '', $value );
@@ -827,9 +827,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		$this->form_fields['secret_key'] = array(
-			'title'             => __( 'Secret key', 'chip-for-woocommerce' ),
+			'title'             => __( 'Secret Key', 'chip-for-woocommerce' ),
 			'type'              => 'text',
-			'description'       => __( 'Secret key can be obtained from CHIP Collect Dashboard >> Developers >> Keys', 'chip-for-woocommerce' ),
+			'description'       => __( 'Secret Key can be obtained from CHIP Collect Dashboard >> Developers >> Keys.', 'chip-for-woocommerce' ),
 			'sanitize_callback' => function ( $value ) {
 				$value = trim( $value );
 				$value = str_replace( ' ', '', $value );
@@ -840,7 +840,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->form_fields['miscellaneous'] = array(
 			'title'       => __( 'Miscellaneous', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to set display logo, due strict, time zone, tokenization && payment method whitelist.', 'chip-for-woocommerce' ),
+			'description' => __( 'Options to set display logo, due strict, time zone, and payment method whitelist.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['display_logo'] = array(
@@ -898,11 +898,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'title'       => __( 'System URL Scheme', 'chip-for-woocommerce' ),
 			'type'        => 'select',
 			'class'       => 'wc-enhanced-select',
-			'description' => __( 'Choose https if you are facing issue with payment status update due to http to https redirection', 'chip-for-woocommerce' ),
+			'description' => __( 'Choose HTTPS if you are facing issues with payment status update due to HTTP to HTTPS redirection.', 'chip-for-woocommerce' ),
 			'default'     => 'https',
 			'options'     => array(
-				'default' => __( 'System Default', 'chip-for-woocommerce' ),
 				'https'   => __( 'HTTPS', 'chip-for-woocommerce' ),
+				'default' => __( 'System Default', 'chip-for-woocommerce' ),
 			),
 		);
 
@@ -916,7 +916,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->form_fields['disable_recurring_support'] = array(
 			'title'       => __( 'Disable card recurring support', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code> && <code>Maestro</code>.', 'chip-for-woocommerce' ),
+			'description' => __( 'Tick to disable card recurring support. This only applies to <code>Visa</code>, <code>Mastercard</code>, and <code>Maestro</code>.', 'chip-for-woocommerce' ),
 			'default'     => 'no',
 		);
 
@@ -952,16 +952,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		$this->form_fields['email_fallback'] = array(
-			'title'       => __( 'Email fallback', 'chip-for-woocommerce' ),
+			'title'       => __( 'Email Fallback', 'chip-for-woocommerce' ),
 			'type'        => 'email',
-			'description' => __( '<strong>Required</strong> if the merchant did not intend to request customer email address', 'chip-for-woocommerce' ),
+			'description' => __( '<strong>Required</strong> if the merchant does not intend to request the customer\'s email address.', 'chip-for-woocommerce' ),
 			'placeholder' => 'merchant@gmail.com',
 		);
 
 		$this->form_fields['additional_charges'] = array(
 			'title'       => __( 'Additional Charges', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to add additional charges after checkout. This option doesn\'t apply to Woocommerce Pre-order fee.', 'chip-for-woocommerce' ),
+			'description' => __( 'Options to add additional charges after checkout. This option does not apply to WooCommerce Pre-order fee.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['enable_additional_charges'] = array(
@@ -987,19 +987,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->form_fields['troubleshooting'] = array(
 			'title'       => __( 'Troubleshooting', 'chip-for-woocommerce' ),
 			'type'        => 'title',
-			'description' => __( 'Options to disable redirect, disable callback && turn on debugging.', 'chip-for-woocommerce' ),
+			'description' => __( 'Options to disable redirect, disable callback, and turn on debugging.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['disable_redirect'] = array(
 			'title'       => __( 'Disable Redirect', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Disable redirect for troubleshooting purpose.', 'chip-for-woocommerce' ),
+			'description' => __( 'Disable redirect for troubleshooting purposes.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['disable_callback'] = array(
 			'title'       => __( 'Disable Callback', 'chip-for-woocommerce' ),
 			'type'        => 'checkbox',
-			'description' => __( 'Disable callback for troubleshooting purpose.', 'chip-for-woocommerce' ),
+			'description' => __( 'Disable callback for troubleshooting purposes.', 'chip-for-woocommerce' ),
 		);
 
 		$this->form_fields['debug'] = array(
