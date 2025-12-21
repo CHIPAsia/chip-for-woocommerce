@@ -2253,7 +2253,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$payment = $chip->get_payment( $purchase_id );
 
 		if ( array_key_exists( '__all__', $payment ) ) {
-			$order->add_order_note( __( 'Order status check failed && no further reattempt will be made.', 'chip-for-woocommerce' ) );
+			$order->add_order_note( __( 'Order status check failed and no further reattempt will be made.', 'chip-for-woocommerce' ) );
 			$this->release_lock( $order_id );
 			return;
 		}
@@ -2265,7 +2265,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		/* translators: %1$s: Payment status */
-		$order->add_order_note( sprintf( __( 'Order status checked && the status is %1$s', 'chip-for-woocommerce' ), $payment['status'] ) );
+		/* translators: %1$s: Payment status from CHIP API. */
+		$order->add_order_note( sprintf( __( 'Order status checked and the status is %1$s.', 'chip-for-woocommerce' ), $payment['status'] ) );
 
 		$this->release_lock( $order_id );
 
