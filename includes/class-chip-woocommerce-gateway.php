@@ -1013,6 +1013,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'class'       => 'wc-enhanced-select',
 			'description' => $card_only_whitelist
 				? __( 'Choose whether to capture payment immediately (Sale) or authorize first and capture later (Authorize). Authorize allows you to capture or void the payment from the order page.', 'chip-for-woocommerce' )
+					. '<br><br><strong style="color: #d63638;">' . esc_html__( 'Important Notes for Authorize:', 'chip-for-woocommerce' ) . '</strong>'
+					. '<ul style="margin-top: 5px; margin-bottom: 0;">'
+					. '<li>' . esc_html__( 'You will NOT receive settlement until you complete the order (update status to Completed) or manually capture the payment from the order page.', 'chip-for-woocommerce' ) . '</li>'
+					. '<li>' . esc_html__( 'Authorized payments must be captured within 30 days. After 30 days, the authorization expires and cannot be captured.', 'chip-for-woocommerce' ) . '</li>'
+					. '</ul>'
 				: __( 'Payment action is only available when Payment Method Whitelist contains only card methods (Visa, Mastercard, Maestro).', 'chip-for-woocommerce' ),
 			'default'     => 'sale',
 			'options'     => $payment_action_options,
