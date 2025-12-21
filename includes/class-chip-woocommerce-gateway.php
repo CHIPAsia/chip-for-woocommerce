@@ -7,6 +7,8 @@
  * @package CHIP for WooCommerce
  */
 
+use Automattic\WooCommerce\Enums\OrderInternalStatus;
+
 /**
  * WooCommerce Payment Gateway for CHIP.
  */
@@ -753,7 +755,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$payment = $this->api()->get_payment( $payment_id );
 		}
 
-		if ( ( 'paid' === $payment['status'] ) || ( ( 'preauthorized' === $payment['status'] ) && 0 === $payment['purchase']['total_override'] ) ) {
+		if ( 'paid' === $payment['status'] ) {
 			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 				if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 					$token = $this->store_recurring_token( $payment, $order->get_user_id() );
@@ -769,6 +771,31 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			WC()->cart->empty_cart();
 
 			$this->log_order_info( 'payment processed', $order );
+		} elseif ( 'preauthorized' === $payment['status'] ) {
+			// Handle preauthorized payments (delayed capture / authorize only).
+			if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
+				$token = $this->store_recurring_token( $payment, $order->get_user_id() );
+				if ( $token ) {
+					$this->add_payment_token( $order->get_id(), $token );
+				}
+			}
+
+			// Check if this is a pre-order with RM 0 authorization.
+			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) && 0 === $payment['purchase']['total_override'] ) {
+				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
+			} elseif ( ! $order->has_status( 'on-hold' ) && ! $order->is_paid() ) {
+				// Set order to On Hold for preauthorized payments awaiting capture.
+				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->set_transaction_id( $payment['id'] );
+				/* translators: %s: Transaction ID */
+				$order->add_order_note( sprintf( __( 'Payment authorized. Transaction ID: %s. Awaiting capture.', 'chip-for-woocommerce' ), $payment['id'] ) );
+				$order->update_status( OrderInternalStatus::ON_HOLD, __( 'Payment authorized, awaiting capture.', 'chip-for-woocommerce' ) );
+				$order->save();
+			}
+
+			WC()->cart->empty_cart();
+
+			$this->log_order_info( 'payment preauthorized, awaiting capture', $order );
 		} elseif ( ! $order->is_paid() ) {
 			$payment_extra = isset( $payment['transaction_data']['attempts'][0]['extra'] ) ? $payment['transaction_data']['attempts'][0]['extra'] : array();
 			if ( ! empty( $payment['transaction_data']['attempts'] ) && ! empty( $payment_extra ) ) {
@@ -1961,7 +1988,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			/* translators: %s: Transaction ID */
 			$renewal_order->add_order_note( sprintf( __( 'Payment Successful by tokenization. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
 		} elseif ( is_array( $charge_payment ) && 'pending_charge' === $charge_payment['status'] ) {
-			$renewal_order->update_status( 'on-hold' );
+			$renewal_order->update_status( OrderInternalStatus::ON_HOLD );
 		} else {
 			$renewal_order->update_status( 'failed' );
 			$renewal_order->add_order_note( __( 'Automatic charge attempt failed.', 'chip-for-woocommerce' ) );
@@ -2337,6 +2364,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( 'paid' === $payment['status'] ) {
 			$this->payment_complete( $order, $payment );
+			$this->release_lock( $order_id );
+			return;
+		}
+
+		if ( 'preauthorized' === $payment['status'] ) {
+			// Handle preauthorized payments (delayed capture / authorize only).
+			if ( ! $order->has_status( 'on-hold' ) ) {
+				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->set_transaction_id( $payment['id'] );
+				/* translators: %s: Transaction ID */
+				$order->add_order_note( sprintf( __( 'Payment authorized. Transaction ID: %s. Awaiting capture.', 'chip-for-woocommerce' ), $payment['id'] ) );
+				$order->update_status( OrderInternalStatus::ON_HOLD, __( 'Payment authorized, awaiting capture.', 'chip-for-woocommerce' ) );
+				$order->save();
+			}
 			$this->release_lock( $order_id );
 			return;
 		}
