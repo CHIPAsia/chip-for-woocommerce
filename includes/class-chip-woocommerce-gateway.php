@@ -831,7 +831,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$redirect_url = $this->get_return_url( $order );
 
-		if ( 'yes' === $this->cancel_order_flow && ! $order->is_paid() && 'pre-ordered' !== $order->get_status() ) {
+		if ( 'yes' === $this->cancel_order_flow && ! $order->is_paid() && ! $order->has_status( 'pre-ordered' ) ) {
 			$redirect_url = esc_url_raw( $order->get_cancel_order_url_raw() );
 		}
 
