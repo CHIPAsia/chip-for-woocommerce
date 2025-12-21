@@ -1260,36 +1260,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Get current language code.
 	 *
-	 * @return string
+	 * Currently, CHIP only supports English ('en'). When CHIP adds support for
+	 * more languages, uncomment the code below to enable automatic language
+	 * detection based on WordPress locale or WPML.
+	 *
+	 * @return string ISO 639-1 language code.
 	 */
 	public function get_language() {
-		if ( defined( 'ICL_LANGUAGE_CODE' ) ) {
-			$ln = ICL_LANGUAGE_CODE;
-		} else {
-			$ln = get_locale();
-		}
-		switch ( $ln ) {
-			case 'et_EE':
-				$ln = 'et';
-				break;
-			case 'ru_RU':
-				$ln = 'ru';
-				break;
-			case 'lt_LT':
-				$ln = 'lt';
-				break;
-			case 'lv_LV':
-				$ln = 'lv';
-				break;
-			case 'et':
-			case 'lt':
-			case 'lv':
-			case 'ru':
-				break;
-			default:
-				$ln = 'en';
-		}
-		return $ln;
+		// TODO: Uncomment the code below when CHIP supports more languages.
+		return 'en';
+
+		/*
+		 * Multi-language support (disabled - CHIP only supports 'en' currently).
+		 *
+		 * if ( defined( 'ICL_LANGUAGE_CODE' ) ) {
+		 *     $language = ICL_LANGUAGE_CODE;
+		 * } else {
+		 *     // Get WordPress locale (e.g., 'en_US', 'ms_MY') and extract ISO 639-1 two-letter code.
+		 *     $locale   = get_locale();
+		 *     $language = substr( $locale, 0, 2 );
+		 * }
+		 *
+		 * // Filters the language code used for the CHIP payment page.
+		 * // The language code should be a valid ISO 639-1 two-letter code.
+		 * // @see https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+		 * return apply_filters( 'chip_payment_page_language', $language, $this );
+		 */
 	}
 
 	/**
