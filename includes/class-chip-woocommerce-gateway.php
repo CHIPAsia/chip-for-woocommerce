@@ -1267,8 +1267,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			// Initialize Select2 (selectWoo) on the dropdown for better UX.
 			if ( '' !== $select_field_id ) {
-				$placeholder        = '';
-				$unavailable_banks  = array();
+				$placeholder       = '';
+				$unavailable_banks = array();
 
 				if ( 'chip_fpx_bank' === $select_field_id ) {
 					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
@@ -2507,8 +2507,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Filter out non-available FPX banks.
 	 *
-	 * @param array $default_fpx Default FPX banks array.
-	 * @param array $fpx         FPX banks data from API.
+	 * @param array  $default_fpx Default FPX banks array.
+	 * @param array  $fpx         FPX banks data from API.
+	 * @param string $type        Bank type: 'b2c' or 'b2b1'.
 	 * @return void
 	 */
 	public function filter_non_available_fpx( &$default_fpx, $fpx, $type = 'b2c' ) {
