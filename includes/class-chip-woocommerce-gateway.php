@@ -1211,36 +1211,65 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				}
 			}
 
+			$select_field_id = '';
+
 			if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
+				$select_field_id = 'chip_fpx_bank';
 				woocommerce_form_field(
-					'chip_fpx_bank',
+					$select_field_id,
 					array(
 						'type'     => 'select',
 						'required' => true,
 						'label'    => __( 'Internet Banking', 'chip-for-woocommerce' ),
 						'options'  => $this->list_fpx_banks(),
+						'class'    => array( 'form-row-wide' ),
 					)
 				);
 			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx_b2b1' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
+				$select_field_id = 'chip_fpx_b2b1_bank';
 				woocommerce_form_field(
-					'chip_fpx_b2b1_bank',
+					$select_field_id,
 					array(
 						'type'     => 'select',
 						'required' => true,
 						'label'    => __( 'Corporate Internet Banking', 'chip-for-woocommerce' ),
 						'options'  => $this->list_fpx_b2b1_banks(),
+						'class'    => array( 'form-row-wide' ),
 					)
 				);
 			} elseif ( is_array( $this->payment_method_whitelist ) && $is_razer && 'yes' === $this->bypass_chip ) {
+				$select_field_id = 'chip_razer_ewallet';
 				woocommerce_form_field(
-					'chip_razer_ewallet',
+					$select_field_id,
 					array(
 						'type'     => 'select',
 						'required' => true,
 						'label'    => __( 'E-Wallet', 'chip-for-woocommerce' ),
 						'options'  => $this->list_razer_ewallets(),
+						'class'    => array( 'form-row-wide' ),
 					)
 				);
+			}
+
+			// Initialize Select2 (selectWoo) on the dropdown for better UX.
+			if ( '' !== $select_field_id ) {
+				$placeholder = '';
+				if ( 'chip_fpx_bank' === $select_field_id || 'chip_fpx_b2b1_bank' === $select_field_id ) {
+					$placeholder = __( 'Select a bank…', 'chip-for-woocommerce' );
+				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
+					$placeholder = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
+				}
+				?>
+				<script type="text/javascript">
+					jQuery( function( $ ) {
+						$( '#<?php echo esc_js( $select_field_id ); ?>' ).selectWoo({
+							placeholder: '<?php echo esc_js( $placeholder ); ?>',
+							allowClear: false,
+							width: 'resolve'
+						});
+					});
+				</script>
+				<?php
 			}
 			// Note: chip_woocommerce_gateway_5 requires no additional fields.
 		}
