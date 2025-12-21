@@ -2986,24 +2986,37 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$fields = array();
 
-		$cvc_field = '<p class="form-row form-row-last">
-      <label for="' . esc_attr( $this->id ) . '-card-cvc">' . esc_html__( 'CVC', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-      <input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" inputmode="numeric" autocomplete="off" autocorrect="no" autocapitalize="no" spellcheck="no" type="password" maxlength="4" placeholder="' . esc_attr__( 'CVC', 'chip-for-woocommerce' ) . '" style="width:100px" />
-    </p>';
+		$cvc_placeholder = esc_attr__( 'CVC', 'chip-for-woocommerce' );
+		$cvc_field       = '<p class="form-row form-row-last validate-required" id="' . esc_attr( $this->id ) . '-card-cvc_field">
+			<label for="' . esc_attr( $this->id ) . '-card-cvc" class="required_field">' . esc_html__( 'CVC', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
+			<span class="woocommerce-input-wrapper">
+				<input type="password" class="input-text" name="' . esc_attr( $this->id ) . '-card-cvc" id="' . esc_attr( $this->id ) . '-card-cvc" placeholder="' . $cvc_placeholder . '" aria-required="true" autocomplete="off" inputmode="numeric" maxlength="4" data-placeholder="' . $cvc_placeholder . '" />
+			</span>
+		</p>';
+
+		$name_placeholder   = esc_attr__( 'Name', 'chip-for-woocommerce' );
+		$number_placeholder = esc_attr__( '1234 1234 1234 1234', 'chip-for-woocommerce' );
+		$expiry_placeholder = esc_attr__( 'MM / YY', 'chip-for-woocommerce' );
 
 		$default_fields = array(
-			'card-name-field'   => '<p class="form-row form-row-wide">
-        <label for="' . esc_attr( $this->id ) . '-card-name">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-name" style="font-size: 1.5em; padding: 8px;" class="input-text wc-credit-card-form-card-name" inputmode="text" autocomplete="cc-name" autocorrect="no" autocapitalize="no" spellcheck="no" type="text" maxlength="30" placeholder="Name" />
-      </p>',
-			'card-number-field' => '<p class="form-row form-row-wide">
-        <label for="' . esc_attr( $this->id ) . '-card-number">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" inputmode="numeric" autocomplete="cc-number" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" placeholder="1234 1234 1234 1234" />
-      </p>',
-			'card-expiry-field' => '<p class="form-row form-row-first">
-        <label for="' . esc_attr( $this->id ) . '-card-expiry">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required">*</span></label>
-        <input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" inputmode="numeric" autocomplete="cc-exp" autocorrect="no" autocapitalize="no" spellcheck="no" type="tel" maxlength="7" placeholder="' . esc_attr__( 'MM / YY', 'chip-for-woocommerce' ) . '" />
-      </p>',
+			'card-name-field'   => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-name_field">
+				<label for="' . esc_attr( $this->id ) . '-card-name" class="required_field">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
+				<span class="woocommerce-input-wrapper">
+					<input type="text" class="input-text" name="' . esc_attr( $this->id ) . '-card-name" id="' . esc_attr( $this->id ) . '-card-name" placeholder="' . $name_placeholder . '" aria-required="true" autocomplete="cc-name" inputmode="text" maxlength="30" data-placeholder="' . $name_placeholder . '" />
+				</span>
+			</p>',
+			'card-number-field' => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-number_field">
+				<label for="' . esc_attr( $this->id ) . '-card-number" class="required_field">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
+				<span class="woocommerce-input-wrapper">
+					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-number" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
+				</span>
+			</p>',
+			'card-expiry-field' => '<p class="form-row form-row-first validate-required" id="' . esc_attr( $this->id ) . '-card-expiry_field">
+				<label for="' . esc_attr( $this->id ) . '-card-expiry" class="required_field">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
+				<span class="woocommerce-input-wrapper">
+					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-expiry" id="' . esc_attr( $this->id ) . '-card-expiry" placeholder="' . $expiry_placeholder . '" aria-required="true" autocomplete="cc-exp" inputmode="numeric" maxlength="7" data-placeholder="' . $expiry_placeholder . '" />
+				</span>
+			</p>',
 		);
 
 		if ( ! $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
@@ -3032,27 +3045,29 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$allowed_html = array(
 			'p'     => array(
 				'class' => array(),
+				'id'    => array(),
 			),
 			'label' => array(
-				'for' => array(),
-			),
-			'span'  => array(
+				'for'   => array(),
 				'class' => array(),
 			),
+			'span'  => array(
+				'class'       => array(),
+				'aria-hidden' => array(),
+			),
 			'input' => array(
-				'id'             => array(),
-				'class'          => array(),
-				'type'           => array(),
-				'inputmode'      => array(),
-				'autocomplete'   => array(),
-				'autocorrect'    => array(),
-				'autocapitalize' => array(),
-				'spellcheck'     => array(),
-				'maxlength'      => array(),
-				'placeholder'    => array(),
-				'style'          => array(),
-				'name'           => array(),
-				'value'          => array(),
+				'id'               => array(),
+				'class'            => array(),
+				'type'             => array(),
+				'inputmode'        => array(),
+				'autocomplete'     => array(),
+				'maxlength'        => array(),
+				'placeholder'      => array(),
+				'style'            => array(),
+				'name'             => array(),
+				'value'            => array(),
+				'aria-required'    => array(),
+				'data-placeholder' => array(),
 			),
 		);
 		foreach ( $fields as $field ) {
