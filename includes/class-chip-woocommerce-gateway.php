@@ -207,6 +207,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $cached_payment_method;
 
 	/**
+	 * Unavailable FPX B2C bank codes.
+	 *
+	 * @var array
+	 */
+	protected $unavailable_fpx_banks = array();
+
+	/**
+	 * Unavailable FPX B2B1 bank codes.
+	 *
+	 * @var array
+	 */
+	protected $unavailable_fpx_b2b1_banks = array();
+
+	/**
 	 * Preferred payment type.
 	 */
 	const PREFERRED_TYPE = 'Online Banking';
@@ -1253,16 +1267,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			// Initialize Select2 (selectWoo) on the dropdown for better UX.
 			if ( '' !== $select_field_id ) {
-				$placeholder = '';
-				if ( 'chip_fpx_bank' === $select_field_id || 'chip_fpx_b2b1_bank' === $select_field_id ) {
-					$placeholder = __( 'Select a bank…', 'chip-for-woocommerce' );
+				$placeholder        = '';
+				$unavailable_banks  = array();
+
+				if ( 'chip_fpx_bank' === $select_field_id ) {
+					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
+					$unavailable_banks = $this->get_unavailable_fpx_banks();
+				} elseif ( 'chip_fpx_b2b1_bank' === $select_field_id ) {
+					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
+					$unavailable_banks = $this->get_unavailable_fpx_b2b1_banks();
 				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
 					$placeholder = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
 				}
 				?>
 				<script type="text/javascript">
 					jQuery( function( $ ) {
-						$( '#<?php echo esc_js( $select_field_id ); ?>' ).selectWoo({
+						var $select = $( '#<?php echo esc_js( $select_field_id ); ?>' );
+						var unavailableBanks = <?php echo wp_json_encode( $unavailable_banks ); ?>;
+
+						// Disable unavailable bank options.
+						if ( unavailableBanks && unavailableBanks.length > 0 ) {
+							unavailableBanks.forEach( function( bankCode ) {
+								$select.find( 'option[value="' + bankCode + '"]' ).prop( 'disabled', true );
+							});
+						}
+
+						$select.selectWoo({
 							placeholder: '<?php echo esc_js( $placeholder ); ?>',
 							allowClear: false,
 							width: 'resolve'
@@ -2463,7 +2493,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$fpx = $data_chip_fpx_b2b1_banks['fpx'];
 
-		$this->filter_non_available_fpx( $default_fpx, $fpx );
+		$this->filter_non_available_fpx( $default_fpx, $fpx, 'b2b1' );
 
 		if ( has_filter( 'wc_' . $this->id . '_list_fpx_b2b1_banks' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
@@ -2481,17 +2511,46 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @param array $fpx         FPX banks data from API.
 	 * @return void
 	 */
-	public function filter_non_available_fpx( &$default_fpx, $fpx ) {
+	public function filter_non_available_fpx( &$default_fpx, $fpx, $type = 'b2c' ) {
+		$unavailable = array();
+
 		if ( is_array( $fpx ) ) {
 			foreach ( $default_fpx as $key => $value ) {
 				if ( '' === $key ) {
 					continue;
 				}
 				if ( isset( $fpx[ $key ] ) && 'A' !== $fpx[ $key ] ) {
-					unset( $default_fpx[ $key ] );
+					// Mark bank as offline instead of removing it.
+					/* translators: %s: Bank name. */
+					$default_fpx[ $key ] = sprintf( __( '%s (Offline)', 'chip-for-woocommerce' ), $value );
+					$unavailable[]       = $key;
 				}
 			}
 		}
+
+		if ( 'b2b1' === $type ) {
+			$this->unavailable_fpx_b2b1_banks = $unavailable;
+		} else {
+			$this->unavailable_fpx_banks = $unavailable;
+		}
+	}
+
+	/**
+	 * Get unavailable FPX B2C bank codes.
+	 *
+	 * @return array
+	 */
+	public function get_unavailable_fpx_banks() {
+		return $this->unavailable_fpx_banks;
+	}
+
+	/**
+	 * Get unavailable FPX B2B1 bank codes.
+	 *
+	 * @return array
+	 */
+	public function get_unavailable_fpx_b2b1_banks() {
+		return $this->unavailable_fpx_b2b1_banks;
 	}
 
 	/**
