@@ -1465,6 +1465,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$params['payment_method_whitelist'] = $this->payment_method_whitelist;
 		}
 
+		// Set skip_capture for authorize (delayed capture) payment action.
+		if ( 'authorize' === $this->payment_action && $this->is_card_only_whitelist() ) {
+			$params['skip_capture'] = true;
+		}
+
 		// Note: When customer ticks "save card" checkbox, remember_card parameter is
 		// passed via direct-post.js instead of setting force_recurring here.
 
@@ -1521,7 +1526,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$params['force_recurring'] = true;
 
-			if ( $params['purchase']['total_override'] > 0 ) {
+			if ( $params['purchase']['total_override'] > 0 && 'authorize' !== $this->payment_action ) {
 				$params['skip_capture'] = false;
 			} else {
 				$params['skip_capture'] = true;
