@@ -2236,8 +2236,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function check_order_status( $purchase_id, $order_id, $attempt ) {
 		$this->get_lock( $order_id );
 
+		// Clear post cache to ensure fresh data is retrieved when object cache is configured.
+		// Note: This covers legacy order storage (posts table). For HPOS (High-Performance Order
+		// Storage), there is no equivalent cache clearing function available at this moment.
+		// HPOS may use its own caching mechanism that is not publicly accessible for clearing.
+		clean_post_cache( $order_id );
+
 		try {
-			$order = new WC_Order( $order_id );
+			$order = wc_get_order( $order_id );
+
+			if ( ! $order ) {
+				$this->release_lock( $order_id );
+				return;
+			}
 		} catch ( Exception $e ) {
 			$this->release_lock( $order_id );
 			return;
@@ -2264,7 +2275,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		/* translators: %1$s: Payment status */
 		/* translators: %1$s: Payment status from CHIP API. */
 		$order->add_order_note( sprintf( __( 'Order status checked and the status is %1$s.', 'chip-for-woocommerce' ), $payment['status'] ) );
 
