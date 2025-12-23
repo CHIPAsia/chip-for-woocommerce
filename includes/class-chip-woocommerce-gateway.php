@@ -721,8 +721,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$this->log_order_info( 'received success callback', $order );
 
-		$payment    = $order->get_meta( '_' . $this->id . '_purchase', true );
-		$payment_id = $payment['id'];
+		// Use the order's payment method to get the correct meta key (handles legacy callbacks).
+		$order_payment_method = $order->get_payment_method();
+		$payment              = $order->get_meta( '_' . $order_payment_method . '_purchase', true );
+		$payment_id           = isset( $payment['id'] ) ? $payment['id'] : '';
 
 		if ( isset( $_SERVER['HTTP_X_SIGNATURE'] ) ) {
 			$content = file_get_contents( 'php://input' );
@@ -799,7 +801,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			// Check if this is a pre-order with delayed capture.
 			if ( $this->order_contains_pre_order( $order ) ) {
-				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
@@ -807,7 +809,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			} elseif ( ! $order->has_status( 'on-hold' ) && ! $order->is_paid() ) {
 				// Set order to On Hold for hold payments awaiting capture.
-				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
@@ -2279,9 +2281,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
+		// Use the order's payment method to get the correct meta key (handles legacy orders).
+		$order_payment_method = $order->get_payment_method();
+
 		/* translators: %s: Transaction ID */
 		$order->add_order_note( sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
-		$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+		$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
 		$order->payment_complete( $payment['id'] );
 		$order->save();
 
@@ -2403,16 +2408,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( 'hold' === $payment['status'] ) {
 			// Handle hold payments (delayed capture with actual payment amount).
+			// Use the order's payment method to get the correct meta key (handles legacy orders).
+			$order_payment_method = $order->get_payment_method();
+
 			// Check if this is a pre-order with delayed capture.
 			if ( $this->order_contains_pre_order( $order ) ) {
-				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
 				$order->save();
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			} elseif ( ! $order->has_status( 'on-hold' ) ) {
-				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
