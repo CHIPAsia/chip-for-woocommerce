@@ -31,9 +31,7 @@
 	<!-- Custom capabilities (WooCommerce) -->
 	<rule ref="WordPress.WP.Capabilities">
 		<properties>
-			<property name="custom_capabilities" type="array">
-				<element value="edit_shop_orders"/>
-			</property>
+			<property name="custom_capabilities" type="array" value="edit_shop_orders"/>
 		</properties>
 	</rule>
 </ruleset>
