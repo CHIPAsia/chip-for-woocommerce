@@ -1,39 +1,59 @@
-const defaultConfig = require('@wordpress/scripts/config/webpack.config');
-const WooCommerceDependencyExtractionWebpackPlugin = require('@woocommerce/dependency-extraction-webpack-plugin');
-const path = require('path');
+const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+const WooCommerceDependencyExtractionWebpackPlugin = require( '@woocommerce/dependency-extraction-webpack-plugin' );
+const path = require( 'path' );
 
+/**
+ * WooCommerce dependency mapping.
+ */
 const wcDepMap = {
-	'@woocommerce/blocks-registry': ['wc', 'wcBlocksRegistry'],
-	'@woocommerce/settings'       : ['wc', 'wcSettings']
+	'@woocommerce/blocks-registry': [ 'wc', 'wcBlocksRegistry' ],
+	'@woocommerce/settings': [ 'wc', 'wcSettings' ],
 };
 
+/**
+ * WooCommerce handle mapping.
+ */
 const wcHandleMap = {
 	'@woocommerce/blocks-registry': 'wc-blocks-registry',
-	'@woocommerce/settings'       : 'wc-settings'
+	'@woocommerce/settings': 'wc-settings',
 };
 
-const requestToExternal = (request) => {
-	if (wcDepMap[request]) {
-		return wcDepMap[request];
+/**
+ * Map request to external.
+ *
+ * @param {string} request The request.
+ * @return {Array|undefined} The external mapping.
+ */
+const requestToExternal = ( request ) => {
+	if ( wcDepMap[ request ] ) {
+		return wcDepMap[ request ];
 	}
 };
 
-const requestToHandle = (request) => {
-	if (wcHandleMap[request]) {
-		return wcHandleMap[request];
+/**
+ * Map request to handle.
+ *
+ * @param {string} request The request.
+ * @return {string|undefined} The handle.
+ */
+const requestToHandle = ( request ) => {
+	if ( wcHandleMap[ request ] ) {
+		return wcHandleMap[ request ];
 	}
 };
 
-// Export configuration.
+/**
+ * Webpack configuration.
+ */
 module.exports = {
 	...defaultConfig,
 	entry: {
-		'frontend/blocks_chip_woocommerce_gateway': '/resources/js/frontend/blocks_chip_woocommerce_gateway.js',
-    'frontend/blocks_chip_woocommerce_gateway_2': '/resources/js/frontend/blocks_chip_woocommerce_gateway_2.js',
-    'frontend/blocks_chip_woocommerce_gateway_3': '/resources/js/frontend/blocks_chip_woocommerce_gateway_3.js',
-    'frontend/blocks_chip_woocommerce_gateway_4': '/resources/js/frontend/blocks_chip_woocommerce_gateway_4.js',
-    'frontend/blocks_chip_woocommerce_gateway_5': '/resources/js/frontend/blocks_chip_woocommerce_gateway_5.js',
-    'frontend/blocks_chip_woocommerce_gateway_6': '/resources/js/frontend/blocks_chip_woocommerce_gateway_6.js',
+		'frontend/blocks_chip_woocommerce_gateway': './resources/js/frontend/blocks_chip_woocommerce_gateway.js',
+		'frontend/blocks_chip_woocommerce_gateway_2': './resources/js/frontend/blocks_chip_woocommerce_gateway_2.js',
+		'frontend/blocks_chip_woocommerce_gateway_3': './resources/js/frontend/blocks_chip_woocommerce_gateway_3.js',
+		'frontend/blocks_chip_woocommerce_gateway_4': './resources/js/frontend/blocks_chip_woocommerce_gateway_4.js',
+		'frontend/blocks_chip_woocommerce_gateway_5': './resources/js/frontend/blocks_chip_woocommerce_gateway_5.js',
+		'frontend/blocks_chip_woocommerce_gateway_6': './resources/js/frontend/blocks_chip_woocommerce_gateway_6.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'assets/js' ),
@@ -41,12 +61,11 @@ module.exports = {
 	},
 	plugins: [
 		...defaultConfig.plugins.filter(
-			(plugin) =>
-				plugin.constructor.name !== 'DependencyExtractionWebpackPlugin'
+			( plugin ) => 'DependencyExtractionWebpackPlugin' !== plugin.constructor.name
 		),
-		new WooCommerceDependencyExtractionWebpackPlugin({
+		new WooCommerceDependencyExtractionWebpackPlugin( {
 			requestToExternal,
-			requestToHandle
-		})
-	]
+			requestToHandle,
+		} ),
+	],
 };
