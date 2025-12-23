@@ -772,7 +772,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$this->log_order_info( 'payment processed', $order );
 		} elseif ( 'preauthorized' === $payment['status'] ) {
-			// Handle preauthorized payments (delayed capture / authorize only).
+			// Handle preauthorized payments ($0 authorization for pre-orders or card verification).
 			if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 				$token = $this->store_recurring_token( $payment, $order->get_user_id() );
 				if ( $token ) {
@@ -780,11 +780,31 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				}
 			}
 
-			// Check if this is a pre-order with RM 0 authorization.
-			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) && 0 === $payment['purchase']['total_override'] ) {
+			// This is a pre-order with $0 authorization.
+			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
+				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
+			}
+
+			WC()->cart->empty_cart();
+
+			$this->log_order_info( 'payment preauthorized ($0 authorization)', $order );
+		} elseif ( 'hold' === $payment['status'] ) {
+			// Handle hold payments (delayed capture with actual payment amount).
+			if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
+				$token = $this->store_recurring_token( $payment, $order->get_user_id() );
+				if ( $token ) {
+					$this->add_payment_token( $order->get_id(), $token );
+				}
+			}
+
+			// Check if this is a pre-order with delayed capture.
+			if ( $this->order_contains_pre_order( $order ) ) {
+				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->set_transaction_id( $payment['id'] );
+				$order->save();
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			} elseif ( ! $order->has_status( 'on-hold' ) && ! $order->is_paid() ) {
-				// Set order to On Hold for preauthorized payments awaiting capture.
+				// Set order to On Hold for hold payments awaiting capture.
 				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
 				$order->set_transaction_id( $payment['id'] );
 				/* translators: %s: Transaction ID */
@@ -795,7 +815,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			WC()->cart->empty_cart();
 
-			$this->log_order_info( 'payment preauthorized, awaiting capture', $order );
+			$this->log_order_info( 'payment on hold, awaiting capture', $order );
 		} elseif ( ! $order->is_paid() ) {
 			$payment_extra = isset( $payment['transaction_data']['attempts'][0]['extra'] ) ? $payment['transaction_data']['attempts'][0]['extra'] : array();
 			if ( ! empty( $payment['transaction_data']['attempts'] ) && ! empty( $payment_extra ) ) {
@@ -831,7 +851,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$redirect_url = $this->get_return_url( $order );
 
-		if ( 'yes' === $this->cancel_order_flow && ! $order->is_paid() && ! $order->has_status( 'pre-ordered' ) ) {
+		if ( 'yes' === $this->cancel_order_flow && ! $order->is_paid() && ! $order->has_status( array( 'pre-ordered', 'on-hold' ) ) ) {
 			$redirect_url = esc_url_raw( $order->get_cancel_order_url_raw() );
 		}
 
@@ -2369,8 +2389,23 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		if ( 'preauthorized' === $payment['status'] ) {
-			// Handle preauthorized payments (delayed capture / authorize only).
-			if ( ! $order->has_status( 'on-hold' ) ) {
+			// Handle preauthorized payments ($0 authorization for pre-orders or card verification).
+			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
+				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
+			}
+			$this->release_lock( $order_id );
+			return;
+		}
+
+		if ( 'hold' === $payment['status'] ) {
+			// Handle hold payments (delayed capture with actual payment amount).
+			// Check if this is a pre-order with delayed capture.
+			if ( $this->order_contains_pre_order( $order ) ) {
+				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+				$order->set_transaction_id( $payment['id'] );
+				$order->save();
+				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
+			} elseif ( ! $order->has_status( 'on-hold' ) ) {
 				$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
 				$order->set_transaction_id( $payment['id'] );
 				/* translators: %s: Transaction ID */
