@@ -244,4 +244,3 @@ class Chip_Woocommerce_Void_Payment {
 }
 
 Chip_Woocommerce_Void_Payment::get_instance();
-
