@@ -91,10 +91,45 @@ class Chip_Woocommerce {
 		add_action( 'woocommerce_payment_token_deleted', array( $this, 'payment_token_deleted' ), 10, 2 );
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'admin_notices', array( $this, 'missing_assets_notice' ) );
 
 		// Register backward compatibility callbacks for old gateway IDs.
 		// This ensures payments initiated with old plugin version still receive callbacks.
 		$this->register_legacy_callbacks();
+	}
+
+	/**
+	 * Display admin notice if built assets are missing.
+	 *
+	 * This warns users who downloaded from GitHub repository directly
+	 * instead of from the Releases page.
+	 *
+	 * @return void
+	 */
+	public function missing_assets_notice() {
+		// Check if the built JS file exists.
+		$built_js = plugin_dir_path( WC_CHIP_FILE ) . 'build/blocks_chip_woocommerce_gateway.js';
+
+		if ( file_exists( $built_js ) ) {
+			return;
+		}
+
+		?>
+		<div class="notice notice-error">
+			<p>
+				<strong><?php esc_html_e( 'CHIP for WooCommerce:', 'chip-for-woocommerce' ); ?></strong>
+				<?php
+				printf(
+					/* translators: %1$s: Opening link tag, %2$s: Closing link tag */
+					esc_html__( 'Required JavaScript files are missing. Please download the plugin from the %1$sReleases page%2$s instead of using "Download ZIP" from the repository. If you are a developer, run %3$s to build the assets.', 'chip-for-woocommerce' ),
+					'<a href="https://github.com/CHIPAsia/chip-for-woocommerce/releases/latest" target="_blank">',
+					'</a>',
+					'<code>npm install && npm run build</code>'
+				);
+				?>
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
