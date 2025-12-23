@@ -47,6 +47,88 @@ class Chip_Woocommerce_Capture_Payment {
 	public function add_actions() {
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'add_capture_button' ) );
 		add_action( 'wp_ajax_chip_capture_payment', array( $this, 'ajax_capture_payment' ) );
+		add_action( 'woocommerce_order_status_changed', array( $this, 'maybe_auto_capture_on_status_change' ), 10, 4 );
+	}
+
+	/**
+	 * Auto-capture payment when order status changes to a paid status.
+	 *
+	 * @param int       $order_id   Order ID.
+	 * @param string    $old_status Old status.
+	 * @param string    $new_status New status.
+	 * @param \WC_Order $order      Order object.
+	 * @return void
+	 */
+	public function maybe_auto_capture_on_status_change( $order_id, $old_status, $new_status, $order ) {
+		// Only process if changing to a paid status.
+		if ( ! in_array( $new_status, wc_get_is_paid_statuses(), true ) ) {
+			return;
+		}
+
+		// Only apply to CHIP orders.
+		if ( ! $this->is_chip_order( $order ) ) {
+			return;
+		}
+
+		// Only capture if order can be captured.
+		if ( 'yes' !== $order->get_meta( '_chip_can_void' ) ) {
+			return;
+		}
+
+		// Don't capture if hold has expired.
+		if ( $this->is_hold_expired( $order ) ) {
+			$order->add_order_note( __( 'Auto-capture failed: Authorization has expired (older than 30 days).', 'chip-for-woocommerce' ) );
+			return;
+		}
+
+		// Get the correct gateway instance.
+		$payment_method = $order->get_payment_method();
+		$gateway        = Chip_Woocommerce::get_chip_gateway_class( $payment_method );
+
+		if ( ! $gateway ) {
+			$order->add_order_note( __( 'Auto-capture failed: Payment gateway not found.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
+		// Get purchase ID.
+		$purchase    = $order->get_meta( '_' . $payment_method . '_purchase' );
+		$purchase_id = isset( $purchase['id'] ) ? $purchase['id'] : $order->get_transaction_id();
+
+		if ( ! $purchase_id ) {
+			$order->add_order_note( __( 'Auto-capture failed: Purchase ID not found.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
+		// Call CHIP API to capture the payment.
+		$chip   = $gateway->api();
+		$result = $chip->capture_payment( $purchase_id );
+
+		if ( is_array( $result ) && isset( $result['id'] ) && 'paid' === $result['status'] ) {
+			// Mark order as no longer voidable/capturable.
+			$order->update_meta_data( '_chip_can_void', 'no' );
+			$order->save();
+
+			// Use gateway's payment_complete method.
+			$gateway->payment_complete( $order, $result );
+
+			/* translators: %s: Purchase ID */
+			$order->add_order_note( sprintf( __( 'Payment auto-captured on status change. Purchase ID: %s.', 'chip-for-woocommerce' ), $purchase_id ) );
+			$order->save();
+		} else {
+			$error_message = __( 'Auto-capture failed.', 'chip-for-woocommerce' );
+			if ( is_array( $result ) && isset( $result['__all__'] ) ) {
+				$messages = array();
+				foreach ( $result['__all__'] as $error ) {
+					if ( isset( $error['message'] ) ) {
+						$messages[] = $error['message'];
+					}
+				}
+				if ( ! empty( $messages ) ) {
+					$error_message .= ' ' . implode( ' ', $messages );
+				}
+			}
+			$order->add_order_note( $error_message );
+		}
 	}
 
 	/**

@@ -57,6 +57,83 @@ class Chip_Woocommerce_Void_Payment {
 	public function add_actions() {
 		add_action( 'woocommerce_order_item_add_action_buttons', array( $this, 'add_void_button' ) );
 		add_action( 'wp_ajax_chip_void_payment', array( $this, 'ajax_void_payment' ) );
+		add_action( 'woocommerce_order_status_changed', array( $this, 'maybe_auto_void_on_status_change' ), 10, 4 );
+	}
+
+	/**
+	 * Auto-void payment when order status changes to cancelled.
+	 *
+	 * @param int       $order_id   Order ID.
+	 * @param string    $old_status Old status.
+	 * @param string    $new_status New status.
+	 * @param \WC_Order $order      Order object.
+	 * @return void
+	 */
+	public function maybe_auto_void_on_status_change( $order_id, $old_status, $new_status, $order ) {
+		// Only process if changing to cancelled status.
+		if ( 'cancelled' !== $new_status ) {
+			return;
+		}
+
+		// Only apply to CHIP orders.
+		if ( ! $this->is_chip_order( $order ) ) {
+			return;
+		}
+
+		// Only void if order can be voided.
+		if ( 'yes' !== $order->get_meta( '_chip_can_void' ) ) {
+			return;
+		}
+
+		// Don't void if hold has expired.
+		if ( $this->is_hold_expired( $order ) ) {
+			$order->add_order_note( __( 'Auto-void failed: Authorization has expired (older than 30 days).', 'chip-for-woocommerce' ) );
+			return;
+		}
+
+		// Get the correct gateway instance.
+		$payment_method = $order->get_payment_method();
+		$gateway        = Chip_Woocommerce::get_chip_gateway_class( $payment_method );
+
+		if ( ! $gateway ) {
+			$order->add_order_note( __( 'Auto-void failed: Payment gateway not found.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
+		// Get purchase ID.
+		$purchase    = $order->get_meta( '_' . $payment_method . '_purchase' );
+		$purchase_id = isset( $purchase['id'] ) ? $purchase['id'] : $order->get_transaction_id();
+
+		if ( ! $purchase_id ) {
+			$order->add_order_note( __( 'Auto-void failed: Purchase ID not found.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
+		// Call CHIP API to release the payment.
+		$chip   = $gateway->api();
+		$result = $chip->release_payment( $purchase_id );
+
+		if ( is_array( $result ) && isset( $result['id'] ) ) {
+			// Mark order as no longer voidable.
+			$order->update_meta_data( '_chip_can_void', 'no' );
+			/* translators: %s: Purchase ID */
+			$order->add_order_note( sprintf( __( 'Payment auto-voided on cancellation. Purchase ID: %s. The authorized amount has been released back to the customer.', 'chip-for-woocommerce' ), $purchase_id ) );
+			$order->save();
+		} else {
+			$error_message = __( 'Auto-void failed.', 'chip-for-woocommerce' );
+			if ( is_array( $result ) && isset( $result['__all__'] ) ) {
+				$messages = array();
+				foreach ( $result['__all__'] as $error ) {
+					if ( isset( $error['message'] ) ) {
+						$messages[] = $error['message'];
+					}
+				}
+				if ( ! empty( $messages ) ) {
+					$error_message .= ' ' . implode( ' ', $messages );
+				}
+			}
+			$order->add_order_note( $error_message );
+		}
 	}
 
 	/**
