@@ -12,17 +12,35 @@ CHIP - Digital Finance Platform. Securely accept one-time and subscription payme
 
 == Description ==
 
-This is an official CHIP plugin for WooCommerce.
+**CHIP for WooCommerce** is the official payment gateway plugin that connects your WooCommerce store to CHIP's powerful Digital Finance Platform. Accept payments seamlessly with Malaysia's leading payment methods.
+
+= Why Choose CHIP for WooCommerce? =
+
+* **WooCommerce Blocks Support** - Fully compatible with the new WooCommerce Blocks checkout experience
+* **Multiple Payment Methods** - Accept FPX, Credit/Debit Cards, DuitNow QR, E-Wallets, and more
+* **Subscription Payments** - Native support for WooCommerce Subscriptions
+* **Tokenization** - Allow customers to save cards for faster checkout
+* **Direct Post Integration** - Secure card payments without redirecting customers
+* **Pre-Orders Support** - Works seamlessly with WooCommerce Pre-Orders
+* **Authorize & Capture** - Delay capture for card payments until order fulfillment
+
+= Supported Payment Methods =
+
+* **FPX** - Malaysia's #1 online banking payment
+* **FPX B2B1** - Corporate online banking
+* **Credit/Debit Cards** - Visa, Mastercard, Maestro
+* **DuitNow QR** - Malaysia's national QR payment
+* **E-Wallets** - GrabPay, Touch 'n Go, Boost, and more via Razer
+
+= About CHIP =
 
 CHIP is a comprehensive Digital Finance Platform specifically designed to support and empower Micro, Small and Medium Enterprises (MSMEs). We provide a suite of solutions encompassing payment collection, expense management, risk mitigation, and treasury management.
 
-Our aim is to help businesses streamline their financial processes, reduce operational complexity, and drive growth.
+Our aim is to help businesses streamline their financial processes, reduce operational complexity, and drive growth. With CHIP, you gain a financial partner committed to simplifying, digitizing, and enhancing your financial operations for ultimate success.
 
-With CHIP, you gain a financial partner committed to simplifying, digitizing, and enhancing your financial operations for ultimate success.
+= Documentation =
 
-This plugin will enable your WooCommerce site to be integrated with CHIP as documented in [API Documentation](https://docs.chip-in.asia).
-
-This plugin includes support for WooCommerce Subscriptions.
+Integrate your WooCommerce site with CHIP as documented in our [API Documentation](https://docs.chip-in.asia).
 
 == Screenshots ==
 * Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
