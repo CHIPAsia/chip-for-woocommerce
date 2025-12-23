@@ -111,7 +111,7 @@ jobs:
 
       - name: Run PHPCS
         run: |
-          phpcs --standard=WordPress --extensions=php --ignore=vendor,node_modules,assets/js/frontend .
+          phpcs --standard=phpcs.xml .
         continue-on-error: false
 
   # Third tier: plugin-check runs after phpcs
