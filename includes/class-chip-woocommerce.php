@@ -108,7 +108,7 @@ class Chip_Woocommerce {
 	 */
 	public function missing_assets_notice() {
 		// Check if the built JS file exists.
-		$built_js = plugin_dir_path( WC_CHIP_FILE ) . 'build/blocks_chip_woocommerce_gateway.js';
+		$built_js = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_chip_woocommerce_gateway.js';
 
 		if ( file_exists( $built_js ) ) {
 			return;
