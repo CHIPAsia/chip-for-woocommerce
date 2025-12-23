@@ -99,9 +99,12 @@ class Chip_Woocommerce_Capture_Payment {
 			return;
 		}
 
+		// Get the latest order total in cents.
+		$amount_in_cents = (int) round( $order->get_total() * 100 );
+
 		// Call CHIP API to capture the payment.
 		$chip   = $gateway->api();
-		$result = $chip->capture_payment( $purchase_id );
+		$result = $chip->capture_payment( $purchase_id, array( 'amount' => $amount_in_cents ) );
 
 		if ( is_array( $result ) && isset( $result['id'] ) && 'paid' === $result['status'] ) {
 			// Mark order as no longer voidable/capturable.
@@ -298,9 +301,12 @@ class Chip_Woocommerce_Capture_Payment {
 			wp_send_json_error( array( 'message' => __( 'Purchase ID not found.', 'chip-for-woocommerce' ) ) );
 		}
 
+		// Get the latest order total in cents.
+		$amount_in_cents = (int) round( $order->get_total() * 100 );
+
 		// Call CHIP API to capture the payment using the correct gateway's API.
 		$chip   = $gateway->api();
-		$result = $chip->capture_payment( $purchase_id );
+		$result = $chip->capture_payment( $purchase_id, array( 'amount' => $amount_in_cents ) );
 
 		if ( is_array( $result ) && isset( $result['id'] ) && 'paid' === $result['status'] ) {
 			// Mark order as no longer voidable/capturable.
