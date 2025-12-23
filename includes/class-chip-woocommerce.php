@@ -69,6 +69,7 @@ class Chip_Woocommerce {
 		if ( is_admin() ) {
 			include $includes_dir . 'class-chip-woocommerce-bulk-action.php';
 			include $includes_dir . 'class-chip-woocommerce-site-health.php';
+			include $includes_dir . 'class-chip-woocommerce-void-payment.php';
 		}
 	}
 
