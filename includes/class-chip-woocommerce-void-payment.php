@@ -86,8 +86,8 @@ class Chip_Woocommerce_Void_Payment {
 			return $should_render;
 		}
 
-		// Hide refunds for on-hold orders (delayed capture).
-		if ( $order->has_status( 'on-hold' ) ) {
+		// Hide refunds for orders that can be voided (payment status is 'hold').
+		if ( 'yes' === $order->get_meta( '_chip_can_void' ) ) {
 			return false;
 		}
 
@@ -106,8 +106,8 @@ class Chip_Woocommerce_Void_Payment {
 			return;
 		}
 
-		// Only show for on-hold orders (delayed capture).
-		if ( ! $order->has_status( 'on-hold' ) ) {
+		// Only show for orders that can be voided (payment status is 'hold').
+		if ( 'yes' !== $order->get_meta( '_chip_can_void' ) ) {
 			return;
 		}
 
@@ -195,9 +195,9 @@ class Chip_Woocommerce_Void_Payment {
 			wp_send_json_error( array( 'message' => __( 'This order does not use CHIP payment gateway.', 'chip-for-woocommerce' ) ) );
 		}
 
-		// Verify order is on-hold.
-		if ( ! $order->has_status( 'on-hold' ) ) {
-			wp_send_json_error( array( 'message' => __( 'This order is not awaiting capture.', 'chip-for-woocommerce' ) ) );
+		// Verify order can be voided (payment status is 'hold').
+		if ( 'yes' !== $order->get_meta( '_chip_can_void' ) ) {
+			wp_send_json_error( array( 'message' => __( 'This order cannot be voided.', 'chip-for-woocommerce' ) ) );
 		}
 
 		// Get the correct gateway instance for this order.
@@ -219,6 +219,8 @@ class Chip_Woocommerce_Void_Payment {
 		$result = $chip->release_payment( $purchase_id );
 
 		if ( is_array( $result ) && isset( $result['id'] ) ) {
+			// Mark order as no longer voidable.
+			$order->update_meta_data( '_chip_can_void', 'no' );
 			// Update order status to cancelled.
 			/* translators: %s: Purchase ID */
 			$order->update_status( 'cancelled', sprintf( __( 'Payment voided. Purchase ID: %s. The authorized amount has been released back to the customer.', 'chip-for-woocommerce' ), $purchase_id ) );
