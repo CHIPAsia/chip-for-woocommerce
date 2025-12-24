@@ -1519,7 +1519,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'client'           => array(
 				'email'                   => $order->get_billing_email(),
 				'phone'                   => substr( $order->get_billing_phone(), 0, 32 ),
-				'full_name'               => $this->filter_customer_full_name( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
+				'full_name'               => $this->filter_customer_full_name( trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ) ),
 				'street_address'          => substr( $order->get_billing_address_1() . ' ' . $order->get_billing_address_2(), 0, 128 ),
 				'country'                 => substr( $order->get_billing_country(), 0, 2 ),
 				'city'                    => substr( $order->get_billing_city(), 0, 128 ),
@@ -1619,7 +1619,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$params['purchase']['notes'] = substr( $order->get_customer_note(), 0, 10000 );
 		}
 
-		if ( ! isset( $params['client_id'] ) && ( ! isset( $params['client']['email'] ) || empty( $params['client']['email'] ) ) ) {
+		if ( ( ! isset( $params['client']['email'] ) || empty( $params['client']['email'] ) ) ) {
 			$params['client']['email'] = $this->email_fallback;
 		}
 
@@ -1934,7 +1934,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'platform'         => 'woocommerce_subscriptions',
 			'due'              => $this->get_due_timestamp(),
 			'brand_id'         => $this->brand_id,
-			'client_id'        => get_user_meta( $renewal_order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
+			'client'           => array(
+				'email'     => $renewal_order->get_billing_email(),
+				'full_name' => $this->filter_customer_full_name( trim( $renewal_order->get_billing_first_name() . ' ' . $renewal_order->get_billing_last_name() ) ),
+			),
 			'purchase'         => array(
 				'timezone'       => $this->purchase_time_zone,
 				'currency'       => $renewal_order->get_currency(),
@@ -3388,7 +3391,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'platform'         => 'woocommerce',
 			'due'              => $this->get_due_timestamp(),
 			'brand_id'         => $this->brand_id,
-			'client_id'        => get_user_meta( $order->get_user_id(), '_' . $this->id . '_client_id_' . substr( $this->secret_key, -8, -2 ), true ),
+			'client'           => array(
+				'email'     => $order->get_billing_email(),
+				'full_name' => $this->filter_customer_full_name( trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ) ),
+			),
 			'purchase'         => array(
 				'timezone'       => $this->purchase_time_zone,
 				'currency'       => $order->get_currency(),
