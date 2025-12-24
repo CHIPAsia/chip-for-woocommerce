@@ -130,11 +130,15 @@ class Chip_Woocommerce_Migration {
 	private static function migrate_order_meta() {
 		global $wpdb;
 
-		// Check if HPOS is enabled.
-		if ( class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()
-		) {
-			// HPOS is enabled, update orders table directly.
+		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+
+		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// Update HPOS table if enabled.
+		if ( $hpos_enabled ) {
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->update(
@@ -145,8 +149,10 @@ class Chip_Woocommerce_Migration {
 					array( '%s' )
 				);
 			}
-		} else {
-			// Legacy post meta storage.
+		}
+
+		// Update legacy post meta if HPOS is disabled OR sync mode is enabled (compatibility mode).
+		if ( ! $hpos_enabled || $sync_enabled ) {
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
 				$wpdb->update(
@@ -177,11 +183,15 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
-		// Check if HPOS is enabled.
-		if ( class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()
-		) {
-			// HPOS is enabled, update orders table for subscriptions.
+		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+
+		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// Update HPOS table if enabled.
+		if ( $hpos_enabled ) {
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->update(
@@ -195,8 +205,10 @@ class Chip_Woocommerce_Migration {
 					array( '%s', '%s' )
 				);
 			}
-		} else {
-			// Legacy post meta storage for subscriptions.
+		}
+
+		// Update legacy post meta if HPOS is disabled OR sync mode is enabled (compatibility mode).
+		if ( ! $hpos_enabled || $sync_enabled ) {
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->query(
