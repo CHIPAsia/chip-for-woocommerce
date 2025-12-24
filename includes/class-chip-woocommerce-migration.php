@@ -66,7 +66,7 @@ class Chip_Woocommerce_Migration {
 
 			// Process other migrations in batches, one batch per page load.
 			if ( ! isset( $progress['payment_tokens'] ) || true !== $progress['payment_tokens'] ) {
-				$gateway_index = ( isset( $progress['payment_tokens'] ) && is_int( $progress['payment_tokens'] ) ) ? $progress['payment_tokens'] : 0;
+				$gateway_index        = ( isset( $progress['payment_tokens'] ) && is_int( $progress['payment_tokens'] ) ) ? $progress['payment_tokens'] : 0;
 				$progress['payment_tokens'] = self::migrate_payment_tokens_batched( $gateway_index );
 				update_option( self::MIGRATION_PROGRESS_OPTION, $progress );
 				if ( true !== $progress['payment_tokens'] ) {
@@ -270,9 +270,9 @@ class Chip_Woocommerce_Migration {
 	private static function migrate_order_meta_batched( $progress = array() ) {
 		global $wpdb;
 
-		$stage = $progress['stage'] ?? 'hpos'; // 'hpos' or 'postmeta'.
+		$stage         = $progress['stage'] ?? 'hpos'; // 'hpos' or 'postmeta'.
 		$gateway_index = $progress['gateway_index'] ?? 0;
-		$last_id = $progress['last_id'] ?? 0;
+		$last_id       = $progress['last_id'] ?? 0;
 
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
@@ -290,9 +290,9 @@ class Chip_Woocommerce_Migration {
 				if ( ! $hpos_enabled || $sync_enabled ) {
 					return self::migrate_order_meta_batched(
 						array(
-							'stage'        => 'postmeta',
+							'stage'         => 'postmeta',
 							'gateway_index' => 0,
-							'last_id'      => 0,
+							'last_id'       => 0,
 						)
 					);
 				}
@@ -335,18 +335,18 @@ class Chip_Woocommerce_Migration {
 				// This gateway complete, move to next.
 				return self::migrate_order_meta_batched(
 					array(
-						'stage'        => 'hpos',
+						'stage'         => 'hpos',
 						'gateway_index' => $gateway_index + 1,
-						'last_id'      => 0,
+						'last_id'       => 0,
 					)
 				);
 			}
 
 			// Still processing this gateway.
 			return array(
-				'stage'        => 'hpos',
+				'stage'         => 'hpos',
 				'gateway_index' => $gateway_index,
-				'last_id'      => (int) $last_processed,
+				'last_id'       => (int) $last_processed,
 			);
 		}
 
@@ -399,18 +399,18 @@ class Chip_Woocommerce_Migration {
 				// This gateway complete, move to next.
 				return self::migrate_order_meta_batched(
 					array(
-						'stage'        => 'postmeta',
+						'stage'         => 'postmeta',
 						'gateway_index' => $gateway_index + 1,
-						'last_id'      => 0,
+						'last_id'       => 0,
 					)
 				);
 			}
 
 			// Still processing this gateway.
 			return array(
-				'stage'        => 'postmeta',
+				'stage'         => 'postmeta',
 				'gateway_index' => $gateway_index,
-				'last_id'      => (int) $last_processed,
+				'last_id'       => (int) $last_processed,
 			);
 		}
 
@@ -431,9 +431,9 @@ class Chip_Woocommerce_Migration {
 			return true; // Skip if not active.
 		}
 
-		$stage = $progress['stage'] ?? 'hpos'; // 'hpos' or 'postmeta'.
+		$stage         = $progress['stage'] ?? 'hpos'; // 'hpos' or 'postmeta'.
 		$gateway_index = $progress['gateway_index'] ?? 0;
-		$last_id = $progress['last_id'] ?? 0;
+		$last_id       = $progress['last_id'] ?? 0;
 
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
@@ -451,9 +451,9 @@ class Chip_Woocommerce_Migration {
 				if ( ! $hpos_enabled || $sync_enabled ) {
 					return self::migrate_subscription_meta_batched(
 						array(
-							'stage'        => 'postmeta',
+							'stage'         => 'postmeta',
 							'gateway_index' => 0,
-							'last_id'      => 0,
+							'last_id'       => 0,
 						)
 					);
 				}
@@ -498,18 +498,18 @@ class Chip_Woocommerce_Migration {
 				// This gateway complete, move to next.
 				return self::migrate_subscription_meta_batched(
 					array(
-						'stage'        => 'hpos',
+						'stage'         => 'hpos',
 						'gateway_index' => $gateway_index + 1,
-						'last_id'      => 0,
+						'last_id'       => 0,
 					)
 				);
 			}
 
 			// Still processing this gateway.
 			return array(
-				'stage'        => 'hpos',
+				'stage'         => 'hpos',
 				'gateway_index' => $gateway_index,
-				'last_id'      => (int) $last_processed,
+				'last_id'       => (int) $last_processed,
 			);
 		}
 
@@ -561,18 +561,18 @@ class Chip_Woocommerce_Migration {
 				// This gateway complete, move to next.
 				return self::migrate_subscription_meta_batched(
 					array(
-						'stage'        => 'postmeta',
+						'stage'         => 'postmeta',
 						'gateway_index' => $gateway_index + 1,
-						'last_id'      => 0,
+						'last_id'       => 0,
 					)
 				);
 			}
 
 			// Still processing this gateway.
 			return array(
-				'stage'        => 'postmeta',
+				'stage'         => 'postmeta',
 				'gateway_index' => $gateway_index,
-				'last_id'      => (int) $last_processed,
+				'last_id'       => (int) $last_processed,
 			);
 		}
 
