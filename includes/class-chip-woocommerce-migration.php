@@ -270,16 +270,18 @@ class Chip_Woocommerce_Migration {
 	private static function migrate_order_meta_batched( $progress = array() ) {
 		global $wpdb;
 
-		$stage         = $progress['stage'] ?? 'hpos'; // 'hpos' or 'postmeta'.
-		$gateway_index = $progress['gateway_index'] ?? 0;
-		$last_id       = $progress['last_id'] ?? 0;
-
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
 		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// Default stage based on HPOS status if not set in progress.
+		$default_stage = $hpos_enabled ? 'hpos' : 'postmeta';
+		$stage         = $progress['stage'] ?? $default_stage; // 'hpos' or 'postmeta'.
+		$gateway_index = $progress['gateway_index'] ?? 0;
+		$last_id       = $progress['last_id'] ?? 0;
 
 		$gateway_ids = array_keys( self::$gateway_id_map );
 
@@ -431,16 +433,18 @@ class Chip_Woocommerce_Migration {
 			return true; // Skip if not active.
 		}
 
-		$stage         = $progress['stage'] ?? 'hpos'; // 'hpos' or 'postmeta'.
-		$gateway_index = $progress['gateway_index'] ?? 0;
-		$last_id       = $progress['last_id'] ?? 0;
-
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
 		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// Default stage based on HPOS status if not set in progress.
+		$default_stage = $hpos_enabled ? 'hpos' : 'postmeta';
+		$stage         = $progress['stage'] ?? $default_stage; // 'hpos' or 'postmeta'.
+		$gateway_index = $progress['gateway_index'] ?? 0;
+		$last_id       = $progress['last_id'] ?? 0;
 
 		$gateway_ids = array_keys( self::$gateway_id_map );
 
