@@ -1096,7 +1096,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					. '<li>' . esc_html__( 'You will NOT receive settlement until you complete the order (update status to Completed) or manually capture the payment from the order page.', 'chip-for-woocommerce' ) . '</li>'
 					. '<li>' . esc_html__( 'Authorized payments must be captured within 30 days. After 30 days, the authorization expires and cannot be captured.', 'chip-for-woocommerce' ) . '</li>'
 					. '</ul>'
-				: __( 'Payment action is only available when Payment Method Whitelist contains only card methods (Visa, Mastercard, Maestro).', 'chip-for-woocommerce' ),
+				: __( 'Payment Action is only supported when Payment Method Whitelist is set to card methods only. Supported cards: <code>Visa</code>, <code>Mastercard</code>, <code>Maestro</code>.', 'chip-for-woocommerce' ),
 			'default'     => 'sale',
 			'options'     => $payment_action_options,
 			'disabled'    => ! $card_only_whitelist,
