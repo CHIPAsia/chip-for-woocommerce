@@ -40,4 +40,3 @@ delete_option( 'woocommerce_chip_woocommerce_gateway_3_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_4_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_5_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_6_settings' );
-
