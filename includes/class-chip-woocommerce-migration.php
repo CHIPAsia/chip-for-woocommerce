@@ -69,16 +69,17 @@ class Chip_Woocommerce_Migration {
 	 * @return void
 	 */
 	public static function maybe_migrate() {
+		// Always register cron hooks for batched migrations.
+		// These need to be registered on every request so scheduled actions can execute.
+		add_action( 'chip_woocommerce_migrate_order_meta_batch', array( __CLASS__, 'handle_order_meta_batch_cron' ) );
+		add_action( 'chip_woocommerce_migrate_subscription_meta_batch', array( __CLASS__, 'handle_subscription_meta_batch_cron' ) );
+
+		// Always register admin notices to show migration status.
+		add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
+
 		$current_version = get_option( self::MIGRATION_VERSION_OPTION, '0' );
 
 		if ( version_compare( $current_version, self::CURRENT_VERSION, '<' ) ) {
-			// Register cron hooks for batched migrations.
-			add_action( 'chip_woocommerce_migrate_order_meta_batch', array( __CLASS__, 'handle_order_meta_batch_cron' ) );
-			add_action( 'chip_woocommerce_migrate_subscription_meta_batch', array( __CLASS__, 'handle_subscription_meta_batch_cron' ) );
-
-			// Register admin notices hook.
-			add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
-
 			// Run simple migrations immediately (don't require Action Scheduler).
 			self::migrate_gateway_settings();
 			self::migrate_payment_tokens();
@@ -93,9 +94,6 @@ class Chip_Woocommerce_Migration {
 			}
 
 			update_option( self::MIGRATION_VERSION_OPTION, self::CURRENT_VERSION );
-		} else {
-			// Always register admin notices to show migration status.
-			add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
 		}
 	}
 
@@ -481,6 +479,7 @@ class Chip_Woocommerce_Migration {
 					WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
 				} catch ( Exception $e ) {
 					// Action Scheduler not ready, will retry on next request.
+					// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 				}
 			}
 		} else {
@@ -682,6 +681,7 @@ class Chip_Woocommerce_Migration {
 					WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
 				} catch ( Exception $e ) {
 					// Action Scheduler not ready, will retry on next request.
+					// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 				}
 			}
 		} else {
