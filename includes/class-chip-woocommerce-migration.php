@@ -50,7 +50,7 @@ class Chip_Woocommerce_Migration {
 	/**
 	 * Batch size for large database migrations.
 	 */
-	const BATCH_SIZE = 50000;
+	const BATCH_SIZE = 25000;
 
 	/**
 	 * Flag to track if batched migrations have been initialized in this request.
@@ -79,36 +79,31 @@ class Chip_Woocommerce_Migration {
 	 * @return void
 	 */
 	public static function maybe_migrate() {
-		// Always register cron hooks for batched migrations.
-		// These need to be registered on every request so scheduled actions can execute.
-		add_action( 'chip_woocommerce_migrate_order_meta_batch', array( __CLASS__, 'handle_order_meta_batch_cron' ) );
-		add_action( 'chip_woocommerce_migrate_subscription_meta_batch', array( __CLASS__, 'handle_subscription_meta_batch_cron' ) );
-
 		// Always register admin notices to show migration status.
 		add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
 
 		$current_version = get_option( self::MIGRATION_VERSION_OPTION, '0' );
 
 		if ( version_compare( $current_version, self::CURRENT_VERSION, '<' ) ) {
-			// Run simple migrations immediately (don't require Action Scheduler).
+			// Run simple migrations immediately.
 			self::migrate_gateway_settings();
 			self::migrate_payment_tokens();
 			self::migrate_user_meta();
 
-			// Schedule batched migrations after Action Scheduler is ready.
-			// Use admin_init for admin pages and wp for frontend to ensure Action Scheduler is initialized.
-			if ( is_admin() ) {
-				add_action( 'admin_init', array( __CLASS__, 'init_batched_migrations' ), 20 );
-			} else {
-				add_action( 'wp', array( __CLASS__, 'init_batched_migrations' ), 20 );
-			}
-
+			// Update version after simple migrations complete.
+			// Don't wait for batched migrations - they track their own state via pointers.
 			update_option( self::MIGRATION_VERSION_OPTION, self::CURRENT_VERSION );
 		}
+
+		// Always try to start/continue batched migrations if they haven't completed.
+		// Migration progresses one batch per page load.
+		add_action( 'admin_init', array( __CLASS__, 'init_batched_migrations' ), 20 );
+		add_action( 'wp', array( __CLASS__, 'init_batched_migrations' ), 20 );
 	}
 
 	/**
-	 * Initialize batched migrations after Action Scheduler is ready.
+	 * Initialize batched migrations.
+	 * Processes one batch per page load.
 	 *
 	 * @return void
 	 */
@@ -118,69 +113,11 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
-		// Ensure WooCommerce is loaded before attempting migration.
-		if ( ! function_exists( 'WC' ) || ! class_exists( 'WooCommerce' ) ) {
-			return;
-		}
-
-		// Ensure Action Scheduler is ready before starting batched migrations.
-		if ( ! self::is_action_scheduler_ready() ) {
-			// If not ready yet, try again on next request.
-			// The migration will continue on next page load when Action Scheduler is ready.
-			return;
-		}
-
 		// Mark as initialized to prevent multiple runs.
 		self::$batched_migrations_initialized = true;
 
 		self::migrate_order_meta();
 		self::migrate_subscription_meta();
-	}
-
-	/**
-	 * Check if Action Scheduler is ready to schedule actions.
-	 *
-	 * @return bool True if Action Scheduler is ready, false otherwise.
-	 */
-	private static function is_action_scheduler_ready() {
-		// Ensure we're past the init hook.
-		if ( ! did_action( 'init' ) ) {
-			return false;
-		}
-
-		// Check if WooCommerce queue is available.
-		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
-			return false;
-		}
-
-		// Check if Action Scheduler store is initialized.
-		// Action Scheduler store must be initialized before scheduling.
-		if ( ! class_exists( 'ActionScheduler_Store' ) ) {
-			return false;
-		}
-
-		// Check if Action Scheduler data store is initialized.
-		// The store must be initialized before we can schedule actions.
-		if ( ! function_exists( 'as_has_scheduled_action' ) ) {
-			return false;
-		}
-
-		// Verify the store instance is available.
-		if ( ! method_exists( 'ActionScheduler_Store', 'instance' ) ) {
-			return false;
-		}
-
-		$store = ActionScheduler_Store::instance();
-		if ( ! $store || ! is_object( $store ) ) {
-			return false;
-		}
-
-		// Verify the store has the necessary methods.
-		if ( ! method_exists( $store, 'save_action' ) ) {
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -258,24 +195,6 @@ class Chip_Woocommerce_Migration {
 	}
 
 	/**
-	 * Handle order meta batch migration cron.
-	 *
-	 * @return void
-	 */
-	public static function handle_order_meta_batch_cron() {
-		self::migrate_order_meta_batched();
-	}
-
-	/**
-	 * Handle subscription meta batch migration cron.
-	 *
-	 * @return void
-	 */
-	public static function handle_subscription_meta_batch_cron() {
-		self::migrate_subscription_meta_batched();
-	}
-
-	/**
 	 * Migrate gateway settings from old IDs to new IDs.
 	 *
 	 * @return void
@@ -344,75 +263,34 @@ class Chip_Woocommerce_Migration {
 
 	/**
 	 * Migrate order meta to use new gateway IDs.
+	 * Processes one batch per page load.
 	 *
 	 * @return void
 	 */
 	private static function migrate_order_meta() {
-		// Check if WooCommerce Action Scheduler is available for batched migration.
-		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
-			// Action Scheduler not available, use simple migration instead.
-			self::migrate_order_meta_simple();
+		// Check if migration is already complete (no pointer and total exists = completed).
+		$pointer = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$total   = get_option( self::ORDER_META_MIGRATION_TOTAL_OPTION, false );
+
+		// If total exists but pointer doesn't, migration was already completed.
+		if ( false === $pointer && false !== $total ) {
 			return;
 		}
 
-		// Mark that batched migration is being used.
-		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
-		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+		// Mark that batched migration is being used (only if not already set).
+		$completion_notice = get_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, false );
+		if ( false === $completion_notice ) {
+			update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
+			wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+		}
 
-		// Use batched migration.
+		// Process one batch.
 		self::migrate_order_meta_batched();
 	}
 
 	/**
-	 * Simple order meta migration (for small databases).
-	 *
-	 * @return void
-	 */
-	private static function migrate_order_meta_simple() {
-		global $wpdb;
-
-		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
-
-		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
-
-		// Update HPOS table if enabled.
-		if ( $hpos_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->update(
-					$wpdb->prefix . 'wc_orders',
-					array( 'payment_method' => $new_id ),
-					array( 'payment_method' => $old_id ),
-					array( '%s' ),
-					array( '%s' )
-				);
-			}
-		}
-
-		// Update legacy post meta if HPOS is disabled OR sync mode is enabled (compatibility mode).
-		if ( ! $hpos_enabled || $sync_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
-				$wpdb->update(
-					$wpdb->postmeta,
-					array( 'meta_value' => $new_id ),
-					array(
-						'meta_key'   => '_payment_method',
-						'meta_value' => $old_id,
-					),
-					array( '%s' ),
-					array( '%s', '%s' )
-				);
-				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-			}
-		}
-	}
-
-	/**
-	 * Batched order meta migration (for large databases).
+	 * Batched order meta migration.
+	 * Processes one batch per page load.
 	 *
 	 * @return void
 	 */
@@ -510,13 +388,8 @@ class Chip_Woocommerce_Migration {
 		update_option( self::ORDER_META_MIGRATION_POINTER_OPTION, $end_pointer, false );
 		wp_cache_delete( self::ORDER_META_MIGRATION_POINTER_OPTION, 'options' );
 
-		// Schedule next batch if not complete.
-		if ( $end_pointer > 0 ) {
-			// Use WooCommerce Action Scheduler only if ready.
-			if ( self::is_action_scheduler_ready() ) {
-				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
-			}
-		} else {
+		// Check if this batch completed the migration.
+		if ( $end_pointer <= 0 ) {
 			delete_option( self::ORDER_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::ORDER_META_MIGRATION_POINTER_OPTION, 'options' );
 
@@ -532,10 +405,12 @@ class Chip_Woocommerce_Migration {
 				}
 			}
 		}
+		// Next batch will be processed on the next page load.
 	}
 
 	/**
 	 * Migrate subscription meta to use new gateway IDs.
+	 * Processes one batch per page load.
 	 *
 	 * @return void
 	 */
@@ -545,75 +420,29 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
-		// Check if WooCommerce Action Scheduler is available for batched migration.
-		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
-			// Action Scheduler not available, use simple migration instead.
-			self::migrate_subscription_meta_simple();
+		// Check if migration is already complete (no pointer and total exists = completed).
+		$pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+		$total   = get_option( self::SUBSCRIPTION_META_MIGRATION_TOTAL_OPTION, false );
+
+		// If total exists but pointer doesn't, migration was already completed.
+		if ( false === $pointer && false !== $total ) {
 			return;
 		}
 
-		// Mark that batched migration is being used.
-		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
-		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+		// Mark that batched migration is being used (only if not already set).
+		$completion_notice = get_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, false );
+		if ( false === $completion_notice ) {
+			update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
+			wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+		}
 
-		// Use batched migration.
+		// Process one batch.
 		self::migrate_subscription_meta_batched();
 	}
 
 	/**
-	 * Simple subscription meta migration (for small databases).
-	 *
-	 * @return void
-	 */
-	private static function migrate_subscription_meta_simple() {
-		global $wpdb;
-
-		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
-
-		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
-
-		// Update HPOS table if enabled.
-		if ( $hpos_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->update(
-					$wpdb->prefix . 'wc_orders',
-					array( 'payment_method' => $new_id ),
-					array(
-						'payment_method' => $old_id,
-						'type'           => 'shop_subscription',
-					),
-					array( '%s' ),
-					array( '%s', '%s' )
-				);
-			}
-		}
-
-		// Update legacy post meta if HPOS is disabled OR sync mode is enabled (compatibility mode).
-		if ( ! $hpos_enabled || $sync_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->postmeta} pm
-						INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-						SET pm.meta_value = %s
-						WHERE pm.meta_key = '_payment_method'
-						AND pm.meta_value = %s
-						AND p.post_type = 'shop_subscription'",
-						$new_id,
-						$old_id
-					)
-				);
-			}
-		}
-	}
-
-	/**
-	 * Batched subscription meta migration (for large databases).
+	 * Batched subscription meta migration.
+	 * Processes one batch per page load.
 	 *
 	 * @return void
 	 */
@@ -711,13 +540,8 @@ class Chip_Woocommerce_Migration {
 		update_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, $end_pointer, false );
 		wp_cache_delete( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, 'options' );
 
-		// Schedule next batch if not complete.
-		if ( $end_pointer > 0 ) {
-			// Use WooCommerce Action Scheduler only if ready.
-			if ( self::is_action_scheduler_ready() ) {
-				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
-			}
-		} else {
+		// Check if this batch completed the migration.
+		if ( $end_pointer <= 0 ) {
 			delete_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, 'options' );
 
@@ -733,6 +557,7 @@ class Chip_Woocommerce_Migration {
 				}
 			}
 		}
+		// Next batch will be processed on the next page load.
 	}
 
 	/**
