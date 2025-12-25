@@ -102,7 +102,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Check if batched migration is in progress.
-		$order_pointer = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$order_pointer        = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
 		$subscription_pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
 
 		// Migration in progress.
@@ -235,7 +235,7 @@ class Chip_Woocommerce_Migration {
 			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
 
-		$total_order_records = 0;
+		$total_order_records       = 0;
 		$total_subscription_records = 0;
 
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
@@ -299,7 +299,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		return array(
-			'orders'       => $total_order_records,
+			'orders'        => $total_order_records,
 			'subscriptions' => $total_subscription_records,
 		);
 	}
@@ -310,10 +310,10 @@ class Chip_Woocommerce_Migration {
 	 * @return void
 	 */
 	private static function migrate_order_meta() {
-		$counts = self::get_migration_record_counts();
-		$total_order_records = $counts['orders'];
+		$counts                  = self::get_migration_record_counts();
+		$total_order_records     = $counts['orders'];
 		$total_subscription_records = $counts['subscriptions'];
-		$total_combined = $total_order_records + $total_subscription_records;
+		$total_combined          = $total_order_records + $total_subscription_records;
 
 		// Use simple migration if below threshold (100k per type OR 200k combined).
 		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
@@ -504,10 +504,10 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
-		$counts = self::get_migration_record_counts();
-		$total_order_records = $counts['orders'];
+		$counts                  = self::get_migration_record_counts();
+		$total_order_records     = $counts['orders'];
 		$total_subscription_records = $counts['subscriptions'];
-		$total_combined = $total_order_records + $total_subscription_records;
+		$total_combined          = $total_order_records + $total_subscription_records;
 
 		// Use simple migration if below threshold (100k per type OR 200k combined).
 		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
