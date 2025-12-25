@@ -81,6 +81,7 @@ class Chip_Woocommerce_Migration {
 			self::migrate_gateway_settings();
 			self::migrate_payment_tokens();
 			self::migrate_user_meta();
+			self::migrate_legacy_post_meta();
 
 			// Update version after simple migrations complete.
 			// Don't wait for batched migrations - they track their own state via pointers.
@@ -180,6 +181,33 @@ class Chip_Woocommerce_Migration {
 	}
 
 	/**
+	 * Migrate legacy post meta to use new gateway IDs.
+	 * Simple UPDATE runs once (no batching needed).
+	 * The _payment_method meta key is WooCommerce-specific, safe to update all.
+	 * Runs regardless of HPOS or sync status.
+	 *
+	 * @return void
+	 */
+	private static function migrate_legacy_post_meta() {
+		global $wpdb;
+
+		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$wpdb->postmeta}
+					SET meta_value = %s
+					WHERE meta_key = '_payment_method'
+					AND meta_value = %s",
+					$new_id,
+					$old_id
+				)
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+		}
+	}
+
+	/**
 	 * Migrate order meta to use new gateway IDs.
 	 * Processes one batch per page load.
 	 *
@@ -202,7 +230,6 @@ class Chip_Woocommerce_Migration {
 	/**
 	 * Batched order meta migration.
 	 * HPOS: Processes one batch per page load using pointer.
-	 * Legacy postmeta: Simple UPDATE runs once (no batching needed).
 	 *
 	 * @return void
 	 */
@@ -212,31 +239,7 @@ class Chip_Woocommerce_Migration {
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
-		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
-
-		// Migrate legacy post meta first (simple UPDATE, no batching needed).
-		// The _payment_method meta key is WooCommerce-specific, safe to update all.
-		// This runs on every batch but is a no-op after the first run (no matching rows).
-		if ( ! $hpos_enabled || $sync_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->postmeta}
-						SET meta_value = %s
-						WHERE meta_key = '_payment_method'
-						AND meta_value = %s",
-						$new_id,
-						$old_id
-					)
-				);
-				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-			}
-		}
-
-		// If HPOS is not enabled, we're done (legacy migration is complete).
+		// If HPOS is not enabled, we're done (legacy migration handled separately).
 		if ( ! $hpos_enabled ) {
 			return;
 		}
@@ -325,7 +328,7 @@ class Chip_Woocommerce_Migration {
 
 	/**
 	 * Batched subscription meta migration.
-	 * Processes one batch per page load.
+	 * HPOS: Processes one batch per page load using pointer.
 	 *
 	 * @return void
 	 */
@@ -335,32 +338,7 @@ class Chip_Woocommerce_Migration {
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
-		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
-
-		// Migrate legacy post meta (simple UPDATE, no batching needed).
-		// The _payment_method meta key is WooCommerce-specific, safe to update all.
-		// Note: This is the same query as order migration (covers all postmeta).
-		// It runs on every call but is a no-op after the first run (no matching rows).
-		if ( ! $hpos_enabled || $sync_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->postmeta}
-						SET meta_value = %s
-						WHERE meta_key = '_payment_method'
-						AND meta_value = %s",
-						$new_id,
-						$old_id
-					)
-				);
-				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-			}
-		}
-
-		// If HPOS is not enabled, we're done (legacy migration is complete).
+		// If HPOS is not enabled, we're done (legacy migration handled separately).
 		if ( ! $hpos_enabled ) {
 			return;
 		}
