@@ -43,6 +43,13 @@ class Chip_Woocommerce_Migration {
 	const BATCH_SIZE = 1000;
 
 	/**
+	 * Flag to track if batched migrations have been initialized in this request.
+	 *
+	 * @var bool
+	 */
+	private static $batched_migrations_initialized = false;
+
+	/**
 	 * Gateway ID mapping from old to new.
 	 *
 	 * @var array
@@ -77,8 +84,13 @@ class Chip_Woocommerce_Migration {
 			self::migrate_payment_tokens();
 			self::migrate_user_meta();
 
-			// Schedule batched migrations on woocommerce_init hook to ensure Action Scheduler is ready.
-			add_action( 'woocommerce_init', array( __CLASS__, 'init_batched_migrations' ), 20 );
+			// Schedule batched migrations after Action Scheduler is ready.
+			// Use admin_init for admin pages and wp for frontend to ensure Action Scheduler is initialized.
+			if ( is_admin() ) {
+				add_action( 'admin_init', array( __CLASS__, 'init_batched_migrations' ), 20 );
+			} else {
+				add_action( 'wp', array( __CLASS__, 'init_batched_migrations' ), 20 );
+			}
 
 			update_option( self::MIGRATION_VERSION_OPTION, self::CURRENT_VERSION );
 		} else {
@@ -93,13 +105,78 @@ class Chip_Woocommerce_Migration {
 	 * @return void
 	 */
 	public static function init_batched_migrations() {
+		// Ensure we only run once per request.
+		if ( self::$batched_migrations_initialized ) {
+			return;
+		}
+
 		// Ensure WooCommerce is loaded before attempting migration.
 		if ( ! function_exists( 'WC' ) || ! class_exists( 'WooCommerce' ) ) {
 			return;
 		}
 
+		// Ensure Action Scheduler is ready before starting batched migrations.
+		if ( ! self::is_action_scheduler_ready() ) {
+			// If not ready yet, try again on next request.
+			// The migration will continue on next page load when Action Scheduler is ready.
+			return;
+		}
+
+		// Mark as initialized to prevent multiple runs.
+		self::$batched_migrations_initialized = true;
+
 		self::migrate_order_meta();
 		self::migrate_subscription_meta();
+	}
+
+	/**
+	 * Check if Action Scheduler is ready to schedule actions.
+	 *
+	 * @return bool True if Action Scheduler is ready, false otherwise.
+	 */
+	private static function is_action_scheduler_ready() {
+		// Ensure we're past the init hook.
+		if ( ! did_action( 'init' ) ) {
+			return false;
+		}
+
+		// Check if WooCommerce queue is available.
+		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
+			return false;
+		}
+
+		// Check if Action Scheduler store is initialized.
+		// Action Scheduler store must be initialized before scheduling.
+		if ( ! class_exists( 'ActionScheduler_Store' ) ) {
+			return false;
+		}
+
+		// Check if Action Scheduler data store is initialized.
+		// The store must be initialized before we can schedule actions.
+		if ( ! function_exists( 'as_has_scheduled_action' ) ) {
+			return false;
+		}
+
+		// Try to get the store instance to verify it's initialized.
+		try {
+			if ( ! method_exists( 'ActionScheduler_Store', 'instance' ) ) {
+				return false;
+			}
+
+			$store = ActionScheduler_Store::instance();
+			if ( ! $store || ! is_object( $store ) ) {
+				return false;
+			}
+
+			// Verify the store has the necessary methods.
+			if ( ! method_exists( $store, 'save_action' ) ) {
+				return false;
+			}
+		} catch ( Exception $e ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -398,9 +475,13 @@ class Chip_Woocommerce_Migration {
 
 		// Schedule next batch if not complete.
 		if ( $end_pointer > 0 ) {
-			// Use WooCommerce Action Scheduler.
-			if ( function_exists( 'WC' ) && is_callable( array( WC(), 'queue' ) ) ) {
-				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
+			// Use WooCommerce Action Scheduler only if ready.
+			if ( self::is_action_scheduler_ready() ) {
+				try {
+					WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
+				} catch ( Exception $e ) {
+					// Action Scheduler not ready, will retry on next request.
+				}
 			}
 		} else {
 			delete_option( self::ORDER_META_MIGRATION_POINTER_OPTION );
@@ -595,9 +676,13 @@ class Chip_Woocommerce_Migration {
 
 		// Schedule next batch if not complete.
 		if ( $end_pointer > 0 ) {
-			// Use WooCommerce Action Scheduler.
-			if ( function_exists( 'WC' ) && is_callable( array( WC(), 'queue' ) ) ) {
-				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
+			// Use WooCommerce Action Scheduler only if ready.
+			if ( self::is_action_scheduler_ready() ) {
+				try {
+					WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
+				} catch ( Exception $e ) {
+					// Action Scheduler not ready, will retry on next request.
+				}
 			}
 		} else {
 			delete_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION );
