@@ -235,14 +235,14 @@ class Chip_Woocommerce_Migration {
 			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
 
-		$total_order_records       = 0;
+		$total_order_records        = 0;
 		$total_subscription_records = 0;
 
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 			// Count orders.
 			if ( $hpos_enabled ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$count = $wpdb->get_var(
+				$count                = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders WHERE payment_method = %s AND type != 'shop_subscription'",
 						$old_id
@@ -253,7 +253,7 @@ class Chip_Woocommerce_Migration {
 
 			if ( ! $hpos_enabled || $sync_enabled ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$count = $wpdb->get_var(
+				$count                = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT COUNT(*) FROM {$wpdb->postmeta} pm
 						INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
@@ -270,7 +270,7 @@ class Chip_Woocommerce_Migration {
 			if ( class_exists( 'WC_Subscriptions' ) ) {
 				if ( $hpos_enabled ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-					$count = $wpdb->get_var(
+					$count                = $wpdb->get_var(
 						$wpdb->prepare(
 							"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders 
 							WHERE payment_method = %s 
@@ -283,7 +283,7 @@ class Chip_Woocommerce_Migration {
 
 				if ( ! $hpos_enabled || $sync_enabled ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-					$count = $wpdb->get_var(
+					$count                = $wpdb->get_var(
 						$wpdb->prepare(
 							"SELECT COUNT(*) FROM {$wpdb->postmeta} pm
 							INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
@@ -310,10 +310,10 @@ class Chip_Woocommerce_Migration {
 	 * @return void
 	 */
 	private static function migrate_order_meta() {
-		$counts                  = self::get_migration_record_counts();
-		$total_order_records     = $counts['orders'];
+		$counts                    = self::get_migration_record_counts();
+		$total_order_records       = $counts['orders'];
 		$total_subscription_records = $counts['subscriptions'];
-		$total_combined          = $total_order_records + $total_subscription_records;
+		$total_combined            = $total_order_records + $total_subscription_records;
 
 		// Use simple migration if below threshold (100k per type OR 200k combined).
 		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
@@ -504,10 +504,10 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
-		$counts                  = self::get_migration_record_counts();
-		$total_order_records     = $counts['orders'];
+		$counts                    = self::get_migration_record_counts();
+		$total_order_records       = $counts['orders'];
 		$total_subscription_records = $counts['subscriptions'];
-		$total_combined          = $total_order_records + $total_subscription_records;
+		$total_combined            = $total_order_records + $total_subscription_records;
 
 		// Use simple migration if below threshold (100k per type OR 200k combined).
 		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
