@@ -50,7 +50,7 @@ class Chip_Woocommerce_Migration {
 	/**
 	 * Batch size for large database migrations.
 	 */
-	const BATCH_SIZE = 20000;
+	const BATCH_SIZE = 50000;
 
 	/**
 	 * Flag to track if batched migrations have been initialized in this request.
