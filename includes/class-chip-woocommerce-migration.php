@@ -72,17 +72,34 @@ class Chip_Woocommerce_Migration {
 			// Register admin notices hook.
 			add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
 
+			// Run simple migrations immediately (don't require Action Scheduler).
 			self::migrate_gateway_settings();
 			self::migrate_payment_tokens();
 			self::migrate_user_meta();
-			self::migrate_order_meta();
-			self::migrate_subscription_meta();
+
+			// Schedule batched migrations on woocommerce_init hook to ensure Action Scheduler is ready.
+			add_action( 'woocommerce_init', array( __CLASS__, 'init_batched_migrations' ), 20 );
 
 			update_option( self::MIGRATION_VERSION_OPTION, self::CURRENT_VERSION );
 		} else {
 			// Always register admin notices to show migration status.
 			add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
 		}
+	}
+
+	/**
+	 * Initialize batched migrations after Action Scheduler is ready.
+	 *
+	 * @return void
+	 */
+	public static function init_batched_migrations() {
+		// Ensure WooCommerce is loaded before attempting migration.
+		if ( ! function_exists( 'WC' ) || ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+
+		self::migrate_order_meta();
+		self::migrate_subscription_meta();
 	}
 
 	/**
