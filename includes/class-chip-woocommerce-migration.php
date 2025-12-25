@@ -43,11 +43,6 @@ class Chip_Woocommerce_Migration {
 	const BATCH_SIZE = 1000;
 
 	/**
-	 * Threshold for using batched migration (records).
-	 */
-	const BATCH_THRESHOLD = 50000;
-
-	/**
 	 * Gateway ID mapping from old to new.
 	 *
 	 * @var array
@@ -221,106 +216,11 @@ class Chip_Woocommerce_Migration {
 	}
 
 	/**
-	 * Get record counts for orders and subscriptions.
-	 *
-	 * @return array Array with 'orders' and 'subscriptions' counts.
-	 */
-	private static function get_migration_record_counts() {
-		global $wpdb;
-
-		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
-
-		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
-			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
-			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
-
-		$total_order_records        = 0;
-		$total_subscription_records = 0;
-
-		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-			// Count orders.
-			if ( $hpos_enabled ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$count                = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders WHERE payment_method = %s AND type != 'shop_subscription'",
-						$old_id
-					)
-				);
-				$total_order_records += (int) $count;
-			}
-
-			if ( ! $hpos_enabled || $sync_enabled ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$count                = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$wpdb->postmeta} pm
-						INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-						WHERE pm.meta_key = '_payment_method'
-						AND pm.meta_value = %s
-						AND p.post_type IN ('shop_order', 'shop_order_refund')",
-						$old_id
-					)
-				);
-				$total_order_records += (int) $count;
-			}
-
-			// Count subscriptions if WooCommerce Subscriptions is active.
-			if ( class_exists( 'WC_Subscriptions' ) ) {
-				if ( $hpos_enabled ) {
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-					$count                       = $wpdb->get_var(
-						$wpdb->prepare(
-							"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders 
-							WHERE payment_method = %s 
-							AND type = 'shop_subscription'",
-							$old_id
-						)
-					);
-					$total_subscription_records += (int) $count;
-				}
-
-				if ( ! $hpos_enabled || $sync_enabled ) {
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-					$count                       = $wpdb->get_var(
-						$wpdb->prepare(
-							"SELECT COUNT(*) FROM {$wpdb->postmeta} pm
-							INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-							WHERE pm.meta_key = '_payment_method'
-							AND pm.meta_value = %s
-							AND p.post_type = 'shop_subscription'",
-							$old_id
-						)
-					);
-					$total_subscription_records += (int) $count;
-				}
-			}
-		}
-
-		return array(
-			'orders'        => $total_order_records,
-			'subscriptions' => $total_subscription_records,
-		);
-	}
-
-	/**
 	 * Migrate order meta to use new gateway IDs.
 	 *
 	 * @return void
 	 */
 	private static function migrate_order_meta() {
-		$counts                     = self::get_migration_record_counts();
-		$total_order_records        = $counts['orders'];
-		$total_subscription_records = $counts['subscriptions'];
-		$total_combined             = $total_order_records + $total_subscription_records;
-
-		// Use simple migration if below threshold (100k per type OR 200k combined).
-		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
-			self::migrate_order_meta_simple();
-			return;
-		}
-
 		// Check if WooCommerce Action Scheduler is available for batched migration.
 		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
 			// Action Scheduler not available, use simple migration instead.
@@ -332,7 +232,7 @@ class Chip_Woocommerce_Migration {
 		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
 		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
 
-		// Use batched migration for large databases.
+		// Use batched migration.
 		self::migrate_order_meta_batched();
 	}
 
@@ -514,17 +414,6 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
-		$counts                     = self::get_migration_record_counts();
-		$total_order_records        = $counts['orders'];
-		$total_subscription_records = $counts['subscriptions'];
-		$total_combined             = $total_order_records + $total_subscription_records;
-
-		// Use simple migration if below threshold (100k per type OR 200k combined).
-		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
-			self::migrate_subscription_meta_simple();
-			return;
-		}
-
 		// Check if WooCommerce Action Scheduler is available for batched migration.
 		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
 			// Action Scheduler not available, use simple migration instead.
@@ -536,7 +425,7 @@ class Chip_Woocommerce_Migration {
 		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
 		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
 
-		// Use batched migration for large databases.
+		// Use batched migration.
 		self::migrate_subscription_meta_batched();
 	}
 
