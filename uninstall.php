@@ -21,7 +21,6 @@ delete_option( 'wc_chip_migrations' );
 delete_option( 'chip_woocommerce_migration_version' );
 delete_option( 'chip_woocommerce_order_meta_migration_pointer' );
 delete_option( 'chip_woocommerce_subscription_meta_migration_pointer' );
-delete_option( 'chip_woocommerce_migration_completion_notice' );
 delete_option( 'chip_woocommerce_order_meta_migration_total' );
 delete_option( 'chip_woocommerce_subscription_meta_migration_total' );
 
