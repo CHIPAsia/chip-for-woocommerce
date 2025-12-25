@@ -39,6 +39,12 @@ delete_option( 'woocommerce_chip_woocommerce_gateway_4_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_5_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_6_settings' );
 
-// Clear any scheduled cron events for migration.
+// Clear any scheduled cron events for migration (WP-Cron).
 wp_clear_scheduled_hook( 'chip_woocommerce_migrate_order_meta_batch' );
 wp_clear_scheduled_hook( 'chip_woocommerce_migrate_subscription_meta_batch' );
+
+// Clear Action Scheduler tasks for migration if WooCommerce is available.
+if ( function_exists( 'WC' ) && is_callable( array( WC(), 'queue' ) ) ) {
+	WC()->queue()->cancel_all( 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
+	WC()->queue()->cancel_all( 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
+}

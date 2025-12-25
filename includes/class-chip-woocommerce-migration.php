@@ -321,6 +321,13 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
+		// Check if WooCommerce Action Scheduler is available for batched migration.
+		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
+			// Action Scheduler not available, use simple migration instead.
+			self::migrate_order_meta_simple();
+			return;
+		}
+
 		// Mark that batched migration is being used.
 		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
 		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
@@ -474,7 +481,10 @@ class Chip_Woocommerce_Migration {
 
 		// Schedule next batch if not complete.
 		if ( $end_pointer > 0 ) {
-			wp_schedule_single_event( time() + 1, 'chip_woocommerce_migrate_order_meta_batch' );
+			// Use WooCommerce Action Scheduler.
+			if ( function_exists( 'WC' ) && is_callable( array( WC(), 'queue' ) ) ) {
+				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
+			}
 		} else {
 			delete_option( self::ORDER_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::ORDER_META_MIGRATION_POINTER_OPTION, 'options' );
@@ -511,6 +521,13 @@ class Chip_Woocommerce_Migration {
 
 		// Use simple migration if below threshold (100k per type OR 200k combined).
 		if ( ( $total_order_records < self::BATCH_THRESHOLD && $total_subscription_records < self::BATCH_THRESHOLD ) || $total_combined < ( self::BATCH_THRESHOLD * 2 ) ) {
+			self::migrate_subscription_meta_simple();
+			return;
+		}
+
+		// Check if WooCommerce Action Scheduler is available for batched migration.
+		if ( ! function_exists( 'WC' ) || ! is_callable( array( WC(), 'queue' ) ) ) {
+			// Action Scheduler not available, use simple migration instead.
 			self::migrate_subscription_meta_simple();
 			return;
 		}
@@ -672,7 +689,10 @@ class Chip_Woocommerce_Migration {
 
 		// Schedule next batch if not complete.
 		if ( $end_pointer > 0 ) {
-			wp_schedule_single_event( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch' );
+			// Use WooCommerce Action Scheduler.
+			if ( function_exists( 'WC' ) && is_callable( array( WC(), 'queue' ) ) ) {
+				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
+			}
 		} else {
 			delete_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, 'options' );
