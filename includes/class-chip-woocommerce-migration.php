@@ -33,6 +33,11 @@ class Chip_Woocommerce_Migration {
 	const SUBSCRIPTION_META_MIGRATION_POINTER_OPTION = 'chip_woocommerce_subscription_meta_migration_pointer';
 
 	/**
+	 * Migration completion notice option name.
+	 */
+	const MIGRATION_COMPLETION_NOTICE_OPTION = 'chip_woocommerce_migration_completion_notice';
+
+	/**
 	 * Batch size for large database migrations.
 	 */
 	const BATCH_SIZE = 1000;
@@ -69,6 +74,9 @@ class Chip_Woocommerce_Migration {
 			add_action( 'chip_woocommerce_migrate_order_meta_batch', array( __CLASS__, 'handle_order_meta_batch_cron' ) );
 			add_action( 'chip_woocommerce_migrate_subscription_meta_batch', array( __CLASS__, 'handle_subscription_meta_batch_cron' ) );
 
+			// Register admin notices hook.
+			add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
+
 			self::migrate_gateway_settings();
 			self::migrate_payment_tokens();
 			self::migrate_user_meta();
@@ -76,6 +84,54 @@ class Chip_Woocommerce_Migration {
 			self::migrate_subscription_meta();
 
 			update_option( self::MIGRATION_VERSION_OPTION, self::CURRENT_VERSION );
+		} else {
+			// Always register admin notices to show migration status.
+			add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
+		}
+	}
+
+	/**
+	 * Display admin notices for migration status.
+	 *
+	 * @return void
+	 */
+	public static function admin_notices() {
+		// Only show on admin pages.
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		// Check if batched migration is in progress.
+		$order_pointer = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$subscription_pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+
+		// Migration in progress.
+		if ( false !== $order_pointer || false !== $subscription_pointer ) {
+			?>
+			<div class="notice notice-info is-dismissible">
+				<p>
+					<strong><?php esc_html_e( 'CHIP for WooCommerce:', 'chip-for-woocommerce' ); ?></strong>
+					<?php esc_html_e( 'Database migration is currently in progress. This process runs in the background and may take a while depending on the number of orders and subscriptions. Please be patient.', 'chip-for-woocommerce' ); ?>
+				</p>
+			</div>
+			<?php
+			return;
+		}
+
+		// Check if migration completion notice should be shown.
+		$completion_notice = get_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, false );
+		if ( 'shown' !== $completion_notice && 'batched' === $completion_notice ) {
+			?>
+			<div class="notice notice-success is-dismissible">
+				<p>
+					<strong><?php esc_html_e( 'CHIP for WooCommerce:', 'chip-for-woocommerce' ); ?></strong>
+					<?php esc_html_e( 'Database migration completed successfully. All orders and subscriptions have been updated.', 'chip-for-woocommerce' ); ?>
+				</p>
+			</div>
+			<?php
+			// Mark notice as shown.
+			update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'shown', false );
+			wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
 		}
 	}
 
@@ -265,6 +321,10 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
+		// Mark that batched migration is being used.
+		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
+		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+
 		// Use batched migration for large databases.
 		self::migrate_order_meta_batched();
 	}
@@ -418,6 +478,18 @@ class Chip_Woocommerce_Migration {
 		} else {
 			delete_option( self::ORDER_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::ORDER_META_MIGRATION_POINTER_OPTION, 'options' );
+
+			// Check if subscription migration is also complete.
+			$subscription_pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+			if ( false === $subscription_pointer ) {
+				// Both migrations complete, ensure completion notice is set.
+				$completion_notice = get_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, false );
+				if ( 'batched' === $completion_notice ) {
+					// Keep it as 'batched' so notice will show.
+					update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
+					wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+				}
+			}
 		}
 	}
 
@@ -442,6 +514,10 @@ class Chip_Woocommerce_Migration {
 			self::migrate_subscription_meta_simple();
 			return;
 		}
+
+		// Mark that batched migration is being used.
+		update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
+		wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
 
 		// Use batched migration for large databases.
 		self::migrate_subscription_meta_batched();
@@ -600,6 +676,18 @@ class Chip_Woocommerce_Migration {
 		} else {
 			delete_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, 'options' );
+
+			// Check if order migration is also complete.
+			$order_pointer = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+			if ( false === $order_pointer ) {
+				// Both migrations complete, ensure completion notice is set.
+				$completion_notice = get_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, false );
+				if ( 'batched' === $completion_notice ) {
+					// Keep it as 'batched' so notice will show.
+					update_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'batched', false );
+					wp_cache_delete( self::MIGRATION_COMPLETION_NOTICE_OPTION, 'options' );
+				}
+			}
 		}
 	}
 
