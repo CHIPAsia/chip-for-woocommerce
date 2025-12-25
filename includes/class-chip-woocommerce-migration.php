@@ -155,22 +155,18 @@ class Chip_Woocommerce_Migration {
 			return false;
 		}
 
-		// Try to get the store instance to verify it's initialized.
-		try {
-			if ( ! method_exists( 'ActionScheduler_Store', 'instance' ) ) {
-				return false;
-			}
+		// Verify the store instance is available.
+		if ( ! method_exists( 'ActionScheduler_Store', 'instance' ) ) {
+			return false;
+		}
 
-			$store = ActionScheduler_Store::instance();
-			if ( ! $store || ! is_object( $store ) ) {
-				return false;
-			}
+		$store = ActionScheduler_Store::instance();
+		if ( ! $store || ! is_object( $store ) ) {
+			return false;
+		}
 
-			// Verify the store has the necessary methods.
-			if ( ! method_exists( $store, 'save_action' ) ) {
-				return false;
-			}
-		} catch ( Exception $e ) {
+		// Verify the store has the necessary methods.
+		if ( ! method_exists( $store, 'save_action' ) ) {
 			return false;
 		}
 
@@ -475,12 +471,7 @@ class Chip_Woocommerce_Migration {
 		if ( $end_pointer > 0 ) {
 			// Use WooCommerce Action Scheduler only if ready.
 			if ( self::is_action_scheduler_ready() ) {
-				try {
-					WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
-				} catch ( Exception $e ) {
-					// Action Scheduler not ready, will retry on next request.
-					// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-				}
+				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_order_meta_batch', array(), 'chip_migration' );
 			}
 		} else {
 			delete_option( self::ORDER_META_MIGRATION_POINTER_OPTION );
@@ -677,12 +668,7 @@ class Chip_Woocommerce_Migration {
 		if ( $end_pointer > 0 ) {
 			// Use WooCommerce Action Scheduler only if ready.
 			if ( self::is_action_scheduler_ready() ) {
-				try {
-					WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
-				} catch ( Exception $e ) {
-					// Action Scheduler not ready, will retry on next request.
-					// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-				}
+				WC()->queue()->schedule_single( time() + 1, 'chip_woocommerce_migrate_subscription_meta_batch', array(), 'chip_migration' );
 			}
 		} else {
 			delete_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION );
