@@ -201,7 +201,8 @@ class Chip_Woocommerce_Migration {
 
 	/**
 	 * Batched order meta migration.
-	 * Processes one batch per page load.
+	 * HPOS: Processes one batch per page load using pointer.
+	 * Legacy postmeta: Simple UPDATE runs once (no batching needed).
 	 *
 	 * @return void
 	 */
@@ -215,22 +216,38 @@ class Chip_Woocommerce_Migration {
 			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
 
-		// Get migration pointer (starts from max order ID).
+		// Migrate legacy post meta first (simple UPDATE, no batching needed).
+		// The _payment_method meta key is WooCommerce-specific, safe to update all.
+		// This runs on every batch but is a no-op after the first run (no matching rows).
+		if ( ! $hpos_enabled || $sync_enabled ) {
+			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
+				$wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$wpdb->postmeta}
+						SET meta_value = %s
+						WHERE meta_key = '_payment_method'
+						AND meta_value = %s",
+						$new_id,
+						$old_id
+					)
+				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			}
+		}
+
+		// If HPOS is not enabled, we're done (legacy migration is complete).
+		if ( ! $hpos_enabled ) {
+			return;
+		}
+
+		// HPOS migration uses batched pointer approach.
 		$pointer = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
 
 		// Initialize pointer if not set.
 		if ( false === $pointer ) {
-			$max_id = 0;
-
-			if ( $hpos_enabled ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$max_id = max( $max_id, (int) $wpdb->get_var( "SELECT MAX(id) FROM {$wpdb->prefix}wc_orders" ) );
-			}
-
-			if ( ! $hpos_enabled || $sync_enabled ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$max_id = max( $max_id, (int) $wpdb->get_var( "SELECT MAX(ID) FROM {$wpdb->posts} WHERE post_type IN ('shop_order', 'shop_order_refund')" ) );
-			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$max_id = (int) $wpdb->get_var( "SELECT MAX(id) FROM {$wpdb->prefix}wc_orders" );
 
 			$pointer = $max_id;
 			update_option( self::ORDER_META_MIGRATION_POINTER_OPTION, $pointer, false );
@@ -252,47 +269,21 @@ class Chip_Woocommerce_Migration {
 		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
 
 		// Migrate HPOS orders.
-		if ( $hpos_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->prefix}wc_orders 
-						SET payment_method = %s 
-						WHERE payment_method = %s 
-						AND id <= %d 
-						AND id > %d",
-						$new_id,
-						$old_id,
-						$pointer,
-						$end_pointer
-					)
-				);
-			}
-		}
-
-		// Migrate legacy post meta.
-		if ( ! $hpos_enabled || $sync_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->postmeta} pm
-						INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-						SET pm.meta_value = %s
-						WHERE pm.meta_key = '_payment_method'
-						AND pm.meta_value = %s
-						AND p.post_type IN ('shop_order', 'shop_order_refund')
-						AND p.ID <= %d
-						AND p.ID > %d",
-						$new_id,
-						$old_id,
-						$pointer,
-						$end_pointer
-					)
-				);
-				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-			}
+		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$wpdb->prefix}wc_orders 
+					SET payment_method = %s 
+					WHERE payment_method = %s 
+					AND id <= %d 
+					AND id > %d",
+					$new_id,
+					$old_id,
+					$pointer,
+					$end_pointer
+				)
+			);
 		}
 
 		// Update pointer.
@@ -348,22 +339,39 @@ class Chip_Woocommerce_Migration {
 			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
 
-		// Get migration pointer (starts from max subscription ID).
+		// Migrate legacy post meta (simple UPDATE, no batching needed).
+		// The _payment_method meta key is WooCommerce-specific, safe to update all.
+		// Note: This is the same query as order migration (covers all postmeta).
+		// It runs on every call but is a no-op after the first run (no matching rows).
+		if ( ! $hpos_enabled || $sync_enabled ) {
+			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
+				$wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$wpdb->postmeta}
+						SET meta_value = %s
+						WHERE meta_key = '_payment_method'
+						AND meta_value = %s",
+						$new_id,
+						$old_id
+					)
+				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			}
+		}
+
+		// If HPOS is not enabled, we're done (legacy migration is complete).
+		if ( ! $hpos_enabled ) {
+			return;
+		}
+
+		// HPOS migration uses batched pointer approach.
 		$pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
 
 		// Initialize pointer if not set.
 		if ( false === $pointer ) {
-			$max_id = 0;
-
-			if ( $hpos_enabled ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$max_id = max( $max_id, (int) $wpdb->get_var( "SELECT MAX(id) FROM {$wpdb->prefix}wc_orders WHERE type = 'shop_subscription'" ) );
-			}
-
-			if ( ! $hpos_enabled || $sync_enabled ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$max_id = max( $max_id, (int) $wpdb->get_var( "SELECT MAX(ID) FROM {$wpdb->posts} WHERE post_type = 'shop_subscription'" ) );
-			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$max_id = (int) $wpdb->get_var( "SELECT MAX(id) FROM {$wpdb->prefix}wc_orders WHERE type = 'shop_subscription'" );
 
 			$pointer = $max_id;
 			update_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, $pointer, false );
@@ -385,47 +393,22 @@ class Chip_Woocommerce_Migration {
 		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
 
 		// Migrate HPOS subscriptions.
-		if ( $hpos_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->prefix}wc_orders 
-						SET payment_method = %s 
-						WHERE payment_method = %s 
-						AND type = 'shop_subscription'
-						AND id <= %d 
-						AND id > %d",
-						$new_id,
-						$old_id,
-						$pointer,
-						$end_pointer
-					)
-				);
-			}
-		}
-
-		// Migrate legacy post meta.
-		if ( ! $hpos_enabled || $sync_enabled ) {
-			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->postmeta} pm
-						INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
-						SET pm.meta_value = %s
-						WHERE pm.meta_key = '_payment_method'
-						AND pm.meta_value = %s
-						AND p.post_type = 'shop_subscription'
-						AND p.ID <= %d
-						AND p.ID > %d",
-						$new_id,
-						$old_id,
-						$pointer,
-						$end_pointer
-					)
-				);
-			}
+		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$wpdb->prefix}wc_orders 
+					SET payment_method = %s 
+					WHERE payment_method = %s 
+					AND type = 'shop_subscription'
+					AND id <= %d 
+					AND id > %d",
+					$new_id,
+					$old_id,
+					$pointer,
+					$end_pointer
+				)
+			);
 		}
 
 		// Update pointer.
