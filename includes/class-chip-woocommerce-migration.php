@@ -225,11 +225,9 @@ class Chip_Woocommerce_Migration {
 					<strong><?php esc_html_e( 'CHIP for WooCommerce:', 'chip-for-woocommerce' ); ?></strong>
 					<?php
 					printf(
-						/* translators: 1: percentage, 2: processed records, 3: total records */
-						esc_html__( 'Database migration is currently in progress. Progress: %1$s%% (%2$s / %3$s records). This process runs in the background.', 'chip-for-woocommerce' ),
-						esc_html( number_format_i18n( $percentage, 1 ) ),
-						esc_html( number_format_i18n( $processed_records ) ),
-						esc_html( number_format_i18n( $total_records ) )
+						/* translators: %s: percentage */
+						esc_html__( 'Database migration is currently in progress. Progress: %s%%. This process runs in the background.', 'chip-for-woocommerce' ),
+						esc_html( number_format_i18n( $percentage, 1 ) )
 					);
 					?>
 				</p>
@@ -241,18 +239,11 @@ class Chip_Woocommerce_Migration {
 		// Check if migration completion notice should be shown.
 		$completion_notice = get_option( self::MIGRATION_COMPLETION_NOTICE_OPTION, false );
 		if ( 'shown' !== $completion_notice && 'batched' === $completion_notice ) {
-			$total_records = ( (int) $order_total ) + ( (int) $subscription_total );
 			?>
 			<div class="notice notice-success is-dismissible">
 				<p>
 					<strong><?php esc_html_e( 'CHIP for WooCommerce:', 'chip-for-woocommerce' ); ?></strong>
-					<?php
-					printf(
-						/* translators: %s: total records */
-						esc_html__( 'Database migration completed successfully. %s records have been updated.', 'chip-for-woocommerce' ),
-						esc_html( number_format_i18n( $total_records ) )
-					);
-					?>
+					<?php esc_html_e( 'Database migration completed successfully.', 'chip-for-woocommerce' ); ?>
 				</p>
 			</div>
 			<?php
