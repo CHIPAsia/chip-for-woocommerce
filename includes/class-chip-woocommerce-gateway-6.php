@@ -18,6 +18,15 @@ class Chip_Woocommerce_Gateway_6 extends Chip_Woocommerce_Gateway {
 	const PREFERRED_TYPE = 'Duitnow QR';
 
 	/**
+	 * Initialize gateway ID.
+	 *
+	 * @return void
+	 */
+	protected function init_id() {
+		$this->id = 'wc_gateway_chip_6';
+	}
+
+	/**
 	 * Initialize the gateway title.
 	 *
 	 * @return void

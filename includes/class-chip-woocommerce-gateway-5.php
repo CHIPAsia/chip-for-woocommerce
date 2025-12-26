@@ -18,6 +18,15 @@ class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 	const PREFERRED_TYPE = 'Atome';
 
 	/**
+	 * Initialize gateway ID.
+	 *
+	 * @return void
+	 */
+	protected function init_id() {
+		$this->id = 'wc_gateway_chip_5';
+	}
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {

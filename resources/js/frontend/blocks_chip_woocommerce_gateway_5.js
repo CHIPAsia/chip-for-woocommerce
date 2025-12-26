@@ -3,7 +3,7 @@ import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
 
-const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_5';
+const PAYMENT_METHOD_NAME = 'wc_gateway_chip_5';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
 const defaultLabel = __("Atome", "chip-for-woocommerce");
@@ -55,7 +55,7 @@ const canMakePayment = ( { cartTotals, paymentRequirements } ) => {
   return hasRequiredFeatures;
 };
 
-const chip_woocommerce_gateway_5 = {
+const wc_gateway_chip_5 = {
   name: PAYMENT_METHOD_NAME,
   paymentMethodId: PAYMENT_METHOD_NAME,
   label: <Label />,
@@ -70,4 +70,4 @@ const chip_woocommerce_gateway_5 = {
   },
 };
 
-registerPaymentMethod(chip_woocommerce_gateway_5);
+registerPaymentMethod(wc_gateway_chip_5);

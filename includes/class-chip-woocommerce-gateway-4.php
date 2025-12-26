@@ -18,6 +18,15 @@ class Chip_Woocommerce_Gateway_4 extends Chip_Woocommerce_Gateway {
 	const PREFERRED_TYPE = 'E-Wallet';
 
 	/**
+	 * Initialize gateway ID.
+	 *
+	 * @return void
+	 */
+	protected function init_id() {
+		$this->id = 'wc_gateway_chip_4';
+	}
+
+	/**
 	 * Initialize the gateway title.
 	 *
 	 * @return void

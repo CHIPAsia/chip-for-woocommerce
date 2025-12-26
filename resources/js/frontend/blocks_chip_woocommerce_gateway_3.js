@@ -4,7 +4,7 @@ import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
 import { useState, useEffect, useCallback } from "@wordpress/element";
 
-const PAYMENT_METHOD_NAME = 'chip_woocommerce_gateway_3';
+const PAYMENT_METHOD_NAME = 'wc_gateway_chip_3';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
 // Add card form and select input styles to match WooCommerce Blocks styling.
@@ -626,7 +626,7 @@ const canMakePayment = ( { cartTotals, paymentRequirements } ) => {
   return hasRequiredFeatures;
 };
 
-const chip_woocommerce_gateway_3 = {
+const wc_gateway_chip_3 = {
   name: PAYMENT_METHOD_NAME,
   paymentMethodId: PAYMENT_METHOD_NAME,
   label: <Label />,
@@ -641,4 +641,4 @@ const chip_woocommerce_gateway_3 = {
   },
 };
 
-registerPaymentMethod(chip_woocommerce_gateway_3);
+registerPaymentMethod(wc_gateway_chip_3);

@@ -51,12 +51,8 @@ class Chip_Woocommerce {
 		include $includes_dir . 'class-chip-woocommerce-api.php';
 		include $includes_dir . 'class-chip-woocommerce-api-fpx.php';
 		include $includes_dir . 'class-chip-woocommerce-logger.php';
-		include $includes_dir . 'class-chip-woocommerce-migration.php';
 		include $includes_dir . 'class-chip-woocommerce-gateway.php';
 		include $includes_dir . 'class-chip-woocommerce-queue.php';
-
-		// Run migration if needed.
-		Chip_Woocommerce_Migration::maybe_migrate();
 
 		if ( ! defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
 			include $includes_dir . 'class-chip-woocommerce-gateway-2.php';
@@ -94,10 +90,6 @@ class Chip_Woocommerce {
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 		add_action( 'admin_notices', array( $this, 'missing_assets_notice' ) );
-
-		// Register backward compatibility callbacks for old gateway IDs.
-		// This ensures payments initiated with old plugin version still receive callbacks.
-		$this->register_legacy_callbacks();
 	}
 
 	/**
@@ -202,31 +194,6 @@ class Chip_Woocommerce {
 	}
 
 	/**
-	 * Register legacy callback handlers for backward compatibility.
-	 *
-	 * Old callback URLs used class names like WC_Gateway_Chip, which are now
-	 * renamed to Chip_Woocommerce_Gateway. This ensures payments created before
-	 * the update still receive their callbacks correctly.
-	 *
-	 * @return void
-	 */
-	private function register_legacy_callbacks() {
-		$legacy_map = Chip_Woocommerce_Migration::get_gateway_id_map();
-
-		foreach ( $legacy_map as $old_id => $new_id ) {
-			add_action(
-				'woocommerce_api_' . $old_id,
-				function () use ( $new_id ) {
-					$gateway = self::get_chip_gateway_class( $new_id );
-					if ( $gateway ) {
-						$gateway->handle_callback();
-					}
-				}
-			);
-		}
-	}
-
-	/**
 	 * Handle payment token deletion.
 	 *
 	 * @param int              $token_id Token ID.
@@ -294,7 +261,7 @@ class Chip_Woocommerce {
 		);
 
 		if ( defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
-			$url_params['section'] = 'chip_woocommerce_gateway';
+			$url_params['section'] = 'wc_gateway_chip';
 		}
 
 		$url = add_query_arg( $url_params, admin_url( 'admin.php' ) );

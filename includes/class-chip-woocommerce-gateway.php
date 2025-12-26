@@ -16,7 +16,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 
 	/**
-	 * Gateway ID (chip_woocommerce_gateway).
+	 * Gateway ID (wc_gateway_chip).
 	 *
 	 * @var string
 	 */
@@ -297,7 +297,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	protected function init_id() {
-		$this->id = strtolower( get_class( $this ) );
+		$this->id = 'wc_gateway_chip';
 	}
 
 	/**
@@ -1354,7 +1354,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				</script>
 				<?php
 			}
-			// Note: chip_woocommerce_gateway_5 requires no additional fields.
+			// Note: wc_gateway_chip_5 requires no additional fields.
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce verification handled by WooCommerce checkout.
@@ -2732,7 +2732,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'duitnow_qr' === $this->payment_method_whitelist[0] ) {
 				$url .= '?preferred=duitnow_qr';
 			}
-		} elseif ( 'chip_woocommerce_gateway_5' === $this->id ) {
+		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
 			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
