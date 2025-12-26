@@ -67,6 +67,7 @@ class Chip_Woocommerce {
 			include $includes_dir . 'class-chip-woocommerce-site-health.php';
 			include $includes_dir . 'class-chip-woocommerce-void-payment.php';
 			include $includes_dir . 'class-chip-woocommerce-capture-payment.php';
+			include $includes_dir . 'class-chip-woocommerce-payment-details.php';
 		}
 	}
 

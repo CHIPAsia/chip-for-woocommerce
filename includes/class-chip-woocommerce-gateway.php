@@ -623,201 +623,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Extract FPX data from payment transaction attempts.
-	 *
-	 * Iterates through all keys in the extra data to find FPX payload.
-	 * Blacklists user_web_browser_data as it may contain incomplete data.
-	 *
-	 * @param array $payment Payment data from CHIP.
-	 * @return array|null FPX data array or null if not found.
-	 */
-	private function extract_fpx_data( $payment ) {
-		if ( empty( $payment['transaction_data']['attempts'] ) ) {
-			return null;
-		}
-
-		$attempt = $payment['transaction_data']['attempts'][0];
-		if ( empty( $attempt['extra'] ) ) {
-			return null;
-		}
-
-		$extra = $attempt['extra'];
-
-		// Keys to skip when looking for FPX data.
-		$blacklist = array( 'user_web_browser_data' );
-
-		// Iterate through all keys to find FPX data.
-		foreach ( $extra as $key => $value ) {
-			// Skip blacklisted keys.
-			if ( in_array( $key, $blacklist, true ) ) {
-				continue;
-			}
-
-			// Check if this key contains FPX data.
-			if ( is_array( $value ) && isset( $value['fpx_debitAuthCode'] ) ) {
-				return $value;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Get FPX field value from payload.
-	 *
-	 * FPX fields can be either arrays (from webhook) or strings (from redirect).
-	 *
-	 * @param array  $fpx_data FPX data array.
-	 * @param string $field    Field name.
-	 * @return string|null Field value or null if not found.
-	 */
-	private function get_fpx_field( $fpx_data, $field ) {
-		if ( ! isset( $fpx_data[ $field ] ) ) {
-			return null;
-		}
-
-		$value = $fpx_data[ $field ];
-
-		// Handle array format (from webhook) vs string format (from redirect).
-		return is_array( $value ) ? $value[0] : $value;
-	}
-
-	/**
-	 * Add payment details as order note.
-	 *
-	 * Detects payment type (FPX or Card) and adds appropriate details.
-	 *
-	 * @param WC_Order $order   Order object.
-	 * @param array    $payment Payment data from CHIP.
-	 * @return void
-	 */
-	private function add_payment_details_order_note( $order, $payment ) {
-		$payment_method = isset( $payment['transaction_data']['payment_method'] ) ? $payment['transaction_data']['payment_method'] : '';
-
-		// Check if it's an FPX payment.
-		if ( in_array( $payment_method, array( 'fpx', 'fpx_b2b1' ), true ) ) {
-			$this->add_fpx_order_note( $order, $payment );
-			return;
-		}
-
-		// Check if it's a card payment.
-		$card_methods = array( 'visa', 'mastercard', 'maestro' );
-		if ( in_array( $payment_method, $card_methods, true ) ) {
-			$this->add_card_order_note( $order, $payment );
-			return;
-		}
-	}
-
-	/**
-	 * Add FPX transaction details as order note.
-	 *
-	 * @param WC_Order $order   Order object.
-	 * @param array    $payment Payment data from CHIP.
-	 * @return void
-	 */
-	private function add_fpx_order_note( $order, $payment ) {
-		$fpx_data = $this->extract_fpx_data( $payment );
-
-		if ( null === $fpx_data ) {
-			return;
-		}
-
-		$debit_auth_code = $this->get_fpx_field( $fpx_data, 'fpx_debitAuthCode' );
-		$fpx_txn_id      = $this->get_fpx_field( $fpx_data, 'fpx_fpxTxnId' );
-		$buyer_bank      = $this->get_fpx_field( $fpx_data, 'fpx_buyerBankBranch' );
-		$buyer_name      = $this->get_fpx_field( $fpx_data, 'fpx_buyerName' );
-
-		// Build order note with available data.
-		$note_parts = array();
-
-		if ( $debit_auth_code ) {
-			/* translators: %s: FPX Debit Auth Code */
-			$note_parts[] = sprintf( __( 'Debit Auth Code: %s', 'chip-for-woocommerce' ), $debit_auth_code );
-		}
-
-		if ( $fpx_txn_id ) {
-			/* translators: %s: FPX Transaction ID */
-			$note_parts[] = sprintf( __( 'FPX Txn ID: %s', 'chip-for-woocommerce' ), $fpx_txn_id );
-		}
-
-		if ( $buyer_bank ) {
-			/* translators: %s: Bank name */
-			$note_parts[] = sprintf( __( 'Bank: %s', 'chip-for-woocommerce' ), $buyer_bank );
-		}
-
-		if ( $buyer_name ) {
-			/* translators: %s: Buyer name from bank */
-			$note_parts[] = sprintf( __( 'Buyer: %s', 'chip-for-woocommerce' ), $buyer_name );
-		}
-
-		if ( ! empty( $note_parts ) ) {
-			$order->add_order_note( __( 'FPX Details:', 'chip-for-woocommerce' ) . ' ' . implode( ' | ', $note_parts ) );
-		}
-	}
-
-	/**
-	 * Add card transaction details as order note.
-	 *
-	 * @param WC_Order $order   Order object.
-	 * @param array    $payment Payment data from CHIP.
-	 * @return void
-	 */
-	private function add_card_order_note( $order, $payment ) {
-		if ( empty( $payment['transaction_data']['attempts'] ) ) {
-			return;
-		}
-
-		$attempt = $payment['transaction_data']['attempts'][0];
-		if ( empty( $attempt['extra'] ) ) {
-			return;
-		}
-
-		$extra = $attempt['extra'];
-
-		// Build order note with available data.
-		$note_parts = array();
-
-		if ( ! empty( $extra['cardholder_name'] ) ) {
-			/* translators: %s: Cardholder name */
-			$note_parts[] = sprintf( __( 'Cardholder: %s', 'chip-for-woocommerce' ), $extra['cardholder_name'] );
-		}
-
-		if ( ! empty( $extra['masked_pan'] ) ) {
-			/* translators: %s: Masked card number */
-			$note_parts[] = sprintf( __( 'Card: %s', 'chip-for-woocommerce' ), $extra['masked_pan'] );
-		}
-
-		if ( ! empty( $extra['expiry_month'] ) && ! empty( $extra['expiry_year'] ) ) {
-			/* translators: %1$s: Expiry month, %2$s: Expiry year */
-			$note_parts[] = sprintf( __( 'Expiry: %1$s/%2$s', 'chip-for-woocommerce' ), str_pad( $extra['expiry_month'], 2, '0', STR_PAD_LEFT ), $extra['expiry_year'] );
-		}
-
-		if ( ! empty( $extra['card_issuer'] ) ) {
-			/* translators: %s: Card issuer bank */
-			$note_parts[] = sprintf( __( 'Issuer: %s', 'chip-for-woocommerce' ), ucwords( $extra['card_issuer'] ) );
-		}
-
-		if ( ! empty( $extra['card_issuer_country'] ) ) {
-			/* translators: %s: Card issuer country */
-			$note_parts[] = sprintf( __( 'Country: %s', 'chip-for-woocommerce' ), $extra['card_issuer_country'] );
-		}
-
-		if ( ! empty( $extra['card_category'] ) ) {
-			/* translators: %s: Card category */
-			$note_parts[] = sprintf( __( 'Category: %s', 'chip-for-woocommerce' ), $extra['card_category'] );
-		}
-
-		if ( ! empty( $extra['authorization_approval_code'] ) ) {
-			/* translators: %s: Authorization approval code */
-			$note_parts[] = sprintf( __( 'Auth Code: %s', 'chip-for-woocommerce' ), $extra['authorization_approval_code'] );
-		}
-
-		if ( ! empty( $note_parts ) ) {
-			$order->add_order_note( __( 'Card Details:', 'chip-for-woocommerce' ) . ' ' . implode( ' | ', $note_parts ) );
-		}
-	}
-
-	/**
 	 * Handle callback from CHIP.
 	 *
 	 * @return void
@@ -962,10 +767,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				}
 
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
-				$this->add_payment_details_order_note( $order, $payment );
+				$this->store_payment_details( $order, $payment );
 			} elseif ( ! $order->is_paid() ) {
 				$this->payment_complete( $order, $payment );
-				$this->add_payment_details_order_note( $order, $payment );
+				$this->store_payment_details( $order, $payment );
 			}
 
 			WC()->cart->empty_cart();
@@ -1021,12 +826,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$this->log_order_info( 'payment on hold, awaiting capture', $order );
 		} elseif ( ! $order->is_paid() ) {
-			$this->add_payment_details_order_note( $order, $payment );
-
-				$order->update_status(
-					'wc-failed'
-				);
-				$this->log_order_info( 'payment not successful', $order );
+			$order->update_status( 'wc-failed' );
+			$this->log_order_info( 'payment not successful', $order );
 		}
 
 		$this->release_lock( $order_id );
