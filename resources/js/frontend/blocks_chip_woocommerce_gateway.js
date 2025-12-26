@@ -27,6 +27,94 @@ const cardFormStyles = `
   .chip-bank-select {
     margin-top: 16px;
   }
+  /* Custom bank dropdown with logos */
+  .chip-bank-dropdown {
+    position: relative;
+    width: 100%;
+  }
+  .chip-bank-dropdown__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    min-height: 48px;
+    box-sizing: border-box;
+  }
+  .chip-bank-dropdown__trigger:hover {
+    border-color: #2271b1;
+  }
+  .chip-bank-dropdown__trigger:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: -2px;
+  }
+  .chip-bank-dropdown.is-open .chip-bank-dropdown__trigger {
+    border-color: #2271b1;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .chip-bank-dropdown__selected {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .chip-bank-dropdown__logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .chip-bank-dropdown__arrow {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .chip-bank-dropdown.is-open .chip-bank-dropdown__arrow {
+    transform: rotate(180deg);
+  }
+  .chip-bank-dropdown__menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #2271b1;
+    border-top: none;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    z-index: 100;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .chip-bank-dropdown__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .chip-bank-dropdown__option:hover {
+    background: #f0f0f1;
+  }
+  .chip-bank-dropdown__option.is-selected {
+    background: #e7f3ff;
+  }
+  .chip-bank-dropdown__option.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .chip-bank-dropdown__placeholder {
+    color: #757575;
+  }
 `;
 
 // Inject styles once.
@@ -310,6 +398,109 @@ const CardForm = (props) => {
   );
 };
 
+/**
+ * Custom Bank Dropdown with logos.
+ */
+const BankDropdown = ({ banks, value, onChange, placeholder, label, id, logoBaseUrl }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
+
+  // Close dropdown when clicking outside.
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedBank = value ? banks[value] : null;
+
+  const handleSelect = (bankCode) => {
+    onChange(bankCode);
+    setIsOpen(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setIsOpen(!isOpen);
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="chip-bank-select">
+      <label className="wc-blocks-components-select__label" style={{ marginBottom: '8px', display: 'block' }}>
+        {label}
+      </label>
+      <div 
+        className={`chip-bank-dropdown ${isOpen ? 'is-open' : ''}`}
+        ref={dropdownRef}
+      >
+        <div
+          className="chip-bank-dropdown__trigger"
+          onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={handleKeyDown}
+          tabIndex="0"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-labelledby={id}
+        >
+          <div className="chip-bank-dropdown__selected">
+            {selectedBank ? (
+              <>
+                <img 
+                  src={`${logoBaseUrl}${value}.png`} 
+                  alt="" 
+                  className="chip-bank-dropdown__logo"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <span>{selectedBank}</span>
+              </>
+            ) : (
+              <span className="chip-bank-dropdown__placeholder">{placeholder}</span>
+            )}
+          </div>
+          <svg 
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg" 
+            className="chip-bank-dropdown__arrow"
+            aria-hidden="true"
+          >
+            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
+          </svg>
+        </div>
+        {isOpen && (
+          <div className="chip-bank-dropdown__menu" role="listbox">
+            {Object.keys(banks).map((bankCode) => (
+              <div
+                key={bankCode}
+                className={`chip-bank-dropdown__option ${value === bankCode ? 'is-selected' : ''}`}
+                onClick={() => handleSelect(bankCode)}
+                role="option"
+                aria-selected={value === bankCode}
+              >
+                <img 
+                  src={`${logoBaseUrl}${bankCode}.png`} 
+                  alt="" 
+                  className="chip-bank-dropdown__logo"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <span>{banks[bankCode]}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const FpxBankList = (props) => {
   const [bankId, setBankId] = useState('');
   const [banks, setBanks] = useState({});
@@ -317,9 +508,11 @@ const FpxBankList = (props) => {
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
 
+  const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+  const logoBaseUrl = gatewayConfig.logo_base_url || '';
+
   // Lazy load banks from API.
   useEffect(() => {
-    const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
     const banksApi = gatewayConfig.banks_api;
 
     if (banksApi) {
@@ -339,7 +532,7 @@ const FpxBankList = (props) => {
     }
   }, []);
 
-  const onSubmit = () => {
+  const onSubmit = useCallback(() => {
     if ('' === bankId) {
       return {
         type: emitResponse.responseTypes.ERROR,
@@ -358,52 +551,29 @@ const FpxBankList = (props) => {
         },
       },
     };
-  };
+  }, [bankId, emitResponse.responseTypes]);
 
   useEffect(() => {
     const unsubscribeProcessing = onPaymentSetup(onSubmit);
     return () => {
       unsubscribeProcessing();
     };
-  }, [onPaymentSetup, bankId]);
+  }, [onPaymentSetup, onSubmit]);
 
   if (loading) {
     return <p>{__("Loading banks...", "chip-for-woocommerce")}</p>;
   }
 
   return (
-    <div className="chip-bank-select">
-      <div className="wc-blocks-components-select">
-        <div className="wc-blocks-components-select__container">
-          <label htmlFor="chip-fpx-bank" className="wc-blocks-components-select__label">
-            {__("Internet Banking", "chip-for-woocommerce")}
-          </label>
-          <select
-            id="chip-fpx-bank"
-            className="wc-blocks-components-select__select"
-            value={bankId}
-            onChange={(e) => setBankId(e.target.value)}
-            aria-invalid="false"
-          >
-            <option value="" disabled>{__("Choose your bank", "chip-for-woocommerce")}</option>
-            {Object.keys(banks).map((key) => (
-              <option key={key} value={key}>{banks[key]}</option>
-            ))}
-          </select>
-          <svg 
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            className="wc-blocks-components-select__expand"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
-          </svg>
-        </div>
-      </div>
-    </div>
+    <BankDropdown
+      banks={banks}
+      value={bankId}
+      onChange={setBankId}
+      placeholder={__("Choose your bank", "chip-for-woocommerce")}
+      label={__("Internet Banking", "chip-for-woocommerce")}
+      id="chip-fpx-bank"
+      logoBaseUrl={logoBaseUrl}
+    />
   );
 };
 
@@ -414,9 +584,11 @@ const Fpxb2b1BankList = (props) => {
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
 
+  const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+  const logoBaseUrl = gatewayConfig.logo_base_url || '';
+
   // Lazy load banks from API.
   useEffect(() => {
-    const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
     const banksApi = gatewayConfig.banks_api;
 
     if (banksApi) {
@@ -436,7 +608,7 @@ const Fpxb2b1BankList = (props) => {
     }
   }, []);
 
-  const onSubmit = () => {
+  const onSubmit = useCallback(() => {
     if ('' === bankIdB2b) {
       return {
         type: emitResponse.responseTypes.ERROR,
@@ -455,52 +627,29 @@ const Fpxb2b1BankList = (props) => {
         },
       },
     };
-  };
+  }, [bankIdB2b, emitResponse.responseTypes]);
 
   useEffect(() => {
     const unsubscribeProcessing = onPaymentSetup(onSubmit);
     return () => {
       unsubscribeProcessing();
     };
-  }, [onPaymentSetup, bankIdB2b]);
+  }, [onPaymentSetup, onSubmit]);
 
   if (loading) {
     return <p>{__("Loading banks...", "chip-for-woocommerce")}</p>;
   }
 
   return (
-    <div className="chip-bank-select">
-      <div className="wc-blocks-components-select">
-        <div className="wc-blocks-components-select__container">
-          <label htmlFor="chip-fpx-b2b1-bank" className="wc-blocks-components-select__label">
-            {__("Corporate Internet Banking", "chip-for-woocommerce")}
-          </label>
-          <select
-            id="chip-fpx-b2b1-bank"
-            className="wc-blocks-components-select__select"
-            value={bankIdB2b}
-            onChange={(e) => setBankIdB2b(e.target.value)}
-            aria-invalid="false"
-          >
-            <option value="" disabled>{__("Choose your bank", "chip-for-woocommerce")}</option>
-            {Object.keys(banks).map((key) => (
-              <option key={key} value={key}>{banks[key]}</option>
-            ))}
-          </select>
-          <svg 
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            className="wc-blocks-components-select__expand"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
-          </svg>
-        </div>
-      </div>
-    </div>
+    <BankDropdown
+      banks={banks}
+      value={bankIdB2b}
+      onChange={setBankIdB2b}
+      placeholder={__("Choose your bank", "chip-for-woocommerce")}
+      label={__("Corporate Internet Banking", "chip-for-woocommerce")}
+      id="chip-fpx-b2b1-bank"
+      logoBaseUrl={logoBaseUrl}
+    />
   );
 };
 
