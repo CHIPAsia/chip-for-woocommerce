@@ -696,7 +696,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		// Check if it's an FPX payment.
 		if ( in_array( $payment_method, array( 'fpx', 'fpx_b2b1' ), true ) ) {
-			$this->add_payment_details_order_note( $order, $payment );
+			$this->add_fpx_order_note( $order, $payment );
 			return;
 		}
 
