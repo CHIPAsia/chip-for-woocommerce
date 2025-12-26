@@ -262,10 +262,11 @@ class Chip_Woocommerce_Migration {
 			}
 
 			// Get max meta_id for _payment_method meta key.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$max_id = (int) $wpdb->get_var(
 				"SELECT MAX(meta_id) FROM {$wpdb->postmeta} WHERE meta_key = '_payment_method'"
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 			$pointer = $max_id;
 			update_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, $pointer, false );
@@ -475,7 +476,7 @@ class Chip_Woocommerce_Migration {
 				$old_meta_key = '_' . $old_id . '_purchase';
 				$new_meta_key = '_' . $new_id . '_purchase';
 
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->query(
 					$wpdb->prepare(
 						"UPDATE {$wpdb->prefix}wc_orders_meta
@@ -489,6 +490,7 @@ class Chip_Woocommerce_Migration {
 						$end_pointer
 					)
 				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
 		}
 
@@ -568,8 +570,9 @@ class Chip_Woocommerce_Migration {
 				return;
 			}
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$max_id = (int) $wpdb->get_var( "SELECT MAX(id) FROM {$wpdb->prefix}wc_orders" );
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 			$pointer = $max_id;
 			update_option( self::ORDER_META_MIGRATION_POINTER_OPTION, $pointer, false );
@@ -592,7 +595,7 @@ class Chip_Woocommerce_Migration {
 
 		// Migrate HPOS orders.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$wpdb->prefix}wc_orders 
@@ -606,6 +609,7 @@ class Chip_Woocommerce_Migration {
 					$end_pointer
 				)
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 
 		// Update pointer.
@@ -689,8 +693,9 @@ class Chip_Woocommerce_Migration {
 				return;
 			}
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$max_id = (int) $wpdb->get_var( "SELECT MAX(id) FROM {$wpdb->prefix}wc_orders WHERE type = 'shop_subscription'" );
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 			$pointer = $max_id;
 			update_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, $pointer, false );
@@ -713,7 +718,7 @@ class Chip_Woocommerce_Migration {
 
 		// Migrate HPOS subscriptions.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$wpdb->prefix}wc_orders 
@@ -728,6 +733,7 @@ class Chip_Woocommerce_Migration {
 					$end_pointer
 				)
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 
 		// Update pointer.
