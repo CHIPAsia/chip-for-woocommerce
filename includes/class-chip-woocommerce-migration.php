@@ -352,6 +352,13 @@ class Chip_Woocommerce_Migration {
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
+		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// Check HPOS if enabled OR sync is enabled (compatibility mode).
+		$should_migrate_hpos = $hpos_enabled || $sync_enabled;
+
 		$pointer = get_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, false );
 
 		// Initialize pointer if not set.
@@ -376,9 +383,9 @@ class Chip_Woocommerce_Migration {
 			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
-			// Check HPOS orders_meta if enabled (no WHERE condition needed as user specified).
+			// Check HPOS orders_meta if enabled or sync is enabled (no WHERE condition needed as user specified).
 			$has_records_hpos = 0;
-			if ( $hpos_enabled ) {
+			if ( $should_migrate_hpos ) {
 				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
 				// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 				$has_records_hpos = (int) $wpdb->get_var(
@@ -411,9 +418,9 @@ class Chip_Woocommerce_Migration {
 			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
-			// Check HPOS orders_meta if enabled.
+			// Check HPOS orders_meta if enabled or sync is enabled.
 			$max_id_hpos = 0;
-			if ( $hpos_enabled ) {
+			if ( $should_migrate_hpos ) {
 				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
 				// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 				$max_id_hpos = (int) $wpdb->get_var(
@@ -471,7 +478,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Migrate HPOS orders_meta meta keys.
-		if ( $hpos_enabled ) {
+		if ( $should_migrate_hpos ) {
 			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 				$old_meta_key = '_' . $old_id . '_purchase';
 				$new_meta_key = '_' . $new_id . '_purchase';
@@ -538,8 +545,12 @@ class Chip_Woocommerce_Migration {
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
-		// If HPOS is not enabled, we're done (legacy migration handled separately).
-		if ( ! $hpos_enabled ) {
+		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// If HPOS is not enabled and sync is not enabled, we're done (legacy migration handled separately).
+		if ( ! $hpos_enabled && ! $sync_enabled ) {
 			return;
 		}
 
@@ -661,8 +672,12 @@ class Chip_Woocommerce_Migration {
 		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
 			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 
-		// If HPOS is not enabled, we're done (legacy migration handled separately).
-		if ( ! $hpos_enabled ) {
+		$sync_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& method_exists( 'Automattic\WooCommerce\Utilities\OrderUtil', 'is_custom_order_tables_in_sync' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::is_custom_order_tables_in_sync();
+
+		// If HPOS is not enabled and sync is not enabled, we're done (legacy migration handled separately).
+		if ( ! $hpos_enabled && ! $sync_enabled ) {
 			return;
 		}
 
