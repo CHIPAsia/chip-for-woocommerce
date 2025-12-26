@@ -53,18 +53,16 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 == Changelog ==
 
 = 2.0.0 2025-12-31 =
-* Changed - Renamed gateway classes from WC_Gateway_Chip to Chip_Woocommerce_Gateway for WordPress compliance.
+* Changed - Refactored codebase with improved class structure for WordPress coding standards compliance.
 * Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
-* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility using _deprecated_hook().
+* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility.
 * Changed - CVC input now hidden (password type) in both legacy and blocks checkout.
-* Added - Migration system for seamless upgrade from previous versions.
-* Added - Backward compatibility for legacy callback URLs.
 * Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
 * Added - REST API endpoint for lazy loading FPX banks and e-wallets.
 * Added - Direct POST card payments support for WooCommerce Blocks checkout.
 * Added - Card form with validation for WooCommerce Blocks.
 * Added - Save card option (remember_card) for both legacy and blocks checkout.
-* Added - PostgreSQL compatibility for database locking.
+* Added - Void and Capture payment functionality for pre-authorized payments.
 * Improved - WooCommerce Blocks integration with recommended patterns.
 * Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
 * Improved - Code quality with PHPCS compliance fixes.
