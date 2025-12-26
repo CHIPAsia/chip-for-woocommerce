@@ -767,10 +767,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				}
 
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
-				$this->store_payment_details( $order, $payment );
 			} elseif ( ! $order->is_paid() ) {
 				$this->payment_complete( $order, $payment );
-				$this->store_payment_details( $order, $payment );
 			}
 
 			WC()->cart->empty_cart();
