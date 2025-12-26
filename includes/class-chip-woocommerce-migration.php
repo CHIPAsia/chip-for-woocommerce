@@ -63,9 +63,22 @@ class Chip_Woocommerce_Migration {
 	const ORDER_META_KEY_MIGRATION_TOTAL_OPTION = 'chip_woocommerce_order_meta_key_migration_total';
 
 	/**
-	 * Batch size for large database migrations.
+	 * Default batch size for large database migrations.
 	 */
-	const BATCH_SIZE = 10000;
+	const DEFAULT_BATCH_SIZE = 10000;
+
+	/**
+	 * Get batch size for migrations.
+	 * Can be overridden via CHIP_WOOCOMMERCE_MIGRATION_BATCH_SIZE constant in wp-config.php.
+	 *
+	 * @return int Batch size.
+	 */
+	private static function get_batch_size() {
+		if ( defined( 'CHIP_WOOCOMMERCE_MIGRATION_BATCH_SIZE' ) && CHIP_WOOCOMMERCE_MIGRATION_BATCH_SIZE > 0 ) {
+			return (int) CHIP_WOOCOMMERCE_MIGRATION_BATCH_SIZE;
+		}
+		return self::DEFAULT_BATCH_SIZE;
+	}
 
 	/**
 	 * Flag to track if batched migrations have been initialized in this request.
@@ -285,7 +298,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Calculate end pointer (decrement by batch size).
-		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
+		$end_pointer = max( 0, $pointer - self::get_batch_size() );
 
 		// Migrate legacy post meta in batches.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
@@ -453,7 +466,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Calculate end pointer (decrement by batch size).
-		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
+		$end_pointer = max( 0, $pointer - self::get_batch_size() );
 
 		// Migrate legacy postmeta meta keys.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
@@ -602,7 +615,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Calculate end pointer (decrement by batch size).
-		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
+		$end_pointer = max( 0, $pointer - self::get_batch_size() );
 
 		// Migrate HPOS orders.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
@@ -729,7 +742,7 @@ class Chip_Woocommerce_Migration {
 		}
 
 		// Calculate end pointer (decrement by batch size).
-		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
+		$end_pointer = max( 0, $pointer - self::get_batch_size() );
 
 		// Migrate HPOS subscriptions.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
