@@ -1338,8 +1338,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							});
 						}
 
-						// Custom template for bank options with logos.
-						function formatBankOption( option ) {
+						// Custom template for bank options with logos (dropdown).
+						function formatBankResult( option ) {
 							if ( ! option.id || ! showBankLogos ) {
 								return option.text;
 							}
@@ -1355,12 +1355,18 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							return $option;
 						}
 
+						// Custom template for selected bank (input display).
+						// Note: Return text only for selection to avoid SelectWoo rendering issues.
+						function formatBankSelection( option ) {
+							return option.text || '';
+						}
+
 						$select.selectWoo({
 							placeholder: '<?php echo esc_js( $placeholder ); ?>',
 							allowClear: false,
 							width: 'resolve',
-							templateResult: formatBankOption,
-							templateSelection: formatBankOption
+							templateResult: formatBankResult,
+							templateSelection: formatBankSelection
 						});
 					});
 				</script>
