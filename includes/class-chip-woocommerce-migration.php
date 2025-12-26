@@ -43,6 +43,16 @@ class Chip_Woocommerce_Migration {
 	const SUBSCRIPTION_META_MIGRATION_TOTAL_OPTION = 'chip_woocommerce_subscription_meta_migration_total';
 
 	/**
+	 * Legacy post meta migration pointer option name.
+	 */
+	const LEGACY_POST_META_MIGRATION_POINTER_OPTION = 'chip_woocommerce_legacy_post_meta_migration_pointer';
+
+	/**
+	 * Legacy post meta migration total option name.
+	 */
+	const LEGACY_POST_META_MIGRATION_TOTAL_OPTION = 'chip_woocommerce_legacy_post_meta_migration_total';
+
+	/**
 	 * Batch size for large database migrations.
 	 */
 	const BATCH_SIZE = 10000;
@@ -81,7 +91,6 @@ class Chip_Woocommerce_Migration {
 			self::migrate_gateway_settings();
 			self::migrate_payment_tokens();
 			self::migrate_user_meta();
-			self::migrate_legacy_post_meta();
 
 			// Update version after simple migrations complete.
 			// Don't wait for batched migrations - they track their own state via pointers.
@@ -109,6 +118,7 @@ class Chip_Woocommerce_Migration {
 		// Mark as initialized to prevent multiple runs.
 		self::$batched_migrations_initialized = true;
 
+		self::migrate_legacy_post_meta();
 		self::migrate_order_meta();
 		self::migrate_subscription_meta();
 	}
@@ -182,15 +192,65 @@ class Chip_Woocommerce_Migration {
 
 	/**
 	 * Migrate legacy post meta to use new gateway IDs.
-	 * Simple UPDATE runs once (no batching needed).
+	 * Processes one batch per page load.
+	 *
+	 * @return void
+	 */
+	private static function migrate_legacy_post_meta() {
+		// Check if migration is already complete (no pointer and total exists = completed).
+		$pointer = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
+		$total   = get_option( self::LEGACY_POST_META_MIGRATION_TOTAL_OPTION, false );
+
+		// If total exists but pointer doesn't, migration was already completed.
+		if ( false === $pointer && false !== $total ) {
+			return;
+		}
+
+		// Process one batch.
+		self::migrate_legacy_post_meta_batched();
+	}
+
+	/**
+	 * Batched legacy post meta migration.
+	 * Processes one batch per page load using meta_id pointer.
 	 * The _payment_method meta key is WooCommerce-specific, safe to update all.
 	 * Runs regardless of HPOS or sync status.
 	 *
 	 * @return void
 	 */
-	private static function migrate_legacy_post_meta() {
+	private static function migrate_legacy_post_meta_batched() {
 		global $wpdb;
 
+		$pointer = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
+
+		// Initialize pointer if not set.
+		if ( false === $pointer ) {
+			// Get max meta_id for _payment_method meta key.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$max_id = (int) $wpdb->get_var(
+				"SELECT MAX(meta_id) FROM {$wpdb->postmeta} WHERE meta_key = '_payment_method'"
+			);
+
+			$pointer = $max_id;
+			update_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, $pointer, false );
+			wp_cache_delete( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, 'options' );
+
+			// Store total for progress tracking (only once at the start).
+			update_option( self::LEGACY_POST_META_MIGRATION_TOTAL_OPTION, $max_id, false );
+			wp_cache_delete( self::LEGACY_POST_META_MIGRATION_TOTAL_OPTION, 'options' );
+		}
+
+		// If pointer is 0 or less, migration is complete.
+		if ( $pointer <= 0 ) {
+			delete_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION );
+			wp_cache_delete( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, 'options' );
+			return;
+		}
+
+		// Calculate end pointer (decrement by batch size).
+		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
+
+		// Migrate legacy post meta in batches.
 		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Migration requires direct meta queries.
 			$wpdb->query(
@@ -198,13 +258,28 @@ class Chip_Woocommerce_Migration {
 					"UPDATE {$wpdb->postmeta}
 					SET meta_value = %s
 					WHERE meta_key = '_payment_method'
-					AND meta_value = %s",
+					AND meta_value = %s
+					AND meta_id <= %d
+					AND meta_id > %d",
 					$new_id,
-					$old_id
+					$old_id,
+					$pointer,
+					$end_pointer
 				)
 			);
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key,WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 		}
+
+		// Update pointer.
+		update_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, $end_pointer, false );
+		wp_cache_delete( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, 'options' );
+
+		// Check if this batch completed the migration.
+		if ( $end_pointer <= 0 ) {
+			delete_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION );
+			wp_cache_delete( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, 'options' );
+		}
+		// Next batch will be processed on the next page load.
 	}
 
 	/**

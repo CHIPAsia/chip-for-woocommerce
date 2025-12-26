@@ -23,6 +23,8 @@ delete_option( 'chip_woocommerce_order_meta_migration_pointer' );
 delete_option( 'chip_woocommerce_subscription_meta_migration_pointer' );
 delete_option( 'chip_woocommerce_order_meta_migration_total' );
 delete_option( 'chip_woocommerce_subscription_meta_migration_total' );
+delete_option( 'chip_woocommerce_legacy_post_meta_migration_pointer' );
+delete_option( 'chip_woocommerce_legacy_post_meta_migration_total' );
 
 // Gateway settings (old IDs).
 delete_option( 'woocommerce_wc_gateway_chip_settings' );
