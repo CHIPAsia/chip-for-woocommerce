@@ -53,6 +53,16 @@ class Chip_Woocommerce_Migration {
 	const LEGACY_POST_META_MIGRATION_TOTAL_OPTION = 'chip_woocommerce_legacy_post_meta_migration_total';
 
 	/**
+	 * Order meta key migration pointer option name.
+	 */
+	const ORDER_META_KEY_MIGRATION_POINTER_OPTION = 'chip_woocommerce_order_meta_key_migration_pointer';
+
+	/**
+	 * Order meta key migration total option name.
+	 */
+	const ORDER_META_KEY_MIGRATION_TOTAL_OPTION = 'chip_woocommerce_order_meta_key_migration_total';
+
+	/**
 	 * Batch size for large database migrations.
 	 */
 	const BATCH_SIZE = 10000;
@@ -122,6 +132,7 @@ class Chip_Woocommerce_Migration {
 		self::$batched_migrations_initialized = true;
 
 		self::migrate_legacy_post_meta();
+		self::migrate_order_meta_keys();
 		self::migrate_order_meta();
 		self::migrate_subscription_meta();
 	}
@@ -281,6 +292,152 @@ class Chip_Woocommerce_Migration {
 		if ( $end_pointer <= 0 ) {
 			delete_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION );
 			wp_cache_delete( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, 'options' );
+		}
+		// Next batch will be processed on the next page load.
+	}
+
+	/**
+	 * Migrate order meta keys to use new gateway IDs.
+	 * Processes one batch per page load.
+	 *
+	 * @return void
+	 */
+	private static function migrate_order_meta_keys() {
+		// Check if migration is already complete (no pointer and total exists = completed).
+		$pointer = get_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, false );
+		$total   = get_option( self::ORDER_META_KEY_MIGRATION_TOTAL_OPTION, false );
+
+		// If total exists but pointer doesn't, migration was already completed.
+		if ( false === $pointer && false !== $total ) {
+			return;
+		}
+
+		// Process one batch.
+		self::migrate_order_meta_keys_batched();
+	}
+
+	/**
+	 * Batched order meta key migration.
+	 * Processes one batch per page load using meta_id pointer.
+	 * Migrates meta keys like _wc_gateway_chip_purchase to _chip_woocommerce_gateway_purchase.
+	 *
+	 * @return void
+	 */
+	private static function migrate_order_meta_keys_batched() {
+		global $wpdb;
+
+		$hpos_enabled = class_exists( 'Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+
+		$pointer = get_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, false );
+
+		// Initialize pointer if not set.
+		if ( false === $pointer ) {
+			// Get max meta_id for purchase meta keys with old gateway IDs.
+			$old_meta_keys = array();
+			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+				$old_meta_keys[] = '_' . $old_id . '_purchase';
+			}
+			$placeholders = implode( ',', array_fill( 0, count( $old_meta_keys ), '%s' ) );
+
+			// Check legacy postmeta first.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+			$max_id_legacy = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT MAX(meta_id) FROM {$wpdb->postmeta} WHERE meta_key IN ($placeholders)",
+					...$old_meta_keys
+				)
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+
+			// Check HPOS orders_meta if enabled.
+			$max_id_hpos = 0;
+			if ( $hpos_enabled ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+				$max_id_hpos = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT MAX(id) FROM {$wpdb->prefix}wc_orders_meta WHERE meta_key IN ($placeholders)",
+						...$old_meta_keys
+					)
+				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			}
+
+			// Use the maximum of both.
+			$max_id = max( $max_id_legacy, $max_id_hpos );
+
+			$pointer = $max_id;
+			update_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, $pointer, false );
+			wp_cache_delete( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, 'options' );
+
+			// Store total for progress tracking (only once at the start).
+			update_option( self::ORDER_META_KEY_MIGRATION_TOTAL_OPTION, $max_id, false );
+			wp_cache_delete( self::ORDER_META_KEY_MIGRATION_TOTAL_OPTION, 'options' );
+		}
+
+		// If pointer is 0 or less, migration is complete.
+		if ( $pointer <= 0 ) {
+			delete_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION );
+			wp_cache_delete( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, 'options' );
+			return;
+		}
+
+		// Calculate end pointer (decrement by batch size).
+		$end_pointer = max( 0, $pointer - self::BATCH_SIZE );
+
+		// Migrate legacy postmeta meta keys.
+		foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+			$old_meta_key = '_' . $old_id . '_purchase';
+			$new_meta_key = '_' . $new_id . '_purchase';
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Migration requires direct meta queries.
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$wpdb->postmeta}
+					SET meta_key = %s
+					WHERE meta_key = %s
+					AND meta_id <= %d
+					AND meta_id > %d",
+					$new_meta_key,
+					$old_meta_key,
+					$pointer,
+					$end_pointer
+				)
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		}
+
+		// Migrate HPOS orders_meta meta keys.
+		if ( $hpos_enabled ) {
+			foreach ( self::$gateway_id_map as $old_id => $new_id ) {
+				$old_meta_key = '_' . $old_id . '_purchase';
+				$new_meta_key = '_' . $new_id . '_purchase';
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$wpdb->prefix}wc_orders_meta
+						SET meta_key = %s
+						WHERE meta_key = %s
+						AND id <= %d
+						AND id > %d",
+						$new_meta_key,
+						$old_meta_key,
+						$pointer,
+						$end_pointer
+					)
+				);
+			}
+		}
+
+		// Update pointer.
+		update_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, $end_pointer, false );
+		wp_cache_delete( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, 'options' );
+
+		// Check if this batch completed the migration.
+		if ( $end_pointer <= 0 ) {
+			delete_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION );
+			wp_cache_delete( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, 'options' );
 		}
 		// Next batch will be processed on the next page load.
 	}
@@ -486,12 +643,13 @@ class Chip_Woocommerce_Migration {
 	 */
 	public static function admin_notices() {
 		// Check if any migration is active by checking for existing pointers.
-		$legacy_pointer       = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
-		$order_pointer        = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
-		$subscription_pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+		$legacy_pointer         = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
+		$order_meta_key_pointer = get_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, false );
+		$order_pointer          = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$subscription_pointer    = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
 
 		// Only show notice if at least one migration is active.
-		if ( false === $legacy_pointer && false === $order_pointer && false === $subscription_pointer ) {
+		if ( false === $legacy_pointer && false === $order_meta_key_pointer && false === $order_pointer && false === $subscription_pointer ) {
 			return;
 		}
 
