@@ -101,6 +101,9 @@ class Chip_Woocommerce_Migration {
 		// Migration progresses one batch per page load.
 		add_action( 'admin_init', array( __CLASS__, 'init_batched_migrations' ), 20 );
 		add_action( 'wp', array( __CLASS__, 'init_batched_migrations' ), 20 );
+
+		// Show admin notices for active migrations.
+		add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
 	}
 
 	/**
@@ -474,6 +477,30 @@ class Chip_Woocommerce_Migration {
 			wp_cache_delete( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, 'options' );
 		}
 		// Next batch will be processed on the next page load.
+	}
+
+	/**
+	 * Display admin notices for active migrations.
+	 *
+	 * @return void
+	 */
+	public static function admin_notices() {
+		// Check if any migration is active by checking for existing pointers.
+		$legacy_pointer = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
+		$order_pointer  = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$subscription_pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+
+		// Only show notice if at least one migration is active.
+		if ( false === $legacy_pointer && false === $order_pointer && false === $subscription_pointer ) {
+			return;
+		}
+
+		?>
+		<div class="notice notice-info is-dismissible">
+			<p><strong><?php esc_html_e( 'CHIP for WooCommerce: Migration in Progress', 'chip-for-woocommerce' ); ?></strong></p>
+			<p><?php esc_html_e( 'The plugin is migrating payment gateway data.', 'chip-for-woocommerce' ); ?></p>
+		</div>
+		<?php
 	}
 
 	/**
