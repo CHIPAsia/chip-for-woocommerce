@@ -127,6 +127,8 @@ class Chip_Woocommerce_Migration {
 
 		// Show admin notices for active migrations.
 		add_action( 'admin_notices', array( __CLASS__, 'admin_notices' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_scripts' ) );
+		add_action( 'wp_ajax_chip_woocommerce_dismiss_migration_notice', array( __CLASS__, 'dismiss_migration_notice' ) );
 	}
 
 	/**
@@ -777,6 +779,86 @@ class Chip_Woocommerce_Migration {
 	}
 
 	/**
+	 * Enqueue admin scripts for dismissible notice.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_admin_scripts() {
+		// Only enqueue on admin pages.
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		// Check if notice should be shown.
+		$legacy_pointer         = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
+		$order_meta_key_pointer = get_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, false );
+		$order_pointer          = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$subscription_pointer   = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+
+		// Only show notice if at least one migration is active.
+		if ( false === $legacy_pointer && false === $order_meta_key_pointer && false === $order_pointer && false === $subscription_pointer ) {
+			return;
+		}
+
+		// Check if user has dismissed the notice.
+		$user_id = get_current_user_id();
+		if ( $user_id && get_user_meta( $user_id, 'chip_woocommerce_migration_notice_dismissed', true ) ) {
+			return;
+		}
+
+		// Enqueue jQuery if not already enqueued.
+		wp_enqueue_script( 'jquery' );
+
+		// Add inline script for dismissible notice.
+		wp_add_inline_script(
+			'jquery',
+			"
+			jQuery( document ).ready( function( $ ) {
+				$( '.chip-woocommerce-migration-notice' ).on( 'click', '.notice-dismiss', function() {
+					$.ajax( {
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'chip_woocommerce_dismiss_migration_notice',
+							nonce: '" . wp_create_nonce( 'chip_woocommerce_dismiss_migration_notice' ) . "'
+						}
+					} );
+				} );
+			} );
+			"
+		);
+	}
+
+	/**
+	 * Handle AJAX request to dismiss migration notice.
+	 *
+	 * @return void
+	 */
+	public static function dismiss_migration_notice() {
+		// Verify nonce.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'chip_woocommerce_dismiss_migration_notice' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'chip-for-woocommerce' ) ) );
+			return;
+		}
+
+		// Check user permissions.
+		// phpcs:ignore WordPress.WP.Capabilities.Unknown -- manage_woocommerce is a valid WooCommerce capability.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'chip-for-woocommerce' ) ) );
+			return;
+		}
+
+		// Save dismissal in user meta.
+		$user_id = get_current_user_id();
+		if ( $user_id ) {
+			update_user_meta( $user_id, 'chip_woocommerce_migration_notice_dismissed', true );
+			wp_send_json_success();
+		} else {
+			wp_send_json_error( array( 'message' => __( 'User not found.', 'chip-for-woocommerce' ) ) );
+		}
+	}
+
+	/**
 	 * Display admin notices for active migrations.
 	 *
 	 * @return void
@@ -793,8 +875,14 @@ class Chip_Woocommerce_Migration {
 			return;
 		}
 
+		// Check if user has dismissed the notice.
+		$user_id = get_current_user_id();
+		if ( $user_id && get_user_meta( $user_id, 'chip_woocommerce_migration_notice_dismissed', true ) ) {
+			return;
+		}
+
 		?>
-		<div class="notice notice-info is-dismissible">
+		<div class="notice notice-info is-dismissible chip-woocommerce-migration-notice">
 			<p><strong><?php esc_html_e( 'CHIP for WooCommerce: Migration in Progress', 'chip-for-woocommerce' ); ?></strong></p>
 			<p><?php esc_html_e( 'The plugin is migrating payment gateway data.', 'chip-for-woocommerce' ); ?></p>
 		</div>

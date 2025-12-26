@@ -43,3 +43,12 @@ delete_option( 'woocommerce_chip_woocommerce_gateway_3_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_4_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_5_settings' );
 delete_option( 'woocommerce_chip_woocommerce_gateway_6_settings' );
+
+// Clean up user meta for dismissed migration notice.
+global $wpdb;
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->delete(
+	$wpdb->usermeta,
+	array( 'meta_key' => 'chip_woocommerce_migration_notice_dismissed' ),
+	array( '%s' )
+);
