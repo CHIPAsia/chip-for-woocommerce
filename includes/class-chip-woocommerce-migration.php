@@ -244,12 +244,14 @@ class Chip_Woocommerce_Migration {
 			$old_ids              = array_keys( self::$gateway_id_map );
 
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+			// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 			$has_records = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT 1 FROM {$wpdb->postmeta} WHERE meta_key = '_payment_method' AND meta_value IN ($old_ids_placeholders) LIMIT 1",
 					...$old_ids
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 			// If no records found, mark migration as complete and skip.
@@ -363,24 +365,28 @@ class Chip_Woocommerce_Migration {
 			// Check if there's at least one record to migrate.
 			// For legacy postmeta, check for purchase meta keys directly.
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+			// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 			$has_records_legacy = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT 1 FROM {$wpdb->postmeta} WHERE meta_key IN ($placeholders) LIMIT 1",
 					...$old_meta_keys
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 			// Check HPOS orders_meta if enabled (no WHERE condition needed as user specified).
 			$has_records_hpos = 0;
 			if ( $hpos_enabled ) {
 				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+				// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 				$has_records_hpos = (int) $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT 1 FROM {$wpdb->prefix}wc_orders_meta WHERE meta_key IN ($placeholders) LIMIT 1",
 						...$old_meta_keys
 					)
 				);
+				// phpcs:enable WordPress.DB.PreparedSQL
 				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			}
 
@@ -394,24 +400,28 @@ class Chip_Woocommerce_Migration {
 			// Get max meta_id for purchase meta keys with old gateway IDs.
 			// Check legacy postmeta first.
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+			// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 			$max_id_legacy = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT MAX(meta_id) FROM {$wpdb->postmeta} WHERE meta_key IN ($placeholders)",
 					...$old_meta_keys
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 			// Check HPOS orders_meta if enabled.
 			$max_id_hpos = 0;
 			if ( $hpos_enabled ) {
 				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+				// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 				$max_id_hpos = (int) $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT MAX(id) FROM {$wpdb->prefix}wc_orders_meta WHERE meta_key IN ($placeholders)",
 						...$old_meta_keys
 					)
 				);
+				// phpcs:enable WordPress.DB.PreparedSQL
 				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			}
 
@@ -541,12 +551,14 @@ class Chip_Woocommerce_Migration {
 			$old_ids              = array_keys( self::$gateway_id_map );
 
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+			// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 			$has_records = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT 1 FROM {$wpdb->prefix}wc_orders WHERE payment_method IN ($old_ids_placeholders) LIMIT 1",
 					...$old_ids
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 			// If no records found, mark migration as complete and skip.
@@ -660,12 +672,14 @@ class Chip_Woocommerce_Migration {
 			$old_ids              = array_keys( self::$gateway_id_map );
 
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are properly prepared.
+			// phpcs:disable WordPress.DB.PreparedSQL -- Placeholders are dynamically built and properly prepared via $wpdb->prepare().
 			$has_records = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT 1 FROM {$wpdb->prefix}wc_orders WHERE type = 'shop_subscription' AND payment_method IN ($old_ids_placeholders) LIMIT 1",
 					...$old_ids
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL
 			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 			// If no records found, mark migration as complete and skip.
@@ -738,7 +752,7 @@ class Chip_Woocommerce_Migration {
 		$legacy_pointer         = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
 		$order_meta_key_pointer = get_option( self::ORDER_META_KEY_MIGRATION_POINTER_OPTION, false );
 		$order_pointer          = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
-		$subscription_pointer    = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
+		$subscription_pointer   = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
 
 		// Only show notice if at least one migration is active.
 		if ( false === $legacy_pointer && false === $order_meta_key_pointer && false === $order_pointer && false === $subscription_pointer ) {
