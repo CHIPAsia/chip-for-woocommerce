@@ -1307,13 +1307,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			if ( '' !== $select_field_id ) {
 				$placeholder       = '';
 				$unavailable_banks = array();
+				$show_bank_logos   = false;
+				$bank_logo_base    = '';
 
 				if ( 'chip_fpx_bank' === $select_field_id ) {
 					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
 					$unavailable_banks = $this->get_unavailable_fpx_banks();
+					$show_bank_logos   = true;
+					$bank_logo_base    = WC_CHIP_URL . 'assets/fpx_bank/';
 				} elseif ( 'chip_fpx_b2b1_bank' === $select_field_id ) {
 					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
 					$unavailable_banks = $this->get_unavailable_fpx_b2b1_banks();
+					$show_bank_logos   = true;
+					$bank_logo_base    = WC_CHIP_URL . 'assets/fpx_bank/';
 				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
 					$placeholder = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
 				}
@@ -1322,6 +1328,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					jQuery( function( $ ) {
 						var $select = $( '#<?php echo esc_js( $select_field_id ); ?>' );
 						var unavailableBanks = <?php echo wp_json_encode( $unavailable_banks ); ?>;
+						var showBankLogos = <?php echo $show_bank_logos ? 'true' : 'false'; ?>;
+						var bankLogoBase = '<?php echo esc_js( $bank_logo_base ); ?>';
 
 						// Disable unavailable bank options.
 						if ( unavailableBanks && unavailableBanks.length > 0 ) {
@@ -1330,13 +1338,53 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							});
 						}
 
+						// Custom template for bank options with logos.
+						function formatBankOption( option ) {
+							if ( ! option.id || ! showBankLogos ) {
+								return option.text;
+							}
+
+							var logoUrl = bankLogoBase + option.id + '.png';
+							var $option = $(
+								'<span class="chip-bank-option">' +
+									'<img src="' + logoUrl + '" class="chip-bank-logo" onerror="this.style.display=\'none\'" />' +
+									'<span class="chip-bank-name">' + option.text + '</span>' +
+								'</span>'
+							);
+
+							return $option;
+						}
+
 						$select.selectWoo({
 							placeholder: '<?php echo esc_js( $placeholder ); ?>',
 							allowClear: false,
-							width: 'resolve'
+							width: 'resolve',
+							templateResult: formatBankOption,
+							templateSelection: formatBankOption
 						});
 					});
 				</script>
+				<style>
+					.chip-bank-option {
+						display: flex;
+						align-items: center;
+						gap: 10px;
+					}
+					.chip-bank-logo {
+						width: 24px;
+						height: 24px;
+						object-fit: contain;
+						flex-shrink: 0;
+					}
+					.chip-bank-name {
+						flex: 1;
+					}
+					.select2-results__option .chip-bank-option,
+					.select2-selection__rendered .chip-bank-option {
+						display: flex;
+						align-items: center;
+					}
+				</style>
 				<?php
 			}
 			// Note: wc_gateway_chip_5 requires no additional fields.
