@@ -18,4 +18,11 @@ class Chip_Woocommerce_Gateway_4_Blocks_Support extends Chip_Woocommerce_Gateway
 	 * @var string
 	 */
 	protected $name = 'wc_gateway_chip_4';
+
+	/**
+	 * Script name for assets.
+	 *
+	 * @var string
+	 */
+	protected $script_name = 'chip_woocommerce_gateway_4';
 }

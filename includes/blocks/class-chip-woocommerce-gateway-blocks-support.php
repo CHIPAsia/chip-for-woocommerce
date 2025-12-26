@@ -29,6 +29,13 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 	protected $name = 'wc_gateway_chip';
 
 	/**
+	 * Script name for assets.
+	 *
+	 * @var string
+	 */
+	protected $script_name = 'chip_woocommerce_gateway';
+
+	/**
 	 * Initialize the payment method.
 	 *
 	 * @return void
@@ -59,8 +66,8 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			return array();
 		}
 
-		$script_path       = 'assets/js/frontend/blocks_' . $this->name . '.js';
-		$script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_' . $this->name . '.asset.php';
+		$script_path       = 'assets/js/frontend/blocks_' . $this->script_name . '.js';
+		$script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_' . $this->script_name . '.asset.php';
 		$script_asset      = file_exists( $script_asset_path )
 			? require $script_asset_path
 			: array(
