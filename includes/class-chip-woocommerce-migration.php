@@ -486,8 +486,8 @@ class Chip_Woocommerce_Migration {
 	 */
 	public static function admin_notices() {
 		// Check if any migration is active by checking for existing pointers.
-		$legacy_pointer = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
-		$order_pointer  = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
+		$legacy_pointer       = get_option( self::LEGACY_POST_META_MIGRATION_POINTER_OPTION, false );
+		$order_pointer        = get_option( self::ORDER_META_MIGRATION_POINTER_OPTION, false );
 		$subscription_pointer = get_option( self::SUBSCRIPTION_META_MIGRATION_POINTER_OPTION, false );
 
 		// Only show notice if at least one migration is active.
