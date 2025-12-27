@@ -1433,8 +1433,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						gap: 10px;
 					}
 					.chip-bank-logo {
-						width: 24px;
-						height: 24px;
+						width: 32px;
+						height: 32px;
 						object-fit: contain;
 						flex-shrink: 0;
 					}
@@ -1447,29 +1447,52 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						align-items: center;
 					}
 					/* Selected bank icon container */
-					.woocommerce-input-wrapper {
+					#chip_fpx_bank_field .woocommerce-input-wrapper,
+					#chip_fpx_b2b1_bank_field .woocommerce-input-wrapper,
+					#chip_razer_ewallet_field .woocommerce-input-wrapper {
 						position: relative;
+						display: flex;
+						align-items: center;
 					}
 					.chip-selected-bank-icon {
 						position: absolute;
 						left: 12px;
 						top: 50%;
 						transform: translateY(-50%);
-						z-index: 1;
+						z-index: 10;
 						pointer-events: none;
 					}
 					.chip-selected-bank-icon img {
-						width: 24px;
-						height: 24px;
+						width: 32px;
+						height: 32px;
 						object-fit: contain;
 						display: block;
 					}
-					/* Add padding to select to make room for the icon */
-					.woocommerce-input-wrapper .select2-selection--single {
-						padding-left: 44px !important;
+					/* Make select wider and add padding for the icon */
+					#chip_fpx_bank_field .select2-container,
+					#chip_fpx_b2b1_bank_field .select2-container,
+					#chip_razer_ewallet_field .select2-container {
+						min-width: 100% !important;
+						width: 100% !important;
 					}
-					.woocommerce-input-wrapper .select2-selection__rendered {
+					#chip_fpx_bank_field .select2-selection--single,
+					#chip_fpx_b2b1_bank_field .select2-selection--single,
+					#chip_razer_ewallet_field .select2-selection--single {
+						padding-left: 52px !important;
+						min-height: 48px !important;
+						display: flex !important;
+						align-items: center !important;
+					}
+					#chip_fpx_bank_field .select2-selection__rendered,
+					#chip_fpx_b2b1_bank_field .select2-selection__rendered,
+					#chip_razer_ewallet_field .select2-selection__rendered {
 						padding-left: 0 !important;
+						line-height: 1.4 !important;
+					}
+					/* Dropdown options styling */
+					.select2-results__option .chip-bank-logo {
+						width: 32px;
+						height: 32px;
 					}
 				</style>
 				<?php
@@ -3256,7 +3279,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				<label for="' . esc_attr( $this->id ) . '-card-number" class="required_field">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper chip-card-number-wrapper">
 					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-number" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
-					<img class="chip-card-brand-icon" src="" alt="" style="display: none;" />
+					<img class="chip-card-brand-icon chip-hidden" src="" alt="" />
 				</span>
 			</p>',
 			'card-expiry-field' => '<p class="form-row form-row-first validate-required" id="' . esc_attr( $this->id ) . '-card-expiry_field">

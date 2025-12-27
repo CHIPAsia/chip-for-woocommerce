@@ -28,6 +28,10 @@ jQuery(($) => {
         z-index: 10 !important;
         margin: 0 !important;
         padding: 0 !important;
+        display: block !important;
+      }
+      .chip-card-number-wrapper .chip-card-brand-icon.chip-hidden {
+        display: none !important;
       }
     `;
     const styleSheet = document.createElement('style');
@@ -55,9 +59,9 @@ jQuery(($) => {
     if (cardBrand && gateway_option.card_logos_url) {
       $icon.attr('src', gateway_option.card_logos_url + cardBrand + '.svg');
       $icon.attr('alt', cardBrand);
-      $icon.show();
+      $icon.removeClass('chip-hidden');
     } else {
-      $icon.hide();
+      $icon.addClass('chip-hidden');
     }
   };
 
