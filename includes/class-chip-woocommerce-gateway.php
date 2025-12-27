@@ -1395,10 +1395,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							return $option;
 						}
 
-						// Custom template for selected bank (input display).
-						// Note: Return text only for selection to avoid SelectWoo rendering issues.
+						// Custom template for selected bank (input display) with logo.
 						function formatBankSelection( option ) {
-							return option.text || '';
+							if ( ! option.id || ! showBankLogos ) {
+								return option.text || '';
+							}
+
+							var logoUrl = bankLogoBase + option.id + '.png';
+							var $option = $(
+								'<span class="chip-bank-option chip-bank-selection">' +
+									'<img src="' + logoUrl + '" class="chip-bank-logo" onerror="this.style.display=\'none\'" />' +
+									'<span class="chip-bank-name">' + option.text + '</span>' +
+								'</span>'
+							);
+
+							return $option;
 						}
 
 						$select.selectWoo({
@@ -1406,7 +1417,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							allowClear: false,
 							width: 'resolve',
 							templateResult: formatBankResult,
-							templateSelection: formatBankSelection
+							templateSelection: formatBankSelection,
+							escapeMarkup: function( markup ) { return markup; }
 						});
 					});
 				</script>
@@ -1429,6 +1441,18 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					.select2-selection__rendered .chip-bank-option {
 						display: flex;
 						align-items: center;
+					}
+					/* Ensure selection renders the logo properly */
+					.select2-selection__rendered .chip-bank-selection {
+						display: inline-flex;
+						align-items: center;
+						gap: 8px;
+						line-height: 1;
+					}
+					.select2-selection__rendered .chip-bank-selection .chip-bank-logo {
+						width: 24px;
+						height: 24px;
+						vertical-align: middle;
 					}
 				</style>
 				<?php
