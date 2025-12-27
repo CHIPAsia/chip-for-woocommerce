@@ -934,10 +934,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			},
 		);
 
+		// Check if API credentials are valid.
+		$current_public_key = $this->get_option( 'public_key' );
+		$is_api_valid       = $this->is_valid_public_key( $current_public_key );
+
+		$secret_key_description = __( 'Secret Key can be obtained from CHIP Collect Dashboard >> Developers >> Keys.', 'chip-for-woocommerce' );
+		if ( $is_api_valid ) {
+			$secret_key_description .= '<br><span style="color: #46b450; font-weight: bold;">&#10004; ' . esc_html__( 'API credentials verified', 'chip-for-woocommerce' ) . '</span>';
+		} elseif ( ! empty( $this->get_option( 'secret_key' ) ) && ! empty( $this->get_option( 'brand_id' ) ) ) {
+			$secret_key_description .= '<br><span style="color: #dc3232; font-weight: bold;">&#10006; ' . esc_html__( 'API credentials invalid - please check your Secret Key', 'chip-for-woocommerce' ) . '</span>';
+		}
+
 		$this->form_fields['secret_key'] = array(
 			'title'             => __( 'Secret Key', 'chip-for-woocommerce' ),
 			'type'              => 'text',
-			'description'       => __( 'Secret Key can be obtained from CHIP Collect Dashboard >> Developers >> Keys.', 'chip-for-woocommerce' ),
+			'description'       => $secret_key_description,
 			'sanitize_callback' => function ( $value ) {
 				$value = trim( $value );
 				$value = str_replace( ' ', '', $value );
