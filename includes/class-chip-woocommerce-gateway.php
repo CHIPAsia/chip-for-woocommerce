@@ -1977,9 +1977,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->update_option( 'public_key', $public_key );
 		$this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
 
-		// Validate Brand ID by calling payment_methods API.
-		$payment_methods_response = $chip->payment_methods( 'MYR', 'en', 200 );
-		$brand_id_valid           = is_array( $payment_methods_response ) && isset( $payment_methods_response['available_payment_methods'] );
+		// Validate Brand ID based on payment_recurring_methods response.
+		$brand_id_valid = isset( $get_available_recurring_payment_method['available_payment_methods'] );
 		$this->update_option( 'brand_id_valid', $brand_id_valid ? 'yes' : 'no' );
 
 		return true;
