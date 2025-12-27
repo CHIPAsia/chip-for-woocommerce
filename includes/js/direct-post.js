@@ -65,35 +65,54 @@ jQuery(($) => {
     }
   };
 
-  // Listen for card number input changes
-  $('body').on('input', 'input[id$="-card-number"]', function() {
-    updateCardBrandIcon($(this));
+  // Card number formatting - format as 1234 5678 9012 3456
+  $('body').on('input', 'input[id$="-card-number"]', function(e) {
+    var $target = $(this);
+    var value = $target.val();
+    
+    // Remove all non-digits
+    var cleaned = value.replace(/\D/g, '');
+    
+    // Limit to 16 digits
+    if (cleaned.length > 16) {
+      cleaned = cleaned.substring(0, 16);
+    }
+    
+    // Format with spaces every 4 digits
+    var formatted = cleaned.replace(/(\d{4})(?=\d)/g, '$1 ');
+    
+    // Only update if different to avoid cursor issues
+    if ($target.val() !== formatted) {
+      $target.val(formatted);
+    }
+    
+    // Update card brand icon
+    updateCardBrandIcon($target);
   });
 
   // Cardholder name validation - only allow [a-zA-Z \'\.\-]
-  $('body').on('keypress', 'input.wc-credit-card-form-card-name', function(e) {
-    var $target, card, digit, length, re, upperLength, value;
-    digit = String.fromCharCode(e.which);
+  $('body').on('keypress', 'input[id$="-card-name"]', function(e) {
+    var digit = String.fromCharCode(e.which);
     var regex = new RegExp("[a-zA-Z \'\.\-]+$");
     if (!regex.test(digit)) {
       e.preventDefault();
     }
-	});
+  });
 
-  // Expiry field formatting - auto-format as MM/YY
-  $('body').on('input', 'input.wc-credit-card-form-card-expiry', function(e) {
+  // Expiry field formatting - auto-format as MM / YY
+  $('body').on('input', 'input[id$="-card-expiry"]', function(e) {
     var $target = $(this);
     var value = $target.val();
     
-    // Remove all non-digits and slashes
-    var cleaned = value.replace(/[^\d]/g, '');
+    // Remove all non-digits
+    var cleaned = value.replace(/\D/g, '');
     
     // Limit to 4 digits (MMYY)
     if (cleaned.length > 4) {
       cleaned = cleaned.substring(0, 4);
     }
     
-    // Format as MM/YY
+    // Format as MM / YY
     var formatted = '';
     if (cleaned.length >= 2) {
       formatted = cleaned.substring(0, 2) + ' / ' + cleaned.substring(2);
@@ -108,7 +127,7 @@ jQuery(($) => {
   });
 
   // Prevent non-numeric input on expiry field
-  $('body').on('keypress', 'input.wc-credit-card-form-card-expiry', function(e) {
+  $('body').on('keypress', 'input[id$="-card-expiry"]', function(e) {
     var charCode = e.which ? e.which : e.keyCode;
     // Allow: backspace, delete, tab, escape, enter, and numbers
     if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) {
@@ -123,7 +142,7 @@ jQuery(($) => {
   });
 
   // CVC field - only allow numeric input
-  $('body').on('keypress', 'input.wc-credit-card-form-card-cvc', function(e) {
+  $('body').on('keypress', 'input[id$="-card-cvc"]', function(e) {
     var charCode = e.which ? e.which : e.keyCode;
     // Allow: backspace, delete, tab, escape, enter, and numbers
     if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) {
@@ -138,10 +157,10 @@ jQuery(($) => {
   });
 
   // CVC field - remove non-numeric characters on input
-  $('body').on('input', 'input.wc-credit-card-form-card-cvc', function(e) {
+  $('body').on('input', 'input[id$="-card-cvc"]', function(e) {
     var $target = $(this);
     var value = $target.val();
-    var cleaned = value.replace(/[^\d]/g, '');
+    var cleaned = value.replace(/\D/g, '');
     if (cleaned.length > 4) {
       cleaned = cleaned.substring(0, 4);
     }
