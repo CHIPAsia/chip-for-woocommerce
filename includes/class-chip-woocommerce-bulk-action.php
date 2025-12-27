@@ -177,7 +177,7 @@ class Chip_Woocommerce_Bulk_Action {
 		if ( 'chip_requery' === $bulk_action ) {
 			/* translators: %s: number of orders */
 			$message = sprintf( _n( '%s order status scheduled to requery.', '%s order statuses scheduled to requery.', $number, 'chip-for-woocommerce' ), number_format_i18n( $number ) );
-			echo '<div class="updated"><p>' . esc_html( $message ) . '</p></div>';
+			echo '<div class="updated chip-admin-notice chip-bulk-action-notice"><p>' . esc_html( $message ) . '</p></div>';
 		}
 	}
 }

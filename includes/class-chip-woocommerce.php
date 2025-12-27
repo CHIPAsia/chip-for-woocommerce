@@ -110,7 +110,7 @@ class Chip_Woocommerce {
 		}
 
 		?>
-		<div class="notice notice-error">
+		<div class="notice notice-error chip-admin-notice chip-missing-assets-notice">
 			<p>
 				<strong><?php esc_html_e( 'CHIP for WooCommerce:', 'chip-for-woocommerce' ); ?></strong>
 				<?php

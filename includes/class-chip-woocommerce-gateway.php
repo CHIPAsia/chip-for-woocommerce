@@ -929,9 +929,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$brand_id_description = __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands.', 'chip-for-woocommerce' );
 
 		if ( 'yes' === $brand_id_valid && ! empty( $current_brand_id ) ) {
-			$brand_id_description .= '<br><span style="color: #46b450; font-weight: bold;">&#10004; ' . esc_html__( 'Brand ID verified', 'chip-for-woocommerce' ) . '</span>';
+			$brand_id_description .= '<br><span class="chip-validation-status chip-validation-success" style="color: #46b450; font-weight: bold;">&#10004; ' . esc_html__( 'Brand ID verified', 'chip-for-woocommerce' ) . '</span>';
 		} elseif ( 'no' === $brand_id_valid && ! empty( $current_brand_id ) ) {
-			$brand_id_description .= '<br><span style="color: #dc3232; font-weight: bold;">&#10006; ' . esc_html__( 'Brand ID invalid - please check your Brand ID', 'chip-for-woocommerce' ) . '</span>';
+			$brand_id_description .= '<br><span class="chip-validation-status chip-validation-error" style="color: #dc3232; font-weight: bold;">&#10006; ' . esc_html__( 'Brand ID invalid - please check your Brand ID', 'chip-for-woocommerce' ) . '</span>';
 		}
 
 		$this->form_fields['brand_id'] = array(
@@ -951,9 +951,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$secret_key_description = __( 'Secret Key can be obtained from CHIP Collect Dashboard >> Developers >> Keys.', 'chip-for-woocommerce' );
 		if ( $is_api_valid ) {
-			$secret_key_description .= '<br><span style="color: #46b450; font-weight: bold;">&#10004; ' . esc_html__( 'API credentials verified', 'chip-for-woocommerce' ) . '</span>';
+			$secret_key_description .= '<br><span class="chip-validation-status chip-validation-success" style="color: #46b450; font-weight: bold;">&#10004; ' . esc_html__( 'API credentials verified', 'chip-for-woocommerce' ) . '</span>';
 		} elseif ( ! empty( $this->get_option( 'secret_key' ) ) && ! empty( $this->get_option( 'brand_id' ) ) ) {
-			$secret_key_description .= '<br><span style="color: #dc3232; font-weight: bold;">&#10006; ' . esc_html__( 'API credentials invalid - please check your Secret Key', 'chip-for-woocommerce' ) . '</span>';
+			$secret_key_description .= '<br><span class="chip-validation-status chip-validation-error" style="color: #dc3232; font-weight: bold;">&#10006; ' . esc_html__( 'API credentials invalid - please check your Secret Key', 'chip-for-woocommerce' ) . '</span>';
 		}
 
 		$this->form_fields['secret_key'] = array(
@@ -989,7 +989,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'type'        => 'select',
 			'class'       => 'wc-enhanced-select chip-display-logo-select',
 			'description' => __( 'Select which logo appears on the checkout page.', 'chip-for-woocommerce' )
-				. '<div id="chip-logo-preview-' . esc_attr( $this->id ) . '" style="margin-top: 10px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; text-align: center; min-height: 60px;">'
+				. '<div id="chip-logo-preview-' . esc_attr( $this->id ) . '" class="chip-logo-preview" style="margin-top: 10px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; text-align: center; min-height: 60px;">'
 				. '<img id="chip-logo-preview-img-' . esc_attr( $this->id ) . '" src="" alt="' . esc_attr__( 'Logo Preview', 'chip-for-woocommerce' ) . '" style="max-height: 50px; max-width: 100%;" />'
 				. '</div>',
 			'default'     => 'fpx_only',
@@ -1115,7 +1115,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'description' => $card_only_whitelist
 				? __( 'Choose whether to capture payment immediately (Sale) or authorize first and capture later (Authorize). Authorize allows you to capture or void the payment from the order page.', 'chip-for-woocommerce' )
 					. '<br><br><strong style="color: #d63638;">' . esc_html__( 'Important Notes for Authorize:', 'chip-for-woocommerce' ) . '</strong>'
-					. '<ul style="margin-top: 5px; margin-bottom: 0;">'
+					. '<ul class="chip-payment-action-warnings" style="margin-top: 5px; margin-bottom: 0;">'
 					. '<li>' . esc_html__( 'You will NOT receive settlement until you complete the order (update status to Completed) or manually capture the payment from the order page.', 'chip-for-woocommerce' ) . '</li>'
 					. '<li>' . esc_html__( 'Authorized payments must be captured within 30 days. After 30 days, the authorization expires and cannot be captured.', 'chip-for-woocommerce' ) . '</li>'
 					. '</ul>'
@@ -1831,7 +1831,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		return array(
 			'result'   => 'success',
 			'redirect' => esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ),
-			'messages' => '<div class="woocommerce-info"><a href="' . esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ) . '">' . __( 'Click here to pay', 'chip-for-woocommerce' ) . '</a></div>',
+			'messages' => '<div class="woocommerce-info chip-checkout-message"><a href="' . esc_url_raw( $this->bypass_chip( $redirect_url, $payment ) ) . '">' . __( 'Click here to pay', 'chip-for-woocommerce' ) . '</a></div>',
 		);
 	}
 
@@ -2542,8 +2542,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function admin_notices() {
 		foreach ( $this->errors as $error ) {
 			?>
-			<div class="notice notice-error">
-				<p><?php echo esc_html( $error ); ?></p>
+		<div class="notice notice-error chip-admin-notice chip-error-notice">
+			<p><?php echo esc_html( $error ); ?></p>
 			</div>
 			<?php
 		}
@@ -3231,7 +3231,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$fields          = wp_parse_args( $fields, $filtered_fields );
 		?>
 
-		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
+		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class='wc-credit-card-form wc-payment-form chip-credit-card-form'>
 		<?php
 		if ( has_action( 'woocommerce_credit_card_form_start' ) ) {
 			_deprecated_hook( 'woocommerce_credit_card_form_start', '2.0.0', 'chip_credit_card_form_start' );
@@ -3288,7 +3288,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->save_payment_method_checkbox();
 
 		if ( $this->supports( 'credit_card_form_cvc_on_saved_method' ) ) {
-			echo '<fieldset>' . wp_kses( $cvc_field, $allowed_html ) . '</fieldset>';
+			echo '<fieldset class="chip-cvc-form">' . wp_kses( $cvc_field, $allowed_html ) . '</fieldset>';
 		}
 	}
 

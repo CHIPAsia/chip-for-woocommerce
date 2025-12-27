@@ -186,7 +186,7 @@ class Chip_Woocommerce_Capture_Payment {
 		// Check if hold has expired (older than 30 days).
 		if ( $this->is_hold_expired( $order ) ) {
 			?>
-			<button type="button" class="button" disabled title="<?php esc_attr_e( 'Authorization expired after 30 days', 'chip-for-woocommerce' ); ?>">
+			<button type="button" class="button chip-capture-payment chip-capture-expired" disabled title="<?php esc_attr_e( 'Authorization expired after 30 days', 'chip-for-woocommerce' ); ?>">
 				<?php esc_html_e( 'Capture Expired', 'chip-for-woocommerce' ); ?>
 			</button>
 			<?php
