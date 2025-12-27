@@ -3253,6 +3253,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	public function form() {
 		wp_enqueue_script( 'wc-credit-card-form' );
+		wp_enqueue_script( "wc-{$this->id}-direct-post" );
 
 		$fields = array();
 
