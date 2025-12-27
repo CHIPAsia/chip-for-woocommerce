@@ -118,6 +118,7 @@ const cardFormStyles = `
   /* Card brand logo in input field */
   .chip-card-number-wrapper {
     position: relative;
+    margin-bottom: 16px;
   }
   .chip-card-number-wrapper .wc-block-components-text-input {
     margin-bottom: 0;

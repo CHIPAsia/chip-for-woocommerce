@@ -8,22 +8,26 @@ jQuery(($) => {
   if (!document.getElementById('chip-card-brand-styles')) {
     const styles = `
       .chip-card-number-wrapper {
-        position: relative;
-        display: block;
+        position: relative !important;
+        display: block !important;
       }
-      .chip-card-number-wrapper input {
-        padding-right: 56px !important;
+      .chip-card-number-wrapper input[type="tel"],
+      .chip-card-number-wrapper input.input-text {
+        padding-right: 60px !important;
+        box-sizing: border-box;
       }
-      .chip-card-brand-icon {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 40px;
-        height: 24px;
-        object-fit: contain;
-        pointer-events: none;
-        z-index: 1;
+      .chip-card-number-wrapper .chip-card-brand-icon {
+        position: absolute !important;
+        right: 10px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 40px !important;
+        height: 25px !important;
+        object-fit: contain !important;
+        pointer-events: none !important;
+        z-index: 10 !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
     `;
     const styleSheet = document.createElement('style');

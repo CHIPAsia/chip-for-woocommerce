@@ -1395,30 +1395,34 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							return $option;
 						}
 
-						// Custom template for selected bank (input display) with logo.
+						// Custom template for selected bank (input display) - text only to avoid rendering issues.
 						function formatBankSelection( option ) {
-							if ( ! option.id || ! showBankLogos ) {
-								return option.text || '';
-							}
-
-							var logoUrl = bankLogoBase + option.id + '.png';
-							var $option = $(
-								'<span class="chip-bank-option chip-bank-selection">' +
-									'<img src="' + logoUrl + '" class="chip-bank-logo" onerror="this.style.display=\'none\'" />' +
-									'<span class="chip-bank-name">' + option.text + '</span>' +
-								'</span>'
-							);
-
-							return $option;
+							return option.text || '';
 						}
+
+						// Add icon container before the select for displaying selected bank logo.
+						var $iconContainer = $('<span class="chip-selected-bank-icon"><img src="" alt="" /></span>');
+						$select.closest('.form-row').find('.woocommerce-input-wrapper').prepend($iconContainer);
+						$iconContainer.hide();
+
+						// Update icon when selection changes.
+						$select.on('change', function() {
+							var selectedValue = $(this).val();
+							if ( selectedValue && showBankLogos ) {
+								var logoUrl = bankLogoBase + selectedValue + '.png';
+								$iconContainer.find('img').attr('src', logoUrl);
+								$iconContainer.show();
+							} else {
+								$iconContainer.hide();
+							}
+						});
 
 						$select.selectWoo({
 							placeholder: '<?php echo esc_js( $placeholder ); ?>',
 							allowClear: false,
 							width: 'resolve',
 							templateResult: formatBankResult,
-							templateSelection: formatBankSelection,
-							escapeMarkup: function( markup ) { return markup; }
+							templateSelection: formatBankSelection
 						});
 					});
 				</script>
@@ -1442,17 +1446,30 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						display: flex;
 						align-items: center;
 					}
-					/* Ensure selection renders the logo properly */
-					.select2-selection__rendered .chip-bank-selection {
-						display: inline-flex;
-						align-items: center;
-						gap: 8px;
-						line-height: 1;
+					/* Selected bank icon container */
+					.woocommerce-input-wrapper {
+						position: relative;
 					}
-					.select2-selection__rendered .chip-bank-selection .chip-bank-logo {
+					.chip-selected-bank-icon {
+						position: absolute;
+						left: 12px;
+						top: 50%;
+						transform: translateY(-50%);
+						z-index: 1;
+						pointer-events: none;
+					}
+					.chip-selected-bank-icon img {
 						width: 24px;
 						height: 24px;
-						vertical-align: middle;
+						object-fit: contain;
+						display: block;
+					}
+					/* Add padding to select to make room for the icon */
+					.woocommerce-input-wrapper .select2-selection--single {
+						padding-left: 44px !important;
+					}
+					.woocommerce-input-wrapper .select2-selection__rendered {
+						padding-left: 0 !important;
 					}
 				</style>
 				<?php
