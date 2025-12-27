@@ -907,6 +907,22 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'description' => __( 'Enter your CHIP API credentials to connect with your account.', 'chip-for-woocommerce' ),
 		);
 
+		// Get existing configurations from other gateways.
+		$existing_configs = $this->get_existing_api_configurations();
+		if ( ! empty( $existing_configs ) ) {
+			$config_options  = array( '' => __( '— Select existing configuration —', 'chip-for-woocommerce' ) );
+			$config_options += $existing_configs;
+
+			$this->form_fields['copy_configuration'] = array(
+				'title'       => __( 'Copy from Existing', 'chip-for-woocommerce' ),
+				'type'        => 'select',
+				'class'       => 'wc-enhanced-select chip-copy-config-select',
+				'description' => __( 'Select an existing gateway configuration to copy the API credentials. This will populate the Brand ID and Secret Key fields below.', 'chip-for-woocommerce' ),
+				'options'     => $config_options,
+				'default'     => '',
+			);
+		}
+
 		$this->form_fields['brand_id'] = array(
 			'title'             => __( 'Brand ID', 'chip-for-woocommerce' ),
 			'type'              => 'text',
@@ -3111,6 +3127,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'chipLogoUrls_' . $this->id,
 			$this->get_logo_urls()
 		);
+
+		// Add copy configuration script if there are existing configurations.
+		$config_data = $this->get_api_configuration_data();
+		if ( ! empty( $config_data ) ) {
+			$script = '
+				jQuery(function($) {
+					var configData = ' . wp_json_encode( $config_data ) . ';
+					$("#woocommerce_' . esc_js( $this->id ) . '_copy_configuration").on("change", function() {
+						var selected = $(this).val();
+						if (selected && configData[selected]) {
+							$("#woocommerce_' . esc_js( $this->id ) . '_brand_id").val(configData[selected].brand_id).trigger("change");
+							$("#woocommerce_' . esc_js( $this->id ) . '_secret_key").val(configData[selected].secret_key).trigger("change");
+							$(this).val("").trigger("change.select2");
+						}
+					});
+				});
+			';
+			wp_add_inline_script( 'chip-admin-logo-preview', $script );
+		}
 	}
 
 	/**
@@ -3528,5 +3563,80 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
 
 		$this->release_lock( $order->get_id() );
+	}
+
+	/**
+	 * Get existing API configurations from other gateway instances.
+	 *
+	 * Returns an array of gateway IDs and their method titles for gateways
+	 * that have both brand_id and secret_key configured.
+	 *
+	 * @return array Array of gateway_id => method_title pairs.
+	 */
+	protected function get_existing_api_configurations() {
+		$gateway_ids = array(
+			'wc_gateway_chip',
+			'wc_gateway_chip_2',
+			'wc_gateway_chip_3',
+			'wc_gateway_chip_4',
+			'wc_gateway_chip_5',
+			'wc_gateway_chip_6',
+		);
+
+		$configurations = array();
+
+		foreach ( $gateway_ids as $gateway_id ) {
+			// Skip current gateway.
+			if ( $gateway_id === $this->id ) {
+				continue;
+			}
+
+			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
+
+			// Check if this gateway has valid API credentials.
+			if ( ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] ) ) {
+				$title                         = ! empty( $settings['title'] ) ? $settings['title'] : $gateway_id;
+				$configurations[ $gateway_id ] = $title;
+			}
+		}
+
+		return $configurations;
+	}
+
+	/**
+	 * Get API configuration data (brand_id and secret_key) for all configured gateways.
+	 *
+	 * @return array Array of gateway_id => array('brand_id' => '', 'secret_key' => '') pairs.
+	 */
+	protected function get_api_configuration_data() {
+		$gateway_ids = array(
+			'wc_gateway_chip',
+			'wc_gateway_chip_2',
+			'wc_gateway_chip_3',
+			'wc_gateway_chip_4',
+			'wc_gateway_chip_5',
+			'wc_gateway_chip_6',
+		);
+
+		$data = array();
+
+		foreach ( $gateway_ids as $gateway_id ) {
+			// Skip current gateway.
+			if ( $gateway_id === $this->id ) {
+				continue;
+			}
+
+			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
+
+			// Check if this gateway has valid API credentials.
+			if ( ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] ) ) {
+				$data[ $gateway_id ] = array(
+					'brand_id'   => $settings['brand_id'],
+					'secret_key' => $settings['secret_key'],
+				);
+			}
+		}
+
+		return $data;
 	}
 }
