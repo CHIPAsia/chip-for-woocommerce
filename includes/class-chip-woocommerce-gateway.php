@@ -3117,7 +3117,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			true
 		);
 
-		wp_localize_script( "wc-{$this->id}-direct-post", 'gateway_option', array( 'id' => $this->id ) );
+		wp_localize_script(
+			"wc-{$this->id}-direct-post",
+			'gateway_option',
+			array(
+				'id'             => $this->id,
+				'card_logos_url' => CHIP_WOOCOMMERCE_URL . 'assets/',
+			)
+		);
 	}
 
 	/**
@@ -3206,8 +3213,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			</p>',
 			'card-number-field' => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-number_field">
 				<label for="' . esc_attr( $this->id ) . '-card-number" class="required_field">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
-				<span class="woocommerce-input-wrapper">
+				<span class="woocommerce-input-wrapper chip-card-number-wrapper">
 					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-number" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
+					<img class="chip-card-brand-icon" src="" alt="" style="display: none;" />
 				</span>
 			</p>',
 			'card-expiry-field' => '<p class="form-row form-row-first validate-required" id="' . esc_attr( $this->id ) . '-card-expiry_field">
@@ -3267,6 +3275,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'value'            => array(),
 				'aria-required'    => array(),
 				'data-placeholder' => array(),
+			),
+			'img'   => array(
+				'class' => array(),
+				'src'   => array(),
+				'alt'   => array(),
+				'style' => array(),
 			),
 		);
 		foreach ( $fields as $field ) {

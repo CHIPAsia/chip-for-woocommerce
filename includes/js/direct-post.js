@@ -4,6 +4,64 @@ jQuery(($) => {
 		return false;
 	}
 
+  // Inject CSS styles for card brand icon
+  if (!document.getElementById('chip-card-brand-styles')) {
+    const styles = `
+      .chip-card-number-wrapper {
+        position: relative;
+        display: block;
+      }
+      .chip-card-number-wrapper input {
+        padding-right: 56px !important;
+      }
+      .chip-card-brand-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 24px;
+        object-fit: contain;
+        pointer-events: none;
+        z-index: 1;
+      }
+    `;
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'chip-card-brand-styles';
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+  }
+
+  // Card brand detection based on card number (BIN/IIN detection)
+  const detectCardBrand = (cardNumber) => {
+    const cleanNumber = cardNumber.replace(/\s/g, '');
+    if (!cleanNumber) return null;
+    if (/^4/.test(cleanNumber)) return 'visa';
+    if (/^5[1-5]/.test(cleanNumber) || /^2[2-7]/.test(cleanNumber)) return 'mastercard';
+    return null;
+  };
+
+  // Update card brand icon on card number input
+  const updateCardBrandIcon = ($input) => {
+    const cardNumber = $input.val();
+    const cardBrand = detectCardBrand(cardNumber);
+    const $wrapper = $input.closest('.chip-card-number-wrapper');
+    const $icon = $wrapper.find('.chip-card-brand-icon');
+    
+    if (cardBrand && gateway_option.card_logos_url) {
+      $icon.attr('src', gateway_option.card_logos_url + cardBrand + '.svg');
+      $icon.attr('alt', cardBrand);
+      $icon.show();
+    } else {
+      $icon.hide();
+    }
+  };
+
+  // Listen for card number input changes
+  $('body').on('input', 'input[id$="-card-number"]', function() {
+    updateCardBrandIcon($(this));
+  });
+
   // Cardholder name validation - only allow [a-zA-Z \'\.\-]
   $('body').on('keypress', 'input.wc-credit-card-form-card-name', function(e) {
     var $target, card, digit, length, re, upperLength, value;

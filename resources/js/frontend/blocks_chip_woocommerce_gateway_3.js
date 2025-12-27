@@ -115,6 +115,27 @@ const cardFormStyles = `
   .chip-bank-dropdown__placeholder {
     color: #757575;
   }
+  /* Card brand logo in input field */
+  .chip-card-number-wrapper {
+    position: relative;
+  }
+  .chip-card-number-wrapper .wc-block-components-text-input {
+    margin-bottom: 0;
+  }
+  .chip-card-brand-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 24px;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .chip-card-number-wrapper input {
+    padding-right: 56px !important;
+  }
 `;
 
 // Inject styles once.
@@ -404,6 +425,17 @@ const RazerEWalletList = (props) => {
 };
 
 /**
+ * Detect card brand based on card number (BIN/IIN detection).
+ */
+const detectCardBrand = (cardNumber) => {
+  const cleanNumber = cardNumber.replace(/\s/g, '');
+  if (!cleanNumber) return null;
+  if (/^4/.test(cleanNumber)) return 'visa';
+  if (/^5[1-5]/.test(cleanNumber) || /^2[2-7]/.test(cleanNumber)) return 'mastercard';
+  return null;
+};
+
+/**
  * Card Form Component for direct post card payments.
  */
 const CardForm = (props) => {
@@ -411,9 +443,13 @@ const CardForm = (props) => {
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
+  const [cardBrand, setCardBrand] = useState(null);
   
   const { eventRegistration, emitResponse, shouldSavePayment } = props;
   const { onPaymentSetup, onCheckoutSuccess } = eventRegistration;
+
+  const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+  const cardLogosUrl = gatewayConfig.card_logos_url || '';
 
   const validateCardName = (name) => {
     const illegalCharacter = /[^a-zA-Z \'\.\-]/;
@@ -448,6 +484,7 @@ const CardForm = (props) => {
     const formatted = formatCardNumber(value);
     if (formatted.replace(/\s/g, '').length <= 16) {
       setCardNumber(formatted);
+      setCardBrand(detectCardBrand(formatted));
     }
   };
 
@@ -580,20 +617,25 @@ const CardForm = (props) => {
           {__("Cardholder Name", "chip-for-woocommerce")}
         </label>
       </div>
-      <div className={`wc-block-components-text-input is-active ${cardNumber ? 'has-value' : ''}`}>
-        <input
-          type="text"
-          id="chip-card-number-3"
-          value={cardNumber}
-          onChange={(e) => handleCardNumberChange(e.target.value)}
-          autoComplete="cc-number"
-          inputMode="numeric"
-          aria-label={__("Card Number", "chip-for-woocommerce")}
-          aria-invalid="false"
-        />
-        <label htmlFor="chip-card-number-3">
-          {__("Card Number", "chip-for-woocommerce")}
-        </label>
+      <div className="chip-card-number-wrapper">
+        <div className={`wc-block-components-text-input is-active ${cardNumber ? 'has-value' : ''}`}>
+          <input
+            type="text"
+            id="chip-card-number-3"
+            value={cardNumber}
+            onChange={(e) => handleCardNumberChange(e.target.value)}
+            autoComplete="cc-number"
+            inputMode="numeric"
+            aria-label={__("Card Number", "chip-for-woocommerce")}
+            aria-invalid="false"
+          />
+          <label htmlFor="chip-card-number-3">
+            {__("Card Number", "chip-for-woocommerce")}
+          </label>
+        </div>
+        {cardBrand && cardLogosUrl && (
+          <img src={`${cardLogosUrl}${cardBrand}.svg`} alt={cardBrand} className="chip-card-brand-icon" />
+        )}
       </div>
       <div className="wc-block-components-card-form__row" style={{ display: 'flex', gap: '16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
