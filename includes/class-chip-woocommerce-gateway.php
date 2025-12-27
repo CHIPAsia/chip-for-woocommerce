@@ -3641,11 +3641,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 
-			// Check if this gateway has valid API credentials (public_key must be parseable).
+			// Check if this gateway has valid API credentials.
+			// - Must have brand_id and secret_key.
+			// - Public key must be parseable.
+			// - Brand ID must be validated as valid.
 			$has_credentials = ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] );
 			$has_valid_key   = isset( $settings['public_key'] ) && $this->is_valid_public_key( $settings['public_key'] );
+			$has_valid_brand = isset( $settings['brand_id_valid'] ) && 'yes' === $settings['brand_id_valid'];
 
-			if ( $has_credentials && $has_valid_key ) {
+			if ( $has_credentials && $has_valid_key && $has_valid_brand ) {
 				$title                         = ! empty( $settings['title'] ) ? $settings['title'] : $gateway_id;
 				$configurations[ $gateway_id ] = $title;
 			}
@@ -3679,11 +3683,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 
-			// Check if this gateway has valid API credentials (public_key must be parseable).
+			// Check if this gateway has valid API credentials.
+			// - Must have brand_id and secret_key.
+			// - Public key must be parseable.
+			// - Brand ID must be validated as valid.
 			$has_credentials = ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] );
 			$has_valid_key   = isset( $settings['public_key'] ) && $this->is_valid_public_key( $settings['public_key'] );
+			$has_valid_brand = isset( $settings['brand_id_valid'] ) && 'yes' === $settings['brand_id_valid'];
 
-			if ( $has_credentials && $has_valid_key ) {
+			if ( $has_credentials && $has_valid_key && $has_valid_brand ) {
 				$data[ $gateway_id ] = array(
 					'brand_id'   => $settings['brand_id'],
 					'secret_key' => $settings['secret_key'],
