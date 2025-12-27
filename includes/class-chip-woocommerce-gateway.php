@@ -923,10 +923,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			);
 		}
 
+		// Check if Brand ID is valid (stored on save).
+		$brand_id_valid       = $this->get_option( 'brand_id_valid' );
+		$current_brand_id     = $this->get_option( 'brand_id' );
+		$brand_id_description = __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands.', 'chip-for-woocommerce' );
+
+		if ( 'yes' === $brand_id_valid && ! empty( $current_brand_id ) ) {
+			$brand_id_description .= '<br><span style="color: #46b450; font-weight: bold;">&#10004; ' . esc_html__( 'Brand ID verified', 'chip-for-woocommerce' ) . '</span>';
+		} elseif ( 'no' === $brand_id_valid && ! empty( $current_brand_id ) ) {
+			$brand_id_description .= '<br><span style="color: #dc3232; font-weight: bold;">&#10006; ' . esc_html__( 'Brand ID invalid - please check your Brand ID', 'chip-for-woocommerce' ) . '</span>';
+		}
+
 		$this->form_fields['brand_id'] = array(
 			'title'             => __( 'Brand ID', 'chip-for-woocommerce' ),
 			'type'              => 'text',
-			'description'       => __( 'Brand ID can be obtained from CHIP Collect Dashboard >> Developers >> Brands.', 'chip-for-woocommerce' ),
+			'description'       => $brand_id_description,
 			'sanitize_callback' => function ( $value ) {
 				$value = trim( $value );
 				$value = str_replace( ' ', '', $value );
@@ -1938,6 +1949,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$this->add_error( sprintf( __( 'Configuration error: %1$s', 'chip-for-woocommerce' ), current( $public_key['__all__'] )['message'] ) );
 			$this->update_option( 'public_key', '' );
 			$this->update_option( 'available_recurring_payment_method', array() );
+			$this->update_option( 'brand_id_valid', 'no' );
 			return false;
 		}
 
@@ -1964,6 +1976,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$this->update_option( 'public_key', $public_key );
 		$this->update_option( 'available_recurring_payment_method', $available_recurring_payment_method );
+
+		// Validate Brand ID by calling payment_methods API.
+		$payment_methods_response = $chip->payment_methods( 'MYR', 'en', 200 );
+		$brand_id_valid           = is_array( $payment_methods_response ) && isset( $payment_methods_response['available_payment_methods'] );
+		$this->update_option( 'brand_id_valid', $brand_id_valid ? 'yes' : 'no' );
 
 		return true;
 	}
