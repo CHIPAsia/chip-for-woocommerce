@@ -240,7 +240,7 @@
 
 = 1.2.3 2022-12-15 =
 * Added   - Add maestro as card group
-* Added   - Constant WC_CHIP_OLD_URL_SCHEME for switch to old URL scheme
+* Added   - Constant CHIP_WOOCOMMERCE_OLD_URL_SCHEME for switch to old URL scheme
 * Changed - Redirect URL using new URL scheme
 
 = 1.2.2 2022-11-25 =

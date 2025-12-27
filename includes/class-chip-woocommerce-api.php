@@ -319,7 +319,7 @@ class Chip_Woocommerce_API {
 			$url,
 			array(
 				'method'    => $method,
-				'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
+				'sslverify' => ! defined( 'CHIP_WOOCOMMERCE_SSLVERIFY_FALSE' ),
 				'headers'   => $headers,
 				'body'      => $params,
 				'timeout'   => 10, // Charge card require longer timeout.

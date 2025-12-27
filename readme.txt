@@ -154,7 +154,7 @@ You may refer to **includes/class-chip-woocommerce-gateway-2.php** file for an e
 
 Create a PHP constant in your wp-config.php file with the following code:
 
-`define( 'DISABLE_CLONE_WC_GATEWAY_CHIP' , true );`
+`define( 'CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES', true );`
 
 == Links ==
 

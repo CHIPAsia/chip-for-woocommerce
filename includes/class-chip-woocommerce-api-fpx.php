@@ -126,7 +126,7 @@ class Chip_Woocommerce_API_FPX {
 			$url,
 			array(
 				'method'    => $method,
-				'sslverify' => ! defined( 'WC_CHIP_SSLVERIFY_FALSE' ),
+				'sslverify' => ! defined( 'CHIP_WOOCOMMERCE_SSLVERIFY_FALSE' ),
 				'headers'   => $headers,
 				'body'      => $params,
 				'timeout'   => 3,

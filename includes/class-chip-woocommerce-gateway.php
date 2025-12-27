@@ -309,12 +309,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$logo = $this->get_option( 'display_logo', 'logo' );
 
 		$file_extension = 'png';
-		$file_path      = plugin_dir_path( WC_CHIP_FILE ) . 'assets/' . $logo . '.png';
+		$file_path      = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/' . $logo . '.png';
 		if ( ! file_exists( $file_path ) ) {
 			$file_extension = 'svg';
 		}
 
-		$this->icon = plugins_url( "assets/{$logo}.{$file_extension}", WC_CHIP_FILE );
+		$this->icon = plugins_url( "assets/{$logo}.{$file_extension}", CHIP_WOOCOMMERCE_FILE );
 		if ( has_filter( 'wc_' . $this->id . '_load_icon' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'wc_' . $this->id . '_load_icon', '2.0.0', 'chip_' . $this->id . '_load_icon' );
@@ -1243,7 +1243,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array Associative array of logo key => URL.
 	 */
 	private function get_logo_urls() {
-		$base_url = WC_CHIP_URL . 'assets/';
+		$base_url = CHIP_WOOCOMMERCE_URL . 'assets/';
 
 		return array(
 			'logo'                    => $base_url . 'logo.png',
@@ -1352,16 +1352,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
 					$unavailable_banks = $this->get_unavailable_fpx_banks();
 					$show_bank_logos   = true;
-					$bank_logo_base    = WC_CHIP_URL . 'assets/fpx_bank/';
+					$bank_logo_base    = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
 				} elseif ( 'chip_fpx_b2b1_bank' === $select_field_id ) {
 					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
 					$unavailable_banks = $this->get_unavailable_fpx_b2b1_banks();
 					$show_bank_logos   = true;
-					$bank_logo_base    = WC_CHIP_URL . 'assets/fpx_bank/';
+					$bank_logo_base    = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
 				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
 					$placeholder     = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
 					$show_bank_logos = true;
-					$bank_logo_base  = WC_CHIP_URL . 'assets/razer_ewallet/';
+					$bank_logo_base  = CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/';
 				}
 				?>
 				<script type="text/javascript">
@@ -1571,7 +1571,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		$callback_url = add_query_arg( array( 'id' => $order_id ), WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
+		if ( defined( 'CHIP_WOOCOMMERCE_OLD_URL_SCHEME' ) && CHIP_WOOCOMMERCE_OLD_URL_SCHEME === true ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
@@ -1582,7 +1582,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'cancel_redirect'  => $callback_url,
 			'force_recurring'  => false,
 			'send_receipt'     => false,
-			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'reference'        => $order->get_id(),
 			'platform'         => 'woocommerce',
 			'due'              => $this->get_due_timestamp(),
@@ -2006,14 +2006,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		$callback_url = add_query_arg( array( 'id' => $renewal_order_id ), WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
+		if ( defined( 'CHIP_WOOCOMMERCE_OLD_URL_SCHEME' ) && CHIP_WOOCOMMERCE_OLD_URL_SCHEME === true ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $renewal_order_id );
 		}
 
 		$params = array(
 			'success_callback' => $callback_url,
 			'send_receipt'     => false,
-			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'reference'        => $renewal_order_id,
 			'platform'         => 'woocommerce_subscriptions',
 			'due'              => $this->get_due_timestamp(),
@@ -2260,7 +2260,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$params = array(
 			'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
-			'creator_agent'            => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'creator_agent'            => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'platform'                 => 'woocommerce_subscriptions',
 			'success_redirect'         => $url,
 			'failure_redirect'         => $url,
@@ -2849,13 +2849,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			),
 			WC()->api_request_url( $this->id )
 		);
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME === true ) {
+		if ( defined( 'CHIP_WOOCOMMERCE_OLD_URL_SCHEME' ) && CHIP_WOOCOMMERCE_OLD_URL_SCHEME === true ) {
 			$url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
 		$params = array(
 			'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
-			'creator_agent'            => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'creator_agent'            => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'platform'                 => 'woocommerce_subscriptions',
 			'success_redirect'         => $url,
 			'failure_redirect'         => $url,
@@ -3111,9 +3111,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function register_script() {
 		wp_register_script(
 			"wc-{$this->id}-direct-post",
-			trailingslashit( WC_CHIP_URL ) . 'includes/js/direct-post.js',
+			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/direct-post.js',
 			array( 'jquery' ),
-			WC_CHIP_MODULE_VERSION,
+			CHIP_WOOCOMMERCE_MODULE_VERSION,
 			true
 		);
 
@@ -3142,9 +3142,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		wp_enqueue_script(
 			'chip-admin-logo-preview',
-			trailingslashit( WC_CHIP_URL ) . 'includes/js/admin-logo-preview.js',
+			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/admin-logo-preview.js',
 			array( 'jquery' ),
-			WC_CHIP_MODULE_VERSION,
+			CHIP_WOOCOMMERCE_MODULE_VERSION,
 			true
 		);
 
@@ -3474,7 +3474,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		$callback_url = add_query_arg( array( 'id' => $order->get_id() ), WC()->api_request_url( $this->id ) );
-		if ( defined( 'WC_CHIP_OLD_URL_SCHEME' ) && WC_CHIP_OLD_URL_SCHEME ) {
+		if ( defined( 'CHIP_WOOCOMMERCE_OLD_URL_SCHEME' ) && CHIP_WOOCOMMERCE_OLD_URL_SCHEME ) {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order->get_id() );
 		}
 
@@ -3489,7 +3489,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$params = array(
 			'success_callback' => $callback_url,
 			'send_receipt'     => false,
-			'creator_agent'    => 'WooCommerce: ' . WC_CHIP_MODULE_VERSION,
+			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'reference'        => $order->get_id(),
 			'platform'         => 'woocommerce',
 			'due'              => $this->get_due_timestamp(),

@@ -40,13 +40,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Cannot access directly.
 
 // Define plugin constants.
-define( 'WC_CHIP_MODULE_VERSION', 'v2.0.0' );
-define( 'WC_CHIP_FILE', __FILE__ );
-define( 'WC_CHIP_BASENAME', plugin_basename( WC_CHIP_FILE ) );
-define( 'WC_CHIP_URL', plugin_dir_url( WC_CHIP_FILE ) );
+define( 'CHIP_WOOCOMMERCE_MODULE_VERSION', 'v2.0.0' );
+define( 'CHIP_WOOCOMMERCE_FILE', __FILE__ );
+define( 'CHIP_WOOCOMMERCE_BASENAME', plugin_basename( CHIP_WOOCOMMERCE_FILE ) );
+define( 'CHIP_WOOCOMMERCE_URL', plugin_dir_url( CHIP_WOOCOMMERCE_FILE ) );
 
 // Include main class.
-require_once plugin_dir_path( WC_CHIP_FILE ) . 'includes/class-chip-woocommerce.php';
+require_once plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/class-chip-woocommerce.php';
 
 // Initialize plugin.
 add_action( 'plugins_loaded', array( 'Chip_Woocommerce', 'load' ) );

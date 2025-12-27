@@ -49,7 +49,7 @@ class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 	 * @return void
 	 */
 	protected function init_icon() {
-		$this->icon = plugins_url( 'assets/atome.svg', WC_CHIP_FILE );
+		$this->icon = plugins_url( 'assets/atome.svg', CHIP_WOOCOMMERCE_FILE );
 		if ( has_filter( 'wc_' . $this->id . '_load_icon' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'wc_' . $this->id . '_load_icon', '2.0.0', 'chip_' . $this->id . '_load_icon' );

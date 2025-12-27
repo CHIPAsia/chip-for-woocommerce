@@ -47,14 +47,14 @@ class Chip_Woocommerce {
 	 * @return void
 	 */
 	public function includes() {
-		$includes_dir = plugin_dir_path( WC_CHIP_FILE ) . 'includes/';
+		$includes_dir = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/';
 		include $includes_dir . 'class-chip-woocommerce-api.php';
 		include $includes_dir . 'class-chip-woocommerce-api-fpx.php';
 		include $includes_dir . 'class-chip-woocommerce-logger.php';
 		include $includes_dir . 'class-chip-woocommerce-gateway.php';
 		include $includes_dir . 'class-chip-woocommerce-queue.php';
 
-		if ( ! defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
+		if ( ! defined( 'CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES' ) ) {
 			include $includes_dir . 'class-chip-woocommerce-gateway-2.php';
 			include $includes_dir . 'class-chip-woocommerce-gateway-3.php';
 			include $includes_dir . 'class-chip-woocommerce-gateway-4.php';
@@ -78,7 +78,7 @@ class Chip_Woocommerce {
 	 */
 	public function add_filters() {
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateways' ) );
-		add_filter( 'plugin_action_links_' . WC_CHIP_BASENAME, array( $this, 'setting_link' ) );
+		add_filter( 'plugin_action_links_' . CHIP_WOOCOMMERCE_BASENAME, array( $this, 'setting_link' ) );
 	}
 
 	/**
@@ -103,7 +103,7 @@ class Chip_Woocommerce {
 	 */
 	public function missing_assets_notice() {
 		// Check if the built JS file exists.
-		$built_js = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_chip_woocommerce_gateway.js';
+		$built_js = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/js/frontend/blocks_chip_woocommerce_gateway.js';
 
 		if ( file_exists( $built_js ) ) {
 			return;
@@ -238,7 +238,7 @@ class Chip_Woocommerce {
 	public function add_gateways( $methods ) {
 		$methods[] = Chip_Woocommerce_Gateway::class;
 
-		if ( ! defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
+		if ( ! defined( 'CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES' ) ) {
 			$methods[] = Chip_Woocommerce_Gateway_2::class;
 			$methods[] = Chip_Woocommerce_Gateway_3::class;
 			$methods[] = Chip_Woocommerce_Gateway_4::class;
@@ -261,7 +261,7 @@ class Chip_Woocommerce {
 			'tab'  => 'checkout',
 		);
 
-		if ( defined( 'DISABLE_CLONE_WC_GATEWAY_CHIP' ) ) {
+		if ( defined( 'CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES' ) ) {
 			$url_params['section'] = 'wc_gateway_chip';
 		}
 
@@ -294,12 +294,12 @@ class Chip_Woocommerce {
 	 */
 	public function block_support() {
 		if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-blocks-support.php';
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-2-blocks-support.php';
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-3-blocks-support.php';
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-4-blocks-support.php';
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-5-blocks-support.php';
-			include plugin_dir_path( WC_CHIP_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-6-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-2-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-3-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-4-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-5-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-6-blocks-support.php';
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
 				function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {

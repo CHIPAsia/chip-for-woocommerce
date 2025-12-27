@@ -67,14 +67,14 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		}
 
 		$script_path       = 'assets/js/frontend/blocks_' . $this->script_name . '.js';
-		$script_asset_path = plugin_dir_path( WC_CHIP_FILE ) . 'assets/js/frontend/blocks_' . $this->script_name . '.asset.php';
+		$script_asset_path = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/js/frontend/blocks_' . $this->script_name . '.asset.php';
 		$script_asset      = file_exists( $script_asset_path )
 			? require $script_asset_path
 			: array(
 				'dependencies' => array(),
-				'version'      => WC_CHIP_MODULE_VERSION,
+				'version'      => CHIP_WOOCOMMERCE_MODULE_VERSION,
 			);
-		$script_url        = WC_CHIP_URL . $script_path;
+		$script_url        = CHIP_WOOCOMMERCE_URL . $script_path;
 
 		wp_register_script(
 			"wc-{$this->name}-blocks",
@@ -107,9 +107,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		}
 
 		// Determine logo base URL based on bank type.
-		$logo_base_url = WC_CHIP_URL . 'assets/fpx_bank/';
+		$logo_base_url = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
 		if ( 'razer' === $bank_type ) {
-			$logo_base_url = WC_CHIP_URL . 'assets/razer_ewallet/';
+			$logo_base_url = CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/';
 		}
 
 		// Provide API URL for lazy loading banks instead of embedding data.
