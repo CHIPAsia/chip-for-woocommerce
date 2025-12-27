@@ -65,7 +65,7 @@ class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 	 * @return array
 	 */
 	public function get_payment_method_list() {
-		return array( 'razer_atome' => 'Razer Atome' );
+		return array( 'razer_atome' => 'Atome' );
 	}
 
 	/**

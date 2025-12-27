@@ -32,7 +32,7 @@ class Chip_Woocommerce_Gateway_4 extends Chip_Woocommerce_Gateway {
 	 * @return void
 	 */
 	protected function init_title() {
-		$this->title = __( 'Grabpay, TnG, Shopeepay, MB2QR', 'chip-for-woocommerce' );
+		$this->title = __( "GrabPay, Touch 'n Go eWallet, ShopeePay, Maybank QRPay", 'chip-for-woocommerce' );
 	}
 
 	/**

@@ -3306,11 +3306,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'visa'            => 'Visa',
 			'mpgs_google_pay' => 'Google Pay',
 			'mpgs_apple_pay'  => 'Apple Pay',
-			'razer_atome'     => 'Razer Atome',
-			'razer_grabpay'   => 'Razer Grabpay',
-			'razer_maybankqr' => 'Razer Maybankqr',
-			'razer_shopeepay' => 'Razer Shopeepay',
-			'razer_tng'       => 'Razer Tng',
+			'razer_atome'     => 'Atome',
+			'razer_grabpay'   => 'GrabPay',
+			'razer_maybankqr' => 'Maybank QRPay',
+			'razer_shopeepay' => 'ShopeePay',
+			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'Duitnow QR',
 		);
 	}
