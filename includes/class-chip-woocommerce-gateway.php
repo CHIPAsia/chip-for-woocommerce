@@ -1478,7 +1478,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					#chip_fpx_bank_field .select2-selection--single,
 					#chip_fpx_b2b1_bank_field .select2-selection--single,
 					#chip_razer_ewallet_field .select2-selection--single {
-						padding-left: 52px !important;
+						padding-left: 56px !important;
 						min-height: 48px !important;
 						display: flex !important;
 						align-items: center !important;
