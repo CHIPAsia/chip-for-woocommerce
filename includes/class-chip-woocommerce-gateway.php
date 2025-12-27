@@ -3566,6 +3566,27 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Check if a public key is valid by attempting to parse it.
+	 *
+	 * @param string $public_key The public key to validate.
+	 * @return bool True if the public key is valid, false otherwise.
+	 */
+	protected function is_valid_public_key( $public_key ) {
+		if ( empty( $public_key ) ) {
+			return false;
+		}
+
+		// Attempt to parse the public key.
+		$key = openssl_pkey_get_public( $public_key );
+
+		if ( false === $key ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Get existing API configurations from other gateway instances.
 	 *
 	 * Returns an array of gateway IDs and their method titles for gateways
@@ -3593,8 +3614,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 
-			// Check if this gateway has valid API credentials.
-			if ( ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] ) ) {
+			// Check if this gateway has valid API credentials (public_key must be parseable).
+			$has_credentials = ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] );
+			$has_valid_key   = isset( $settings['public_key'] ) && $this->is_valid_public_key( $settings['public_key'] );
+
+			if ( $has_credentials && $has_valid_key ) {
 				$title                         = ! empty( $settings['title'] ) ? $settings['title'] : $gateway_id;
 				$configurations[ $gateway_id ] = $title;
 			}
@@ -3628,8 +3652,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 
-			// Check if this gateway has valid API credentials.
-			if ( ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] ) ) {
+			// Check if this gateway has valid API credentials (public_key must be parseable).
+			$has_credentials = ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] );
+			$has_valid_key   = isset( $settings['public_key'] ) && $this->is_valid_public_key( $settings['public_key'] );
+
+			if ( $has_credentials && $has_valid_key ) {
 				$data[ $gateway_id ] = array(
 					'brand_id'   => $settings['brand_id'],
 					'secret_key' => $settings['secret_key'],
