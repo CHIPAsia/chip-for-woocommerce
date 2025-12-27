@@ -1321,7 +1321,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					$show_bank_logos   = true;
 					$bank_logo_base    = WC_CHIP_URL . 'assets/fpx_bank/';
 				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
-					$placeholder = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
+					$placeholder     = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
+					$show_bank_logos = true;
+					$bank_logo_base  = WC_CHIP_URL . 'assets/razer_ewallet/';
 				}
 				?>
 				<script type="text/javascript">

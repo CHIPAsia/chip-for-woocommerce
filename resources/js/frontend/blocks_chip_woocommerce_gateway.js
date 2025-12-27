@@ -660,93 +660,54 @@ const RazerEWalletList = (props) => {
   const { eventRegistration, emitResponse } = props;
   const { onPaymentSetup } = eventRegistration;
 
+  const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+  const logoBaseUrl = gatewayConfig.logo_base_url || '';
+
   // Lazy load ewallets from API.
   useEffect(() => {
-    const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
     const banksApi = gatewayConfig.banks_api;
-
     if (banksApi) {
-      fetch(banksApi, {
-        headers: { 'X-WP-Nonce': gatewayConfig.nonce }
-      })
+      fetch(banksApi, { headers: { 'X-WP-Nonce': gatewayConfig.nonce } })
         .then(response => response.json())
-        .then(data => {
-          setWallets(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setLoading(false);
-        });
+        .then(data => { setWallets(data); setLoading(false); })
+        .catch(() => { setLoading(false); });
     } else {
       setLoading(false);
     }
   }, []);
 
-  const onSubmit = () => {
+  const onSubmit = useCallback(() => {
     if ('' === walletId) {
       return {
         type: emitResponse.responseTypes.ERROR,
-        message: __(
-          "<strong>E-Wallet</strong> is a required field.",
-          "chip-for-woocommerce"
-        ),
+        message: __("<strong>E-Wallet</strong> is a required field.", "chip-for-woocommerce"),
       };
     }
-
     return {
       type: emitResponse.responseTypes.SUCCESS,
-      meta: {
-        paymentMethodData: {
-          chip_razer_ewallet: walletId,
-        },
-      },
+      meta: { paymentMethodData: { chip_razer_ewallet: walletId } },
     };
-  };
+  }, [walletId, emitResponse.responseTypes]);
 
   useEffect(() => {
     const unsubscribeProcessing = onPaymentSetup(onSubmit);
-    return () => {
-      unsubscribeProcessing();
-    };
-  }, [onPaymentSetup, walletId]);
+    return () => { unsubscribeProcessing(); };
+  }, [onPaymentSetup, onSubmit]);
 
   if (loading) {
     return <p>{__("Loading e-wallets...", "chip-for-woocommerce")}</p>;
   }
 
   return (
-    <div className="chip-bank-select">
-      <div className="wc-blocks-components-select">
-        <div className="wc-blocks-components-select__container">
-          <label htmlFor="chip-razer-ewallet" className="wc-blocks-components-select__label">
-            {__("E-Wallet", "chip-for-woocommerce")}
-          </label>
-          <select
-            id="chip-razer-ewallet"
-            className="wc-blocks-components-select__select"
-            value={walletId}
-            onChange={(e) => setWalletId(e.target.value)}
-            aria-invalid="false"
-          >
-            <option value="" disabled>{__("Choose your e-wallet", "chip-for-woocommerce")}</option>
-            {Object.keys(wallets).map((key) => (
-              <option key={key} value={key}>{wallets[key]}</option>
-            ))}
-          </select>
-          <svg 
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            className="wc-blocks-components-select__expand"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M17.5 11.6L12 16l-5.5-4.4.9-1.2L12 14l4.5-3.6 1 1.2z"></path>
-          </svg>
-        </div>
-      </div>
-    </div>
+    <BankDropdown
+      banks={wallets}
+      value={walletId}
+      onChange={setWalletId}
+      placeholder={__("Choose your e-wallet", "chip-for-woocommerce")}
+      label={__("E-Wallet", "chip-for-woocommerce")}
+      id="chip-razer-ewallet"
+      logoBaseUrl={logoBaseUrl}
+    />
   );
 };
 
