@@ -327,7 +327,8 @@ class Chip_Woocommerce_Payment_Details {
 		}
 
 		if ( ! empty( $extra['card_brand'] ) ) {
-			$this->render_detail_row( __( 'Card Brand', 'chip-for-woocommerce' ), esc_html( ucwords( $extra['card_brand'] ) ) );
+			$card_brand_display = $this->get_card_brand_display( $extra['card_brand'] );
+			$this->render_detail_row( __( 'Card Brand', 'chip-for-woocommerce' ), $card_brand_display );
 		}
 
 		if ( ! empty( $extra['expiry_month'] ) && $expiry_year ) {
@@ -357,6 +358,26 @@ class Chip_Woocommerce_Payment_Details {
 
 		echo '</tbody>';
 		echo '</table>';
+	}
+
+	/**
+	 * Get card brand display with logo for supported brands.
+	 *
+	 * @param string $card_brand Card brand name.
+	 * @return string HTML for card brand display.
+	 */
+	private function get_card_brand_display( $card_brand ) {
+		$card_brand_lower = strtolower( $card_brand );
+
+		$supported_logos = array( 'visa', 'mastercard' );
+
+		if ( in_array( $card_brand_lower, $supported_logos, true ) ) {
+			$logo_url = plugins_url( 'assets/' . $card_brand_lower . '.svg', CHIP_WOOCOMMERCE_FILE );
+			$logo_img = '<img src="' . esc_url( $logo_url ) . '" alt="' . esc_attr( ucwords( $card_brand ) ) . '" width="40" height="24" />';
+			return '<span class="chip-card-brand-logo">' . $logo_img . ' ' . esc_html( ucwords( $card_brand ) ) . '</span>';
+		}
+
+		return esc_html( ucwords( $card_brand ) );
 	}
 
 	/**
@@ -418,6 +439,15 @@ class Chip_Woocommerce_Payment_Details {
 				background: #f0f0f1;
 				padding: 2px 5px;
 				font-size: 11px;
+			}
+			.chip-payment-details .chip-card-brand-logo {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+			}
+			.chip-payment-details .chip-card-brand-logo svg {
+				vertical-align: middle;
+				flex-shrink: 0;
 			}
 		</style>
 		<?php
