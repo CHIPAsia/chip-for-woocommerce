@@ -7,6 +7,10 @@
  * @package CHIP for WooCommerce
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Chip_Woocommerce_Gateway_5 class for Atome payments.
  */

@@ -7,6 +7,10 @@
  * @package CHIP for WooCommerce
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * CHIP Void Payment class.
  */

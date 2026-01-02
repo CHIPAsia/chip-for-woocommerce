@@ -7,6 +7,10 @@
  * @package CHIP for WooCommerce
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * WooCommerce Blocks support class for CHIP gateway 2.
  */

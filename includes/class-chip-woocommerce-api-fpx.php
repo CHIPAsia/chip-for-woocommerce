@@ -7,6 +7,10 @@
  * @package CHIP for WooCommerce
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! defined( 'CHIP_FPX_ROOT_URL' ) ) {
 	define( 'CHIP_FPX_ROOT_URL', 'https://api.chip-in.asia/health_check' );
 }

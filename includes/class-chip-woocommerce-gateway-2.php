@@ -7,6 +7,10 @@
  * @package CHIP for WooCommerce
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Chip_Woocommerce_Gateway_2 class for Corporate Online Banking.
  */

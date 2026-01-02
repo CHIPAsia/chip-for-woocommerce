@@ -7,6 +7,10 @@
  * @package CHIP for WooCommerce
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // This is CHIP API URL Endpoint as per documented in: https://docs.chip-in.asia.
 if ( ! defined( 'CHIP_ROOT_URL' ) ) {
 	define( 'CHIP_ROOT_URL', 'https://gate.chip-in.asia/api' );
