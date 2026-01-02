@@ -840,7 +840,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			// Check if this is a pre-order with delayed capture.
 			if ( $this->order_contains_pre_order( $order ) ) {
-				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
+				$this->store_purchase_meta( $order, $payment, $order_payment_method );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
@@ -848,7 +848,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			} elseif ( ! $order->has_status( 'on-hold' ) && ! $order->is_paid() ) {
 				// Set order to On Hold for hold payments awaiting capture.
-				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
+				$this->store_purchase_meta( $order, $payment, $order_payment_method );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
@@ -1920,7 +1920,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			sprintf( __( 'Payment attempt with CHIP. Purchase ID: %1$s', 'chip-for-woocommerce' ), $payment['id'] )
 		);
 
-		$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+		$this->store_purchase_meta( $order, $payment );
 		$order->save();
 
 		if ( has_action( 'wc_' . $this->id . '_chip_purchase' ) ) {
@@ -2264,7 +2264,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$chip    = $this->api();
 		$payment = $chip->create_payment( $params );
 
-		$renewal_order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+		$this->store_purchase_meta( $renewal_order, $payment );
 		$renewal_order->save();
 
 		if ( has_action( 'wc_' . $this->id . '_chip_purchase' ) ) {
@@ -2577,7 +2577,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		/* translators: %s: Transaction ID */
 		$order->add_order_note( sprintf( __( 'Payment Successful. Transaction ID: %s', 'chip-for-woocommerce' ), $payment['id'] ) );
-		$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
+		$this->store_purchase_meta( $order, $payment, $order_payment_method );
 		$order->payment_complete( $payment['id'] );
 		$order->save();
 
@@ -2704,14 +2704,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			// Check if this is a pre-order with delayed capture.
 			if ( $this->order_contains_pre_order( $order ) ) {
-				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
+				$this->store_purchase_meta( $order, $payment, $order_payment_method );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
 				$order->save();
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			} elseif ( ! $order->has_status( 'on-hold' ) ) {
-				$order->update_meta_data( '_' . $order_payment_method . '_purchase', $payment );
+				$this->store_purchase_meta( $order, $payment, $order_payment_method );
 				$order->update_meta_data( '_chip_can_void', 'yes' );
 				$order->update_meta_data( '_chip_hold_timestamp', time() );
 				$order->set_transaction_id( $payment['id'] );
@@ -3766,7 +3766,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			sprintf( __( 'Payment attempt with CHIP. Purchase ID: %1$s', 'chip-for-woocommerce' ), $payment['id'] )
 		);
 
-		$order->update_meta_data( '_' . $this->id . '_purchase', $payment );
+		$this->store_purchase_meta( $order, $payment );
 		$order->save();
 
 		if ( has_action( 'wc_' . $this->id . '_chip_purchase' ) ) {
@@ -3925,5 +3925,35 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Store purchase meta data for an order.
+	 *
+	 * Stores the current payment payload and appends the purchase ID to history.
+	 * This allows tracking multiple payment attempts for the same order.
+	 *
+	 * @param WC_Order $order   The order object.
+	 * @param array    $payment The payment data from CHIP API.
+	 * @param string   $meta_key_prefix Optional. The meta key prefix (gateway ID). Defaults to $this->id.
+	 * @return void
+	 */
+	public function store_purchase_meta( $order, $payment, $meta_key_prefix = '' ) {
+		if ( empty( $meta_key_prefix ) ) {
+			$meta_key_prefix = $this->id;
+		}
+
+		// Store as current/latest purchase (backwards compatible).
+		$order->update_meta_data( '_' . $meta_key_prefix . '_purchase', $payment );
+
+		// Append purchase ID to history (only store IDs, not full payload).
+		if ( isset( $payment['id'] ) ) {
+			$history = $order->get_meta( '_' . $meta_key_prefix . '_purchase_ids', true );
+			if ( ! is_array( $history ) ) {
+				$history = array();
+			}
+			$history[] = $payment['id'];
+			$order->update_meta_data( '_' . $meta_key_prefix . '_purchase_ids', array_unique( $history ) );
+		}
 	}
 }
