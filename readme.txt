@@ -55,25 +55,39 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 = 2.0.0 2025-12-31 =
 * Changed - Refactored codebase with improved class structure for WordPress coding standards compliance.
 * Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
-* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility.
+* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility using _deprecated_hook().
 * Changed - CVC input now hidden (password type) in both legacy and blocks checkout.
+* Changed - Simplified client creation by removing explicit client_id management.
 * Changed - Only update order status to Failed when order is in Pending Payment status.
 * Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
-* Added - REST API endpoint for lazy loading FPX banks and e-wallets.
+* Added - REST API endpoint for lazy loading FPX banks and e-wallets (GET /chip/v1/banks/).
 * Added - Direct POST card payments support for WooCommerce Blocks checkout.
-* Added - Card form with validation for WooCommerce Blocks.
-* Added - Card number formatting with spaces and card brand logos (Visa/Mastercard).
+* Added - Card form component with validation for WooCommerce Blocks.
+* Added - Expiry formatting (MM/YY) for legacy checkout card form.
+* Added - Card number formatting with spaces every 4 digits for legacy checkout.
+* Added - Save card option (remember_card) parameter for both legacy and blocks checkout.
+* Added - PostgreSQL compatibility for database locking.
+* Added - Void payment functionality for pre-authorized payments.
+* Added - Capture payment functionality for pre-authorized payments.
+* Added - Card brand logos (Visa/Mastercard) display in card number input field.
 * Added - Bank/e-wallet logos display next to selected option in dropdown.
-* Added - Save card option (remember_card) for both legacy and blocks checkout.
-* Added - Void and Capture payment functionality for pre-authorized payments.
-* Added - Server time accuracy check with Site Health integration.
-* Added - Purchase ID history tracking for multiple payment attempts.
+* Added - Purchase ID history tracking for multiple payment attempts on same order.
+* Added - Purchase ID included in log messages for better debugging.
+* Added - ABSPATH security check to all PHP files.
 * Improved - WooCommerce Blocks integration with recommended patterns.
+* Improved - canMakePayment now checks currency support and payment requirements.
 * Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
-* Improved - Log messages now include Purchase ID for better debugging.
-* Improved - Code quality with PHPCS compliance and ABSPATH security checks.
+* Improved - Expiry and CVC fields now have equal width styling in blocks checkout.
+* Improved - Code quality with PHPCS compliance fixes.
 * Fixed - Saved card payments in WooCommerce Blocks checkout.
-* Removed - Metabox AJAX handler, Update client information, Disable clients API, Force tokenization, Webhook public key options, and Receipt link buttons.
+* Fixed - Direct POST redirect behavior consistency in blocks checkout.
+* Removed - Metabox AJAX handler and related features.
+* Removed - Update client information option and patch_client functionality.
+* Removed - Disable clients API option.
+* Removed - Force tokenization setting.
+* Removed - Webhook public key option and related webhook handling.
+* Removed - get_client_by_email function (now relies on automatic client creation).
+* Removed - CHIP Invoice, Receipt, and Feed buttons from order admin page.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
@@ -139,9 +153,6 @@ You can visit our [API documentation](https://docs.chip-in.asia/) for your refer
 **FPX Health Check API** – `CHIP_FPX_ROOT_URL` (https://api.chip-in.asia/health_check)
 - `/fpx_b2c` – FPX B2C bank status
 - `/fpx_b2b1` – FPX B2B1 bank status
-
-**Time API** (https://timeapi.io)
-- `/api/Time/current/zone?timeZone=UTC` – Server time accuracy check (cached 1 hour)
 
 = How to clone CHIP for WooCommerce? =
 

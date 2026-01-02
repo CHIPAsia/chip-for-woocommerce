@@ -442,40 +442,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		// WooCommerce Blocks payment processing.
 		add_action( 'woocommerce_rest_checkout_process_payment_with_context', array( $this, 'process_payment_with_context' ), 10, 2 );
-
-		// Handle time check refresh.
-		add_action( 'admin_init', array( $this, 'handle_time_check_refresh' ) );
-	}
-
-	/**
-	 * Handle time check refresh request.
-	 *
-	 * Clears the server time offset transient when the refresh link is clicked.
-	 *
-	 * @return void
-	 */
-	public function handle_time_check_refresh() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce is verified below.
-		if ( ! isset( $_GET['chip_refresh_time'] ) ) {
-			return;
-		}
-
-		// Verify nonce.
-		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'chip_refresh_time' ) ) {
-			return;
-		}
-
-		// Check user capability.
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			return;
-		}
-
-		// Delete the transient.
-		delete_transient( 'chip_server_time_offset' );
-
-		// Redirect back without the refresh parameter.
-		wp_safe_redirect( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . $this->id ) );
-		exit;
 	}
 
 	/**
@@ -1106,37 +1072,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'default'     => 'yes',
 		);
 
-		$time_warning       = '';
-		$server_time_offset = $this->get_server_time_offset();
-		if ( null !== $server_time_offset && $server_time_offset < -30 ) {
-			$refresh_url  = wp_nonce_url(
-				add_query_arg(
-					array(
-						'chip_refresh_time' => '1',
-					),
-					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . $this->id )
-				),
-				'chip_refresh_time'
-			);
-			$time_warning = '<br><strong style="color: #d63638;">' .
-				sprintf(
-					/* translators: %d: Time difference in seconds */
-					__( '⚠️ Warning: Your server time appears to be %d seconds behind the actual time. This may cause payment issues. Leave this field blank to disable the due parameter, or contact your hosting provider to fix the server time.', 'chip-for-woocommerce' ),
-					abs( $server_time_offset )
-				) .
-				'</strong>' .
-				sprintf(
-					' <a href="%s">%s</a>',
-					esc_url( $refresh_url ),
-					__( '[Refresh Time Check]', 'chip-for-woocommerce' )
-				);
-		}
-
 		$this->form_fields['due_strict_timing'] = array(
 			'title'       => __( 'Due Strict Timing (minutes)', 'chip-for-woocommerce' ),
 			'type'        => 'number',
 			/* translators: %1$s: Default hold stock minutes value */
-			'description' => sprintf( __( 'Payment expiry time in minutes. Defaults to WooCommerce hold stock setting: <code>%1$s</code>. Only applies when Due Strict is enabled. Leave blank to disable the due parameter entirely.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ) . $time_warning,
+			'description' => sprintf( __( 'Payment expiry time in minutes. Defaults to WooCommerce hold stock setting: <code>%1$s</code>. Only applies when Due Strict is enabled. Leave blank to disable the due parameter entirely.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ),
 			'default'     => '',
 			'placeholder' => get_option( 'woocommerce_hold_stock_minutes', '60' ),
 		);
@@ -2021,59 +1961,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		return time() + ( $due_strict_timing * 60 );
-	}
-
-	/**
-	 * Get server time offset compared to external time API.
-	 *
-	 * Checks the server time against https://timeapi.io to detect clock drift.
-	 * Caches the result for 1 hour to avoid excessive API calls.
-	 *
-	 * @return int|null Time offset in seconds (negative = server is behind), or null on error.
-	 */
-	public function get_server_time_offset() {
-		$cache_key     = 'chip_server_time_offset';
-		$cached_offset = get_transient( $cache_key );
-
-		if ( false !== $cached_offset ) {
-			return (int) $cached_offset;
-		}
-
-		$response = wp_remote_get(
-			'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
-			array(
-				'timeout' => 5,
-				'headers' => array(
-					'Accept' => 'application/json',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return null;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( ! isset( $data['dateTime'] ) ) {
-			return null;
-		}
-
-		// Parse the API time.
-		$api_time    = strtotime( $data['dateTime'] );
-		$server_time = time();
-
-		if ( false === $api_time ) {
-			return null;
-		}
-
-		$offset = $server_time - $api_time;
-
-		// Cache for 1 hour.
-		set_transient( $cache_key, $offset, HOUR_IN_SECONDS );
-
-		return $offset;
 	}
 
 	/**

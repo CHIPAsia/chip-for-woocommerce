@@ -17,10 +17,6 @@
 * Added - PostgreSQL compatibility for database locking.
 * Added - Void payment functionality for pre-authorized payments.
 * Added - Capture payment functionality for pre-authorized payments.
-* Added - Server time accuracy check using timeapi.io API.
-* Added - Site Health test for server time accuracy.
-* Added - Refresh button for server time check in Site Health and gateway settings.
-* Added - Warning in Due Strict Timing setting when server time is inaccurate.
 * Added - Card brand logos (Visa/Mastercard) display in card number input field.
 * Added - Bank/e-wallet logos display next to selected option in dropdown.
 * Added - Purchase ID history tracking for multiple payment attempts on same order.
