@@ -813,7 +813,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$this->log_order_info( 'payment processed. Purchase ID: ' . $payment['id'], $order );
 		} elseif ( 'preauthorized' === $payment['status'] ) {
-			// Handle preauthorized payments ($0 authorization for pre-orders or card verification).
+			// Handle preauthorized payments (RM0 authorization for pre-orders or card verification).
 			if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
 				$token = $this->store_recurring_token( $payment, $order->get_user_id() );
 				if ( $token ) {
@@ -821,7 +821,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				}
 			}
 
-			// This is a pre-order with $0 authorization.
+			// This is a pre-order with RM0 authorization.
 			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			}
@@ -2689,7 +2689,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		if ( 'preauthorized' === $payment['status'] ) {
-			// Handle preauthorized payments ($0 authorization for pre-orders or card verification).
+			// Handle preauthorized payments (RM0 authorization for pre-orders or card verification).
 			if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
 			}
