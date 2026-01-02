@@ -112,35 +112,30 @@ You can visit our [API documentation](https://docs.chip-in.asia/) for your refer
 
 = What CHIP API services are used in this plugin? =
 
-This plugin relies on CHIP API ([CHIP_ROOT_URL](https://gate.chip-in.asia)) as follows:
+**CHIP API** – `CHIP_ROOT_URL` (https://gate.chip-in.asia)
 
-  - **/payment_methods/**
-    - This is for getting available payment methods specific to your account
-  - **/purchases/**
-    - This is for creating a payment/purchase
-  - **/purchases/<id\>/**
-    - This is for getting payment status from CHIP
-  - **/purchases/<id\>/refund/**
-    - This is for refunding payment
-  - **/purchases/<id\>/charge/**
-    - This is for charging payment with saved card token
-  - **/purchases/<id\>/capture/**
-    - This is for capturing pre-authorized payment
-  - **/purchases/<id\>/release/**
-    - This is for releasing pre-authorized payment
-  - **/purchases/<id\>/delete_recurring_token/**
-    - This is for deleting saved card token
-  - **/clients/**
-    - This is for creating clients in CHIP
-  - **/public_key/**
-    - This is for getting public key for webhook verification
+*Payment Operations:*
+- `/purchases/` – Create payment
+- `/purchases/{id}/` – Get payment status
+- `/purchases/{id}/refund/` – Refund payment
+- `/purchases/{id}/capture/` – Capture pre-authorized payment
+- `/purchases/{id}/release/` – Release pre-authorized payment
 
-Additionally, for FPX bank status, this plugin relies on CHIP API ([CHIP_FPX_ROOT_URL](https://api.chip-in.asia/health_check)) as follows:
+*Card Token Operations:*
+- `/purchases/{id}/charge/` – Charge saved card
+- `/purchases/{id}/delete_recurring_token/` – Delete saved card
 
-  - **/fpx_b2c**
-    - This is for getting FPX B2C status
-  - **/fpx_b2b1**
-    - This is for getting FPX B2B1 status
+*Other:*
+- `/payment_methods/` – Get available payment methods
+- `/clients/` – Create clients
+- `/public_key/` – Webhook verification
+
+**FPX Health Check API** – `CHIP_FPX_ROOT_URL` (https://api.chip-in.asia/health_check)
+- `/fpx_b2c` – FPX B2C bank status
+- `/fpx_b2b1` – FPX B2B1 bank status
+
+**Time API** (https://timeapi.io)
+- `/api/Time/current/zone?timeZone=UTC` – Server time accuracy check (cached 1 hour)
 
 = How to clone CHIP for WooCommerce? =
 

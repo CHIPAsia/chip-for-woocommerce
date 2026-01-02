@@ -1058,12 +1058,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'default'     => 'yes',
 		);
 
+		$time_warning       = '';
+		$server_time_offset = $this->get_server_time_offset();
+		if ( null !== $server_time_offset && $server_time_offset < -30 ) {
+			$time_warning = '<br><strong style="color: #d63638;">' .
+				sprintf(
+					/* translators: %d: Time difference in seconds */
+					__( '⚠️ Warning: Your server time appears to be %d seconds behind the actual time. This may cause payment issues. Leave this field blank to disable the due parameter, or contact your hosting provider to fix the server time.', 'chip-for-woocommerce' ),
+					abs( $server_time_offset )
+				) .
+				'</strong>';
+		}
+
 		$this->form_fields['due_strict_timing'] = array(
 			'title'       => __( 'Due Strict Timing (minutes)', 'chip-for-woocommerce' ),
 			'type'        => 'number',
 			/* translators: %1$s: Default hold stock minutes value */
-			'description' => sprintf( __( 'Payment expiry time in minutes. Defaults to WooCommerce hold stock setting: <code>%1$s</code>. Only applies when Due Strict is enabled.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ),
-			'default'     => get_option( 'woocommerce_hold_stock_minutes', '60' ),
+			'description' => sprintf( __( 'Payment expiry time in minutes. Defaults to WooCommerce hold stock setting: <code>%1$s</code>. Only applies when Due Strict is enabled. Leave blank to disable the due parameter entirely.', 'chip-for-woocommerce' ), get_option( 'woocommerce_hold_stock_minutes', '60' ) ) . $time_warning,
+			'default'     => '',
+			'placeholder' => get_option( 'woocommerce_hold_stock_minutes', '60' ),
 		);
 
 		$this->form_fields['purchase_time_zone'] = array(
@@ -1639,6 +1652,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $order_id );
 		}
 
+		$due_timestamp = $this->get_due_timestamp();
+
 		$params = array(
 			'success_callback' => $callback_url,
 			'success_redirect' => $callback_url,
@@ -1649,7 +1664,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'reference'        => $order->get_id(),
 			'platform'         => 'woocommerce',
-			'due'              => $this->get_due_timestamp(),
 			'purchase'         => array(
 				'total_override' => round( $order->get_total() * 100 ),
 				'due_strict'     => 'yes' === $this->due_strict,
@@ -1713,6 +1727,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					'price' => round( $order->get_total() * 100 ),
 				),
 			);
+		}
+
+		// Only set 'due' if a valid timestamp is returned.
+		if ( null !== $due_timestamp ) {
+			$params['due'] = $due_timestamp;
 		}
 
 		foreach ( $params['client'] as $key => $value ) {
@@ -1902,14 +1921,75 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Get due timestamp for payment.
 	 *
-	 * @return int
+	 * Returns null if due_strict_timing is empty (disabled).
+	 *
+	 * @return int|null Due timestamp or null if disabled.
 	 */
 	public function get_due_timestamp() {
-		$due_strict_timing = $this->due_strict_timing;
-		if ( empty( $this->due_strict_timing ) ) {
-			$due_strict_timing = 60;
+		// If due_strict_timing is empty, return null to disable the due parameter.
+		if ( '' === $this->due_strict_timing || null === $this->due_strict_timing ) {
+			return null;
 		}
-		return time() + ( absint( $due_strict_timing ) * 60 );
+
+		$due_strict_timing = absint( $this->due_strict_timing );
+		if ( 0 === $due_strict_timing ) {
+			return null;
+		}
+
+		return time() + ( $due_strict_timing * 60 );
+	}
+
+	/**
+	 * Get server time offset compared to external time API.
+	 *
+	 * Checks the server time against https://timeapi.io to detect clock drift.
+	 * Caches the result for 1 hour to avoid excessive API calls.
+	 *
+	 * @return int|null Time offset in seconds (negative = server is behind), or null on error.
+	 */
+	public function get_server_time_offset() {
+		$cache_key     = 'chip_server_time_offset';
+		$cached_offset = get_transient( $cache_key );
+
+		if ( false !== $cached_offset ) {
+			return (int) $cached_offset;
+		}
+
+		$response = wp_remote_get(
+			'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
+			array(
+				'timeout' => 5,
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return null;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( ! isset( $data['dateTime'] ) ) {
+			return null;
+		}
+
+		// Parse the API time.
+		$api_time    = strtotime( $data['dateTime'] );
+		$server_time = time();
+
+		if ( false === $api_time ) {
+			return null;
+		}
+
+		$offset = $server_time - $api_time;
+
+		// Cache for 1 hour.
+		set_transient( $cache_key, $offset, HOUR_IN_SECONDS );
+
+		return $offset;
 	}
 
 	/**
@@ -2074,13 +2154,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$callback_url = home_url( '/?wc-api=' . get_class( $this ) . '&id=' . $renewal_order_id );
 		}
 
+		$due_timestamp = $this->get_due_timestamp();
+
 		$params = array(
 			'success_callback' => $callback_url,
 			'send_receipt'     => false,
 			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'reference'        => $renewal_order_id,
 			'platform'         => 'woocommerce_subscriptions',
-			'due'              => $this->get_due_timestamp(),
 			'brand_id'         => $this->brand_id,
 			'client'           => array(
 				'email'     => $renewal_order->get_billing_email(),
@@ -2095,6 +2176,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'products'       => array(),
 			),
 		);
+
+		// Only set 'due' if a valid timestamp is returned.
+		if ( null !== $due_timestamp ) {
+			$params['due'] = $due_timestamp;
+		}
 
 		$items = $renewal_order->get_items();
 
@@ -3565,13 +3651,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// TODO: Check if still require to minus total_pre_order_fee.
 		$total = absint( $order->get_total() ) - absint( $total_pre_order_fee );
 
+		$due_timestamp = $this->get_due_timestamp();
+
 		$params = array(
 			'success_callback' => $callback_url,
 			'send_receipt'     => false,
 			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
 			'reference'        => $order->get_id(),
 			'platform'         => 'woocommerce',
-			'due'              => $this->get_due_timestamp(),
 			'brand_id'         => $this->brand_id,
 			'client'           => array(
 				'email'     => $order->get_billing_email(),
@@ -3586,6 +3673,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'products'       => array(),
 			),
 		);
+
+		// Only set 'due' if a valid timestamp is returned.
+		if ( null !== $due_timestamp ) {
+			$params['due'] = $due_timestamp;
+		}
 
 		$items = $order->get_items();
 
