@@ -63,7 +63,7 @@ class Chip_Woocommerce_Site_Health {
 	 */
 	public function response_success() {
 		return array(
-			'label'       => __( 'CHIP Payment Gateway is connected', 'chip-for-woocommerce' ),
+			'label'       => __( 'CHIP Collect API is connected', 'chip-for-woocommerce' ),
 			'status'      => 'good',
 			'badge'       => array(
 				'label' => __( 'CHIP Plugin', 'chip-for-woocommerce' ),
@@ -71,7 +71,7 @@ class Chip_Woocommerce_Site_Health {
 			),
 			'description' => sprintf(
 				'<p>%s</p>',
-				__( 'Your site can successfully communicate with the CHIP Payment Gateway.', 'chip-for-woocommerce' )
+				__( 'Your site can successfully communicate with the CHIP Collect API.', 'chip-for-woocommerce' )
 			),
 			'actions'     => array(),
 			'test'        => 'CHIP_plugin_api_status',
@@ -85,7 +85,7 @@ class Chip_Woocommerce_Site_Health {
 	 */
 	public function response_fail() {
 		return array(
-			'label'       => __( 'CHIP Payment Gateway connection failed', 'chip-for-woocommerce' ),
+			'label'       => __( 'CHIP Collect API connection failed', 'chip-for-woocommerce' ),
 			'status'      => 'critical',
 			'badge'       => array(
 				'label' => __( 'CHIP Plugin', 'chip-for-woocommerce' ),
@@ -93,7 +93,7 @@ class Chip_Woocommerce_Site_Health {
 			),
 			'description' => sprintf(
 				'<p>%s</p>',
-				__( 'Your site cannot connect to the CHIP Payment Gateway. Please check your server\'s internet connectivity.', 'chip-for-woocommerce' )
+				__( 'Your site cannot connect to the CHIP Collect API. Please check your server\'s internet connectivity.', 'chip-for-woocommerce' )
 			),
 			'actions'     => array(),
 			'test'        => 'CHIP_plugin_api_status',
