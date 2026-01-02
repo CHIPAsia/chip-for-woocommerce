@@ -1811,7 +1811,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( function_exists( 'wcs_order_contains_subscription' ) ) {
 			if ( $this->supports( 'tokenization' ) && wcs_order_contains_subscription( $order ) ) {
 				$params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();
-				$params['force_recurring']          = true;
+
+				// Only set force_recurring if Accept Manual Renewals is not enabled.
+				// If Accept Manual Renewals is enabled, payments should be processed manually.
+				$accept_manual_renewals = get_option( 'woocommerce_subscriptions_accept_manual_renewals', 'no' );
+				if ( 'yes' !== $accept_manual_renewals ) {
+					$params['force_recurring'] = true;
+				}
 
 				if ( 0 === $params['purchase']['total_override'] ) {
 					$params['skip_capture'] = true;
