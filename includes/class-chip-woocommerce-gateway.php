@@ -1869,6 +1869,22 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 		// End of logic for WooCommerce Pre-orders.
 
+		// Filter payment_method_whitelist when force_recurring is true.
+		// Only visa, mastercard, and maestro are allowed for recurring payments.
+		if ( isset( $params['force_recurring'] ) && true === $params['force_recurring'] ) {
+			if ( isset( $params['payment_method_whitelist'] ) && is_array( $params['payment_method_whitelist'] ) ) {
+				$allowed_recurring_methods = array( 'visa', 'mastercard', 'maestro' );
+				$params['payment_method_whitelist'] = array_intersect( $params['payment_method_whitelist'], $allowed_recurring_methods );
+				// If no valid methods remain, set default to visa, mastercard, and maestro.
+				if ( empty( $params['payment_method_whitelist'] ) ) {
+					$params['payment_method_whitelist'] = array( 'visa', 'mastercard', 'maestro' );
+				}
+			} elseif ( ! isset( $params['payment_method_whitelist'] ) ) {
+				// If payment_method_whitelist is not set, set default for recurring.
+				$params['payment_method_whitelist'] = array( 'visa', 'mastercard', 'maestro' );
+			}
+		}
+
 		if ( has_filter( 'wc_' . $this->id . '_purchase_params' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'wc_' . $this->id . '_purchase_params', '2.0.0', 'chip_' . $this->id . '_purchase_params' );
@@ -3619,9 +3635,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$pmw = $this->get_payment_method_whitelist();
 		if ( is_countable( $pmw ) && count( $pmw ) >= 1 ) {
-			return $pmw;
-		} elseif ( $this->supports( 'tokenization' ) ) {
-			return array( 'visa', 'mastercard' ); // Return the most generic card payment method.
+			// Filter to only allow visa, mastercard, and maestro for recurring payments.
+			$allowed_recurring_methods = array( 'visa', 'mastercard', 'maestro' );
+			$filtered_pmw = array_intersect( $pmw, $allowed_recurring_methods );
+			// If no valid methods remain after filtering, return default.
+			if ( ! empty( $filtered_pmw ) ) {
+				return $filtered_pmw;
+			}
+		}
+		if ( $this->supports( 'tokenization' ) ) {
+			return array( 'visa', 'mastercard', 'maestro' ); // Return the allowed recurring card payment methods.
 		}
 
 		return null;
