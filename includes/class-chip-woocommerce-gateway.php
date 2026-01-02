@@ -438,6 +438,40 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		// WooCommerce Blocks payment processing.
 		add_action( 'woocommerce_rest_checkout_process_payment_with_context', array( $this, 'process_payment_with_context' ), 10, 2 );
+
+		// Handle time check refresh.
+		add_action( 'admin_init', array( $this, 'handle_time_check_refresh' ) );
+	}
+
+	/**
+	 * Handle time check refresh request.
+	 *
+	 * Clears the server time offset transient when the refresh link is clicked.
+	 *
+	 * @return void
+	 */
+	public function handle_time_check_refresh() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce is verified below.
+		if ( ! isset( $_GET['chip_refresh_time'] ) ) {
+			return;
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'chip_refresh_time' ) ) {
+			return;
+		}
+
+		// Check user capability.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
+		// Delete the transient.
+		delete_transient( 'chip_server_time_offset' );
+
+		// Redirect back without the refresh parameter.
+		wp_safe_redirect( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . $this->id ) );
+		exit;
 	}
 
 	/**
@@ -1061,13 +1095,27 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$time_warning       = '';
 		$server_time_offset = $this->get_server_time_offset();
 		if ( null !== $server_time_offset && $server_time_offset < -30 ) {
+			$refresh_url  = wp_nonce_url(
+				add_query_arg(
+					array(
+						'chip_refresh_time' => '1',
+					),
+					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . $this->id )
+				),
+				'chip_refresh_time'
+			);
 			$time_warning = '<br><strong style="color: #d63638;">' .
 				sprintf(
 					/* translators: %d: Time difference in seconds */
 					__( '⚠️ Warning: Your server time appears to be %d seconds behind the actual time. This may cause payment issues. Leave this field blank to disable the due parameter, or contact your hosting provider to fix the server time.', 'chip-for-woocommerce' ),
 					abs( $server_time_offset )
 				) .
-				'</strong>';
+				'</strong>' .
+				sprintf(
+					' <a href="%s">%s</a>',
+					esc_url( $refresh_url ),
+					__( '[Refresh Time Check]', 'chip-for-woocommerce' )
+				);
 		}
 
 		$this->form_fields['due_strict_timing'] = array(

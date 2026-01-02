@@ -21,6 +21,80 @@ class Chip_Woocommerce_Site_Health {
 	 */
 	public function __construct() {
 		add_filter( 'site_status_tests', array( $this, 'chip_plugin_register_site_health_tests' ) );
+		add_action( 'wp_ajax_chip_refresh_time_check', array( $this, 'ajax_refresh_time_check' ) );
+		add_action( 'admin_footer-site-health.php', array( $this, 'add_refresh_script' ) );
+	}
+
+	/**
+	 * AJAX handler to refresh time check by clearing transient.
+	 */
+	public function ajax_refresh_time_check() {
+		check_ajax_referer( 'chip_refresh_time_check', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized' );
+		}
+
+		delete_transient( 'chip_server_time_offset' );
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * Add JavaScript for refresh button on Site Health page.
+	 */
+	public function add_refresh_script() {
+		$nonce = wp_create_nonce( 'chip_refresh_time_check' );
+		?>
+		<script type="text/javascript">
+		(function() {
+			document.addEventListener('click', function(e) {
+				if (e.target && e.target.id === 'chip-refresh-time-check') {
+					e.preventDefault();
+					e.target.textContent = '<?php echo esc_js( __( 'Refreshing...', 'chip-for-woocommerce' ) ); ?>';
+					e.target.disabled = true;
+
+					fetch(ajaxurl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded',
+						},
+						body: 'action=chip_refresh_time_check&nonce=<?php echo esc_js( $nonce ); ?>'
+					})
+					.then(function(response) {
+						return response.json();
+					})
+					.then(function(data) {
+						if (data.success) {
+							location.reload();
+						} else {
+							alert('<?php echo esc_js( __( 'Failed to refresh time check.', 'chip-for-woocommerce' ) ); ?>');
+							e.target.textContent = '<?php echo esc_js( __( 'Refresh Time Check', 'chip-for-woocommerce' ) ); ?>';
+							e.target.disabled = false;
+						}
+					})
+					.catch(function() {
+						alert('<?php echo esc_js( __( 'Failed to refresh time check.', 'chip-for-woocommerce' ) ); ?>');
+						e.target.textContent = '<?php echo esc_js( __( 'Refresh Time Check', 'chip-for-woocommerce' ) ); ?>';
+						e.target.disabled = false;
+					});
+				}
+			});
+		})();
+		</script>
+		<?php
+	}
+
+	/**
+	 * Get refresh button HTML.
+	 *
+	 * @return string
+	 */
+	private function get_refresh_button() {
+		return sprintf(
+			'<button type="button" id="chip-refresh-time-check" class="button">%s</button>',
+			__( 'Refresh Time Check', 'chip-for-woocommerce' )
+		);
 	}
 
 	/**
@@ -170,7 +244,7 @@ class Chip_Woocommerce_Site_Health {
 				'<p>%s</p>',
 				__( 'Could not verify server time against external time service. This may be due to network restrictions. If you experience payment expiry issues, contact your hosting provider to verify server time accuracy.', 'chip-for-woocommerce' )
 			),
-			'actions'     => '',
+			'actions'     => $this->get_refresh_button(),
 			'test'        => 'CHIP_plugin_server_time',
 		);
 	}
@@ -199,9 +273,10 @@ class Chip_Woocommerce_Site_Health {
 				__( 'Please contact your hosting provider to synchronize your server clock with an NTP time server, or leave the "Due Strict Timing" field blank in the CHIP gateway settings to disable payment expiry.', 'chip-for-woocommerce' )
 			),
 			'actions'     => sprintf(
-				'<a href="%s">%s</a>',
+				'<a href="%s">%s</a> %s',
 				admin_url( 'admin.php?page=wc-settings&tab=checkout&section=chip' ),
-				__( 'Go to CHIP Settings', 'chip-for-woocommerce' )
+				__( 'Go to CHIP Settings', 'chip-for-woocommerce' ),
+				$this->get_refresh_button()
 			),
 			'test'        => 'CHIP_plugin_server_time',
 		);
@@ -230,7 +305,7 @@ class Chip_Woocommerce_Site_Health {
 				),
 				__( 'Consider contacting your hosting provider to synchronize your server clock with an NTP time server for optimal accuracy.', 'chip-for-woocommerce' )
 			),
-			'actions'     => '',
+			'actions'     => $this->get_refresh_button(),
 			'test'        => 'CHIP_plugin_server_time',
 		);
 	}
@@ -265,7 +340,7 @@ class Chip_Woocommerce_Site_Health {
 					$offset_text
 				)
 			),
-			'actions'     => '',
+			'actions'     => $this->get_refresh_button(),
 			'test'        => 'CHIP_plugin_server_time',
 		);
 	}
