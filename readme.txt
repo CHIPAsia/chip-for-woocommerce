@@ -57,15 +57,21 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 * Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
 * Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility.
 * Changed - CVC input now hidden (password type) in both legacy and blocks checkout.
+* Changed - Only update order status to Failed when order is in Pending Payment status.
 * Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
 * Added - REST API endpoint for lazy loading FPX banks and e-wallets.
 * Added - Direct POST card payments support for WooCommerce Blocks checkout.
 * Added - Card form with validation for WooCommerce Blocks.
+* Added - Card number formatting with spaces and card brand logos (Visa/Mastercard).
+* Added - Bank/e-wallet logos display next to selected option in dropdown.
 * Added - Save card option (remember_card) for both legacy and blocks checkout.
 * Added - Void and Capture payment functionality for pre-authorized payments.
+* Added - Server time accuracy check with Site Health integration.
+* Added - Purchase ID history tracking for multiple payment attempts.
 * Improved - WooCommerce Blocks integration with recommended patterns.
 * Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
-* Improved - Code quality with PHPCS compliance fixes.
+* Improved - Log messages now include Purchase ID for better debugging.
+* Improved - Code quality with PHPCS compliance and ABSPATH security checks.
 * Fixed - Saved card payments in WooCommerce Blocks checkout.
 * Removed - Metabox AJAX handler, Update client information, Disable clients API, Force tokenization, Webhook public key options, and Receipt link buttons.
 

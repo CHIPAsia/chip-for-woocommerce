@@ -6,15 +6,26 @@
 * Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility using _deprecated_hook().
 * Changed - CVC input now hidden (password type) in both legacy and blocks checkout.
 * Changed - Simplified client creation by removing explicit client_id management.
+* Changed - Only update order status to Failed when order is in Pending Payment status.
 * Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
 * Added - REST API endpoint for lazy loading FPX banks and e-wallets (GET /chip/v1/banks/).
 * Added - Direct POST card payments support for WooCommerce Blocks checkout.
 * Added - Card form component with validation for WooCommerce Blocks.
 * Added - Expiry formatting (MM/YY) for legacy checkout card form.
+* Added - Card number formatting with spaces every 4 digits for legacy checkout.
 * Added - Save card option (remember_card) parameter for both legacy and blocks checkout.
 * Added - PostgreSQL compatibility for database locking.
 * Added - Void payment functionality for pre-authorized payments.
 * Added - Capture payment functionality for pre-authorized payments.
+* Added - Server time accuracy check using timeapi.io API.
+* Added - Site Health test for server time accuracy.
+* Added - Refresh button for server time check in Site Health and gateway settings.
+* Added - Warning in Due Strict Timing setting when server time is inaccurate.
+* Added - Card brand logos (Visa/Mastercard) display in card number input field.
+* Added - Bank/e-wallet logos display next to selected option in dropdown.
+* Added - Purchase ID history tracking for multiple payment attempts on same order.
+* Added - Purchase ID included in log messages for better debugging.
+* Added - ABSPATH security check to all PHP files.
 * Improved - WooCommerce Blocks integration with recommended patterns.
 * Improved - canMakePayment now checks currency support and payment requirements.
 * Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
