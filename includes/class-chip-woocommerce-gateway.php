@@ -692,7 +692,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 			if ( 1 !== openssl_verify( $content, base64_decode( $signature ), $this->get_public_key(), 'sha256WithRSAEncryption' ) ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
-				exit( esc_html( $message ) );
+				wp_die( esc_html( $message ) );
 			}
 
 			$payment    = json_decode( $content, true );
@@ -700,7 +700,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
-			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
+			wp_die( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
 		if ( 'preauthorized' !== $payment['status'] ) {
@@ -735,7 +735,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function handle_callback_order() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		if ( ! isset( $_GET['id'] ) ) {
-			exit( 'Missing order ID' );
+			wp_die( esc_html__( 'Missing order ID', 'chip-for-woocommerce' ) );
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		$order_id = intval( $_GET['id'] );
@@ -754,7 +754,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( ! $order ) {
 			$this->release_lock( $order_id );
-			exit( 'Order not found' );
+			wp_die( esc_html__( 'Order not found', 'chip-for-woocommerce' ) );
 		}
 
 		$this->log_order_info( 'received success callback for Order ID: ' . $order_id, $order );
@@ -772,7 +772,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			if ( openssl_verify( $content, base64_decode( $signature ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
 				$this->log_order_info( $message, $order );
-				exit( esc_html( $message ) );
+				wp_die( esc_html( $message ) );
 			}
 
 			$payment    = json_decode( $content, true );
@@ -780,7 +780,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
-			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
+			wp_die( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
 		if ( has_action( 'wc_' . $this->id . '_before_handle_callback_order' ) || has_action( 'chip_' . $this->id . '_before_handle_callback_order' ) ) {
@@ -793,6 +793,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			do_action( 'chip_' . $this->id . '_before_handle_callback_order', $order, $payment, $this );
 
 			$payment = $this->api()->get_payment( $payment_id );
+		}
+
+		// Validate payment data structure.
+		if ( ! is_array( $payment ) || ! isset( $payment['status'] ) || ! isset( $payment['id'] ) ) {
+			$message = __( 'Invalid payment data received from callback.', 'chip-for-woocommerce' );
+			$this->log_order_info( $message . ' Payment ID: ' . $payment_id, $order );
+			$this->release_lock( $order_id );
+			wp_die( esc_html( $message ) );
 		}
 
 		if ( 'paid' === $payment['status'] ) {
@@ -3176,14 +3184,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function handle_payment_method_change() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		if ( ! isset( $_GET['id'] ) ) {
-			exit( 'Missing subscription ID' );
+			wp_die( esc_html__( 'Missing subscription ID', 'chip-for-woocommerce' ) );
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		$subscription_id = intval( $_GET['id'] );
 		$payment_id      = WC()->session->get( 'chip_payment_method_change_' . $subscription_id );
 
 		if ( ! wcs_is_subscription( $subscription_id ) ) {
-			exit( esc_html__( 'Order is not subscription', 'chip-for-woocommerce' ) );
+			wp_die( esc_html__( 'Order is not subscription', 'chip-for-woocommerce' ) );
 		}
 
 		$subscription = new WC_Subscription( $subscription_id );
@@ -3196,7 +3204,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			if ( openssl_verify( $content, base64_decode( $signature ), $this->get_public_key(), 'sha256WithRSAEncryption' ) !== 1 ) {
 				$message = __( 'Success callback failed to be processed due to failure in verification.', 'chip-for-woocommerce' );
 				$this->log_order_info( $message, $subscription );
-				exit( esc_html( $message ) );
+				wp_die( esc_html( $message ) );
 			}
 
 			$payment    = json_decode( $content, true );
@@ -3204,7 +3212,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		} elseif ( $payment_id ) {
 			$payment = $this->api()->get_payment( $payment_id );
 		} else {
-			exit( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
+			wp_die( esc_html__( 'Unexpected response', 'chip-for-woocommerce' ) );
 		}
 
 		if ( 'preauthorized' !== $payment['status'] ) {
