@@ -67,13 +67,17 @@ class Chip_Woocommerce_Site_Health {
 			'status'      => 'good',
 			'badge'       => array(
 				'label' => __( 'CHIP Plugin', 'chip-for-woocommerce' ),
-				'color' => 'green',
+				'color' => 'blue',
 			),
 			'description' => sprintf(
 				'<p>%s</p>',
-				__( 'Your site can successfully communicate with the CHIP Collect API.', 'chip-for-woocommerce' )
+				__( 'Connection successful. Your store can accept payments via CHIP. Ensure your payment gateway is enabled in WooCommerce settings.', 'chip-for-woocommerce' )
 			),
-			'actions'     => array(),
+			'actions'     => sprintf(
+				'<a href="%s" class="button">%s</a>',
+				admin_url( 'admin.php?page=wc-settings&tab=checkout' ),
+				__( 'Go to Payment Settings', 'chip-for-woocommerce' )
+			),
 			'test'        => 'CHIP_plugin_api_status',
 		);
 	}
@@ -93,9 +97,9 @@ class Chip_Woocommerce_Site_Health {
 			),
 			'description' => sprintf(
 				'<p>%s</p>',
-				__( 'Your site cannot connect to the CHIP Collect API. Please check your server\'s internet connectivity.', 'chip-for-woocommerce' )
+				__( 'Your store cannot accept payments via CHIP. Please check your server\'s internet connectivity or contact your hosting provider.', 'chip-for-woocommerce' )
 			),
-			'actions'     => array(),
+			'actions'     => '',
 			'test'        => 'CHIP_plugin_api_status',
 		);
 	}
