@@ -1873,7 +1873,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// Only visa, mastercard, and maestro are allowed for recurring payments.
 		if ( isset( $params['force_recurring'] ) && true === $params['force_recurring'] ) {
 			if ( isset( $params['payment_method_whitelist'] ) && is_array( $params['payment_method_whitelist'] ) ) {
-				$allowed_recurring_methods = array( 'visa', 'mastercard', 'maestro' );
+				$allowed_recurring_methods          = array( 'visa', 'mastercard', 'maestro' );
 				$params['payment_method_whitelist'] = array_intersect( $params['payment_method_whitelist'], $allowed_recurring_methods );
 				// If no valid methods remain, set default to visa, mastercard, and maestro.
 				if ( empty( $params['payment_method_whitelist'] ) ) {
@@ -3637,7 +3637,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( is_countable( $pmw ) && count( $pmw ) >= 1 ) {
 			// Filter to only allow visa, mastercard, and maestro for recurring payments.
 			$allowed_recurring_methods = array( 'visa', 'mastercard', 'maestro' );
-			$filtered_pmw = array_intersect( $pmw, $allowed_recurring_methods );
+			$filtered_pmw              = array_intersect( $pmw, $allowed_recurring_methods );
 			// If no valid methods remain after filtering, return default.
 			if ( ! empty( $filtered_pmw ) ) {
 				return $filtered_pmw;
