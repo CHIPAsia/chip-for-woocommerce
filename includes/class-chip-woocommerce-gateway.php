@@ -757,7 +757,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			exit( 'Order not found' );
 		}
 
-		$this->log_order_info( 'received success callback', $order );
+		$this->log_order_info( 'received success callback for Order ID: ' . $order_id, $order );
 
 		// Use the order's payment method to get the correct meta key (handles legacy callbacks).
 		$order_payment_method = $order->get_payment_method();
@@ -811,7 +811,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			WC()->cart->empty_cart();
 
-			$this->log_order_info( 'payment processed', $order );
+			$this->log_order_info( 'payment processed. Purchase ID: ' . $payment['id'], $order );
 		} elseif ( 'preauthorized' === $payment['status'] ) {
 			// Handle preauthorized payments ($0 authorization for pre-orders or card verification).
 			if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
@@ -828,7 +828,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			WC()->cart->empty_cart();
 
-			$this->log_order_info( 'payment preauthorized ($0 authorization)', $order );
+			$this->log_order_info( 'payment preauthorized (RM0 authorization). Purchase ID: ' . $payment['id'], $order );
 		} elseif ( 'hold' === $payment['status'] ) {
 			// Handle hold payments (delayed capture with actual payment amount).
 			if ( $payment['is_recurring_token'] || ! empty( $payment['recurring_token'] ) ) {
@@ -860,10 +860,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			WC()->cart->empty_cart();
 
-			$this->log_order_info( 'payment on hold, awaiting capture', $order );
+			$this->log_order_info( 'payment on hold, awaiting capture. Purchase ID: ' . $payment['id'], $order );
 		} elseif ( ! $order->is_paid() ) {
-			$order->update_status( 'failed' );
-			$this->log_order_info( 'payment not successful', $order );
+			if ( $order->has_status( 'pending' ) ) {
+				$order->update_status( 'failed' );
+			}
+			$this->log_order_info( 'payment not successful. Purchase ID: ' . $payment['id'], $order );
 		}
 
 		$this->release_lock( $order_id );
@@ -1898,7 +1900,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			WC()->cart->empty_cart();
 		}
 
-		$this->log_order_info( 'got checkout url, redirecting', $order );
+		$this->log_order_info( 'got checkout url, redirecting. Purchase ID: ' . $payment['id'], $order );
 
 		$payment_requery_status = 'due';
 
