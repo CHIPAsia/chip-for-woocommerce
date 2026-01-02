@@ -862,7 +862,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 			$this->log_order_info( 'payment on hold, awaiting capture', $order );
 		} elseif ( ! $order->is_paid() ) {
-			$order->update_status( 'wc-failed' );
+			$order->update_status( 'failed' );
 			$this->log_order_info( 'payment not successful', $order );
 		}
 
