@@ -706,7 +706,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Callback from external payment gateway, verified via X-Signature.
 		$order_id = intval( $_GET['id'] );
 
-		$this->api()->log_info( 'received callback for order id: ' . $order_id );
+		$this->api()->log_info( 'received callback for Order ID: ' . $order_id );
 
 		$this->get_lock( $order_id );
 
@@ -1994,7 +1994,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 
 		if ( ! $this->can_refund_order( $order ) ) {
-			$this->log_order_info( 'Cannot refund order', $order );
+			$this->log_order_info( 'cannot refund order', $order );
 			return new WP_Error( 'error', __( 'Refund failed.', 'chip-for-woocommerce' ) );
 		}
 
@@ -2015,7 +2015,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return new WP_Error( 'error', $error_details );
 		}
 
-		$this->log_order_info( 'Refund Result: ' . wc_print_r( $result, true ), $order );
+		$this->log_order_info( 'refund result: ' . wc_print_r( $result, true ), $order );
 		switch ( strtolower( $result['status'] ?? 'failed' ) ) {
 			case 'success':
 				$refund_amount = round( $result['payment']['amount'] / 100, 2 ) . $result['payment']['currency'];
