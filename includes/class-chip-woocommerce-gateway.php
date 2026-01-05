@@ -1801,7 +1801,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$product = $item->get_product();
 			}
 
-			$params['purchase']['total_override'] = round( absint( WC_Pre_Orders_Product::get_pre_order_fee( $product ) ) * 100 );
+			$params['purchase']['total_override'] = (int) round( absint( WC_Pre_Orders_Product::get_pre_order_fee( $product ) ) * 100 );
 
 			if ( ! empty( $token_id ) && 0 === $params['purchase']['total_override'] ) {
 
