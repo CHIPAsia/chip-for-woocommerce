@@ -127,21 +127,67 @@ Automatic updates should work smoothly, but we still recommend you back up your 
 
 = Where is the Brand ID and Secret Key located? =
 
-Brand ID and Secret Key are available through our merchant dashboard.
+Brand ID and Secret Key are available through our [merchant dashboard](https://gate.chip-in.asia). Navigate to Developer > Credentials after logging in.
 
-= Do I need to set the public key for webhook? =
+= What currencies are supported? =
 
-Optional. You may set the public key for webhook to synchronize card token availability.
+CHIP for WooCommerce supports MYR (Malaysian Ringgit) as the primary currency. Contact CHIP support for multi-currency options.
+
+= Is this plugin compatible with WooCommerce Blocks? =
+
+Yes! CHIP for WooCommerce fully supports the new WooCommerce Blocks checkout experience, including card payments, saved cards, and all payment methods.
+
+= Can customers save their cards for future purchases? =
+
+Yes. Enable "Allow Customers to Save Cards" in the gateway settings. Customers can then save their Visa, Mastercard, or Maestro cards for faster checkout.
+
+= Why is my order showing "On Hold" status? =
+
+Orders with "On Hold" status have pre-authorized payments awaiting capture. Go to the order page and click "Capture Payment" when ready to charge the customer.
+
+= How do I capture a pre-authorized payment? =
+
+Navigate to WooCommerce > Orders, open the order, and click the "Capture Payment" button in the order actions section. You can also enable auto-capture when order status changes to Processing or Completed.
+
+= Does this work with WooCommerce Subscriptions? =
+
+Yes! CHIP for WooCommerce supports WooCommerce Subscriptions with automatic recurring payments using saved cards.
+
+= Does this work with WooCommerce Pre-Orders? =
+
+Yes. Pre-Orders are supported with card tokenization. The saved card will be charged when the pre-order is released.
+
+= Payment failed but money was deducted from my account? =
+
+This is usually a temporary hold by your bank. If payment failed on CHIP's end, the hold will be released automatically within 1-7 business days depending on your bank.
+
+= Why can't I see the CHIP payment option at checkout? =
+
+Check the following:
+
+1. Plugin is activated and gateway is enabled
+2. Brand ID and Secret Key are correctly configured
+3. Your store currency is supported (MYR)
+4. Check Site Health (Tools > Site Health) for API connection status
+
+= Is card data stored on my server? =
+
+No. Card data is processed directly by CHIP's secure servers. Your WooCommerce store never handles or stores sensitive card information, ensuring PCI compliance.
+
+= Are there any transaction fees? =
+
+Transaction fees are determined by your CHIP merchant agreement. Contact CHIP sales for pricing details.
 
 = Where can I find documentation? =
 
-You can visit our [API documentation](https://docs.chip-in.asia/) for your reference.
+Visit our [API documentation](https://docs.chip-in.asia/) for technical reference.
 
 = What CHIP API services are used in this plugin? =
 
 **CHIP API** – `CHIP_ROOT_URL` (https://gate.chip-in.asia)
 
 *Payment Operations:*
+
 - `/purchases/` – Create payment
 - `/purchases/{id}/` – Get payment status
 - `/purchases/{id}/refund/` – Refund payment
@@ -149,15 +195,17 @@ You can visit our [API documentation](https://docs.chip-in.asia/) for your refer
 - `/purchases/{id}/release/` – Release pre-authorized payment
 
 *Card Token Operations:*
+
 - `/purchases/{id}/charge/` – Charge saved card
 - `/purchases/{id}/delete_recurring_token/` – Delete saved card
 
 *Other:*
+
 - `/payment_methods/` – Get available payment methods
 - `/clients/` – Create clients
-- `/public_key/` – Webhook verification
 
 **FPX Health Check API** – `CHIP_FPX_ROOT_URL` (https://api.chip-in.asia/health_check)
+
 - `/fpx_b2c` – FPX B2C bank status
 - `/fpx_b2b1` – FPX B2B1 bank status
 
@@ -167,11 +215,11 @@ Create a new class that extends **Chip_Woocommerce_Gateway** with your own custo
 
 Then, hook it with filter **woocommerce_payment_gateways** and pass your class name to it.
 
-You may refer to **includes/class-chip-woocommerce-gateway-2.php** file for an example of how to extend the base gateway class.
+Refer to **includes/class-chip-woocommerce-gateway-2.php** for an example.
 
 = How to remove additional payment methods? =
 
-Create a PHP constant in your wp-config.php file with the following code:
+Add this constant to your wp-config.php file:
 
 `define( 'CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES', true );`
 
