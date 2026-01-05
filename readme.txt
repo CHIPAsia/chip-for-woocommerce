@@ -43,12 +43,19 @@ Our aim is to help businesses streamline their financial processes, reduce opera
 Integrate your WooCommerce site with CHIP as documented in our [API Documentation](https://docs.chip-in.asia).
 
 == Screenshots ==
-* Fill up the form with Brand ID and Secret Key. Tick Enable API and Save changes to activate.
-* Checkout and pay with CHIP
-* CHIP payment page
-* WooCommerce order received page
-* WooCommerce dashboard order page
-* WooCommerce refund order
+
+1. Gateway configuration - Enter your Brand ID and Secret Key to connect with CHIP.
+2. Payment method settings - Configure accepted payment methods and card options.
+3. Card payment form (Legacy) - Secure card input with Visa/Mastercard brand detection.
+4. FPX bank selection - Choose from available Malaysian banks with status indicators.
+5. WooCommerce Blocks checkout - Modern checkout experience with card payment support.
+6. Saved cards selection - Returning customers can pay with saved cards.
+7. CHIP payment page - Secure hosted checkout for completing payment.
+8. Order confirmation - Customer receives order confirmation after successful payment.
+9. Order admin panel - View payment details including card brand and Purchase ID.
+10. Capture payment - Capture pre-authorized payments when ready to fulfill.
+11. Refund order - Process full or partial refunds directly from WooCommerce.
+12. Site Health integration - Verify CHIP API connection status in WordPress Site Health.
 
 == Changelog ==
 
