@@ -13,7 +13,7 @@
  * WC tested up to: 10.4
  * Requires Plugins: woocommerce
  *
- * Copyright: © 2025 CHIP
+ * Copyright: © 2026 CHIP
  * License: GNU General Public License v3.0
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  *

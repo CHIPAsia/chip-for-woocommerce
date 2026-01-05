@@ -59,7 +59,7 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.0 2025-12-31 =
+= 2.0.0 2026-01-06 =
 * Changed - Refactored codebase with improved class structure for WordPress coding standards compliance.
 * Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
 * Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility using _deprecated_hook().
