@@ -6,19 +6,52 @@ on:
 
 jobs:
   build-and-release:
+    name: Build and Upload Release Zip
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v6
-      
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '^20.11.1'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+
+      - name: Prepare plugin folder
+        run: |
+          # Create a clean directory structure for the plugin
+          # The folder name MUST match the plugin slug for WordPress
+          mkdir -p dist/chip-for-woocommerce
+          
+          # Use git archive to get clean files (respects .gitignore)
+          git archive HEAD | tar -x -C dist/chip-for-woocommerce
+          
+          # Create directory for build artifacts (may not exist after git archive)
+          mkdir -p dist/chip-for-woocommerce/assets/js/frontend
+          
+          # Copy build artifacts (not in git)
+          cp assets/js/frontend/*.js dist/chip-for-woocommerce/assets/js/frontend/
+          cp assets/js/frontend/*.php dist/chip-for-woocommerce/assets/js/frontend/
+          
+          echo "✅ Prepared plugin folder"
+          ls -la dist/chip-for-woocommerce/assets/js/frontend/
+
       - name: Create zip file
         run: |
-          git archive HEAD --format=zip --output=chip-for-woocommerce.zip
-      
+          cd dist
+          zip -r ../chip-for-woocommerce.zip chip-for-woocommerce
+          cd ..
+          echo "✅ Created zip file"
+          ls -la chip-for-woocommerce.zip
+
       - name: Upload release asset
         run: |
           gh release upload "${{ github.event.release.tag_name }}" chip-for-woocommerce.zip --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
