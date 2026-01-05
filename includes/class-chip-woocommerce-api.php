@@ -115,7 +115,7 @@ class Chip_Woocommerce_API {
 	/**
 	 * Capture payment.
 	 *
-	 * @param string $payment_id Payment ID.
+	 * @param string $payment_id Purchase ID.
 	 * @param array  $params     Capture parameters.
 	 * @return array|null
 	 */
@@ -128,7 +128,7 @@ class Chip_Woocommerce_API {
 	/**
 	 * Release payment.
 	 *
-	 * @param string $payment_id Payment ID.
+	 * @param string $payment_id Purchase ID.
 	 * @return array|null
 	 */
 	public function release_payment( $payment_id ) {
@@ -140,7 +140,7 @@ class Chip_Woocommerce_API {
 	/**
 	 * Charge payment.
 	 *
-	 * @param string $payment_id Payment ID.
+	 * @param string $payment_id Purchase ID.
 	 * @param array  $params     Charge parameters.
 	 * @return array|null
 	 */
@@ -187,7 +187,7 @@ class Chip_Woocommerce_API {
 	/**
 	 * Get payment.
 	 *
-	 * @param string $payment_id Payment ID.
+	 * @param string $payment_id Purchase ID.
 	 * @return array|null
 	 */
 	public function get_payment( $payment_id ) {
@@ -203,7 +203,7 @@ class Chip_Woocommerce_API {
 	/**
 	 * Refund payment.
 	 *
-	 * @param string $payment_id Payment ID.
+	 * @param string $payment_id Purchase ID.
 	 * @param array  $params     Refund parameters.
 	 * @return array|null
 	 */

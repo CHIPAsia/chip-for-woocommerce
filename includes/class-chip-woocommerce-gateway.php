@@ -764,7 +764,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// Validate payment data structure.
 		if ( ! is_array( $payment ) || ! isset( $payment['status'] ) || ! isset( $payment['id'] ) ) {
 			$message = __( 'Invalid payment data received from callback.', 'chip-for-woocommerce' );
-			$this->log_order_info( $message . ' Payment ID: ' . $payment_id, $order );
+			$this->log_order_info( $message . ' Purchase ID: ' . $payment_id, $order );
 			$this->release_lock( $order_id );
 			wp_die( esc_html( $message ) );
 		}
@@ -2499,7 +2499,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$order->save();
 
 		if ( true === $payment['is_test'] ) {
-			/* translators: %s: Payment ID */
+			/* translators: %s: Purchase ID */
 			$order->add_order_note( sprintf( __( 'The payment (%s) made in test mode where it does not involve real payment.', 'chip-for-woocommerce' ), $payment['id'] ) );
 		}
 	}
