@@ -723,7 +723,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			wp_die( esc_html__( 'Order not found', 'chip-for-woocommerce' ) );
 		}
 
-		$this->log_order_info( 'received success callback for Order ID: ' . $order_id, $order );
+		$this->log_order_info( 'received success callback', $order );
 
 		// Use the order's payment method to get the correct meta key (handles legacy callbacks).
 		$order_payment_method = $order->get_payment_method();
