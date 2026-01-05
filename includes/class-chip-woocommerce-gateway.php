@@ -1667,7 +1667,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'reference'        => $order->get_id(),
 			'platform'         => 'woocommerce',
 			'purchase'         => array(
-				'total_override' => round( $order->get_total() * 100 ),
+				'total_override' => (int) round( $order->get_total() * 100 ),
 				'due_strict'     => 'yes' === $this->due_strict,
 				'timezone'       => $this->purchase_time_zone,
 				'currency'       => $order->get_currency(),
@@ -2143,7 +2143,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'currency'       => $renewal_order->get_currency(),
 				'language'       => $this->get_language(),
 				'due_strict'     => 'yes' === $this->due_strict,
-				'total_override' => round( $total_amount * 100 ),
+				'total_override' => (int) round( $total_amount * 100 ),
 				'products'       => array(),
 			),
 		);
@@ -3647,7 +3647,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'currency'       => $order->get_currency(),
 				'language'       => $this->get_language(),
 				'due_strict'     => 'yes' === $this->due_strict,
-				'total_override' => round( $total * 100 ),
+				'total_override' => (int) round( $total * 100 ),
 				'products'       => array(),
 			),
 		);
