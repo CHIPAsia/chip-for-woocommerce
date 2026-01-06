@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 2.0.1 2026-01-07 =
+* Added - MBSB Bank to FPX bank list.
+
 = 2.0.0 2026-01-06 =
 * Changed - Refactored codebase with improved class structure for WordPress coding standards compliance.
 * Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.

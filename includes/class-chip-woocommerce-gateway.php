@@ -2693,6 +2693,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'KFH0346'  => __( 'KFH', 'chip-for-woocommerce' ),
 			'MBB0228'  => __( 'Maybank2E', 'chip-for-woocommerce' ),
 			'MB2U0227' => __( 'Maybank2u', 'chip-for-woocommerce' ),
+			'MBSB001'  => __( 'MBSB Bank', 'chip-for-woocommerce' ),
 			'OCBC0229' => __( 'OCBC Bank', 'chip-for-woocommerce' ),
 			'PBB0233'  => __( 'Public Bank', 'chip-for-woocommerce' ),
 			'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),

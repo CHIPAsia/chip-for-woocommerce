@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 6.9
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -45,56 +45,23 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 == Screenshots ==
 
 1. Gateway configuration - Enter your Brand ID and Secret Key to connect with CHIP.
-2. Payment method settings - Configure accepted payment methods and card options.
-3. Card payment form (Legacy) - Secure card input with Visa/Mastercard brand detection.
-4. FPX bank selection - Choose from available Malaysian banks with status indicators.
-5. WooCommerce Blocks checkout - Modern checkout experience with card payment support.
-6. Saved cards selection - Returning customers can pay with saved cards.
-7. CHIP payment page - Secure hosted checkout for completing payment.
-8. Order confirmation - Customer receives order confirmation after successful payment.
-9. Order admin panel - View payment details including card brand and Purchase ID.
-10. Capture payment - Capture pre-authorized payments when ready to fulfill.
-11. Refund order - Process full or partial refunds directly from WooCommerce.
-12. Site Health integration - Verify CHIP API connection status in WordPress Site Health.
+2. Payment gateways overview - All CHIP payment gateways available in WooCommerce Payments settings.
+3. Payment method settings - Configure accepted payment methods and card options.
+4. Card payment form (Legacy) - Secure card input with Visa/Mastercard brand detection.
+5. FPX bank selection - Choose from available Malaysian banks with status indicators.
+6. WooCommerce Blocks checkout - Modern checkout experience with card payment support.
+7. Saved cards selection - Returning customers can pay with saved cards.
+8. CHIP payment page - Secure hosted checkout for completing payment.
+9. Order confirmation - Customer receives order confirmation after successful payment.
+10. Order admin panel - View payment details including card brand and Purchase ID.
+11. Capture payment - Capture pre-authorized payments when ready to fulfill.
+12. Refund order - Process full or partial refunds directly from WooCommerce.
+13. Site Health integration - Verify CHIP API connection status in WordPress Site Health.
 
 == Changelog ==
 
-= 2.0.0 2026-01-06 =
-* Changed - Refactored codebase with improved class structure for WordPress coding standards compliance.
-* Changed - Renamed global constants WC_CHIP_ROOT_URL and WC_CHIP_FPX_ROOT_URL to CHIP_ROOT_URL and CHIP_FPX_ROOT_URL.
-* Changed - Changed hook prefixes from wc_ to chip_ with backward compatibility using _deprecated_hook().
-* Changed - CVC input now hidden (password type) in both legacy and blocks checkout.
-* Changed - Simplified client creation by removing explicit client_id management.
-* Changed - Only update order status to Failed when order is in Pending Payment status.
-* Added - Filter chip_blocks_payment_method_data for blocks payment method customization.
-* Added - REST API endpoint for lazy loading FPX banks and e-wallets (GET /chip/v1/banks/).
-* Added - Direct POST card payments support for WooCommerce Blocks checkout.
-* Added - Card form component with validation for WooCommerce Blocks.
-* Added - Expiry formatting (MM/YY) for legacy checkout card form.
-* Added - Card number formatting with spaces every 4 digits for legacy checkout.
-* Added - Save card option (remember_card) parameter for both legacy and blocks checkout.
-* Added - PostgreSQL compatibility for database locking.
-* Added - Void payment functionality for pre-authorized payments.
-* Added - Capture payment functionality for pre-authorized payments.
-* Added - Card brand logos (Visa/Mastercard) display in card number input field.
-* Added - Bank/e-wallet logos display next to selected option in dropdown.
-* Added - Purchase ID history tracking for multiple payment attempts on same order.
-* Added - Purchase ID included in log messages for better debugging.
-* Added - ABSPATH security check to all PHP files.
-* Improved - WooCommerce Blocks integration with recommended patterns.
-* Improved - canMakePayment now checks currency support and payment requirements.
-* Improved - Bank/e-wallet lists now lazy loaded via AJAX for better performance.
-* Improved - Expiry and CVC fields now have equal width styling in blocks checkout.
-* Improved - Code quality with PHPCS compliance fixes.
-* Fixed - Saved card payments in WooCommerce Blocks checkout.
-* Fixed - Direct POST redirect behavior consistency in blocks checkout.
-* Removed - Metabox AJAX handler and related features.
-* Removed - Update client information option and patch_client functionality.
-* Removed - Disable clients API option.
-* Removed - Force tokenization setting.
-* Removed - Webhook public key option and related webhook handling.
-* Removed - get_client_by_email function (now relies on automatic client creation).
-* Removed - CHIP Invoice, Receipt, and Feed buttons from order admin page.
+= 2.0.1 2026-01-07 =
+* Added - MBSB Bank to FPX bank list.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
