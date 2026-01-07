@@ -1023,6 +1023,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				// Standalone Logos (Payment method logo only, no CHIP branding).
 				__( 'Standalone Logos (No CHIP Branding)', 'chip-for-woocommerce' ) => array(
 					'fpx_only'                => __( 'FPX Only — FPX logo without CHIP branding', 'chip-for-woocommerce' ),
+					'fpx_b2b1_only'           => __( 'FPX B2B1 Only — Corporate FPX logo without CHIP branding', 'chip-for-woocommerce' ),
 					'ewallet_only'            => __( 'E-Wallet Only — E-Wallet logo without CHIP branding', 'chip-for-woocommerce' ),
 					'card_only'               => __( 'Card Only — Card logo without CHIP branding', 'chip-for-woocommerce' ),
 					'card_international_only' => __( 'Card with Maestro Only — Includes Maestro, no CHIP branding', 'chip-for-woocommerce' ),
@@ -1264,6 +1265,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'logo'                    => $base_url . 'logo.png',
 			'fpx'                     => $base_url . 'fpx.png',
 			'fpx_b2b1'                => $base_url . 'fpx_b2b1.png',
+			'fpx_b2b1_only'           => $base_url . 'fpx_b2b1_only.png',
 			'ewallet'                 => $base_url . 'ewallet.png',
 			'card'                    => $base_url . 'card.png',
 			'fpx_only'                => $base_url . 'fpx_only.png',
@@ -2693,6 +2695,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'KFH0346'  => __( 'KFH', 'chip-for-woocommerce' ),
 			'MBB0228'  => __( 'Maybank2E', 'chip-for-woocommerce' ),
 			'MB2U0227' => __( 'Maybank2u', 'chip-for-woocommerce' ),
+			'MBSB001'  => __( 'MBSB Bank', 'chip-for-woocommerce' ),
 			'OCBC0229' => __( 'OCBC Bank', 'chip-for-woocommerce' ),
 			'PBB0233'  => __( 'Public Bank', 'chip-for-woocommerce' ),
 			'RHB0218'  => __( 'RHB Bank', 'chip-for-woocommerce' ),
