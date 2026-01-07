@@ -62,6 +62,8 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 = 2.0.1 2026-01-07 =
 * Added - MBSB Bank to FPX bank list.
+* Added - FPX B2B1 standalone logo option.
+* Updated - FPX B2C standalone logo option.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
