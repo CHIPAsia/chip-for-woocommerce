@@ -89,7 +89,7 @@ class Chip_Woocommerce {
 	/**
 	 * Allow redirects to CHIP gateway domain for payment method change and checkout flows.
 	 *
-	 * wp_safe_redirect() blocks external URLs by default. WooCommerce Subscriptions uses
+	 * The wp_safe_redirect() function blocks external URLs by default. WooCommerce Subscriptions uses
 	 * wp_safe_redirect() when redirecting to the gateway after process_payment(), which
 	 * would reject the CHIP checkout URL and fall back to wp-admin.
 	 *
