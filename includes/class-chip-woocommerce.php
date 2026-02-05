@@ -83,6 +83,28 @@ class Chip_Woocommerce {
 	public function add_filters() {
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateways' ) );
 		add_filter( 'plugin_action_links_' . CHIP_WOOCOMMERCE_BASENAME, array( $this, 'setting_link' ) );
+		add_filter( 'allowed_redirect_hosts', array( $this, 'allowed_redirect_hosts' ), 10, 2 );
+	}
+
+	/**
+	 * Allow redirects to CHIP gateway domain for payment method change and checkout flows.
+	 *
+	 * wp_safe_redirect() blocks external URLs by default. WooCommerce Subscriptions uses
+	 * wp_safe_redirect() when redirecting to the gateway after process_payment(), which
+	 * would reject the CHIP checkout URL and fall back to wp-admin.
+	 *
+	 * @param array  $hosts Allowed redirect hosts.
+	 * @param string $host  The host of the redirect destination.
+	 * @return array
+	 */
+	public function allowed_redirect_hosts( $hosts, $host ) {
+		$chip_suffix = '.chip-in.asia';
+		if ( ! empty( $host ) && ( 'chip-in.asia' === $host || substr( $host, -strlen( $chip_suffix ) ) === $chip_suffix ) ) {
+			if ( ! in_array( $host, $hosts, true ) ) {
+				$hosts[] = $host;
+			}
+		}
+		return $hosts;
 	}
 
 	/**
