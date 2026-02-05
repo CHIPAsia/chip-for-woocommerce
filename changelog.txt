@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 2.0.2 2026-01-29 =
+* Fixed - Subscription payment method change when customer chooses new card instead of saved card. Resolved ID mismatch between order-pay path and change_payment_method parameter used by WooCommerce Subscriptions.
+
 = 2.0.1 2026-01-07 =
 * Added - MBSB Bank to FPX bank list.
 * Added - FPX B2B1 standalone logo option.
