@@ -60,7 +60,7 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.2 2026-01-29 =
+= 2.0.2 2026-02-05 =
 * Fixed - Subscription payment method change when customer chooses new card instead of saved card. Resolved ID mismatch between order-pay path and change_payment_method parameter used by WooCommerce Subscriptions.
 * Fixed - Redirect to CHIP checkout URL blocked by wp_safe_redirect when changing subscription payment method. Added allowed_redirect_hosts filter to permit CHIP gateway domain.
 
