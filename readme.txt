@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 6.9
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -60,10 +60,9 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.1 2026-01-07 =
-* Added - MBSB Bank to FPX bank list.
-* Added - FPX B2B1 standalone logo option.
-* Updated - FPX B2C standalone logo option.
+= 2.0.2 2026-02-05 =
+* Fixed - Subscription payment method change when customer chooses new card instead of saved card. Resolved ID mismatch between order-pay path and change_payment_method parameter used by WooCommerce Subscriptions.
+* Fixed - Redirect to CHIP checkout URL blocked by wp_safe_redirect when changing subscription payment method. Added allowed_redirect_hosts filter to permit CHIP gateway domain.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
