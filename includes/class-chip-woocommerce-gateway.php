@@ -1707,6 +1707,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				),
 			);
 		} else {
+			$use_total_override = false;
 			foreach ( $items as $item ) {
 				$price = round( $item->get_total() * 100 );
 				$qty   = $item->get_quantity();
@@ -1715,10 +1716,28 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					$price = 0;
 				}
 
+				$qty_safe   = ( is_numeric( $qty ) && $qty > 0 ) ? (float) $qty : 1;
+				$unit_price = (int) round( $price / $qty_safe );
+				$qty_int    = max( 1, (int) $qty );
+
+				if ( 0 === $unit_price ) {
+					$use_total_override = true;
+					break;
+				}
+
 				$params['purchase']['products'][] = array(
 					'name'     => substr( $item->get_name(), 0, 256 ),
-					'price'    => round( $price / $qty ),
-					'quantity' => $qty,
+					'price'    => $unit_price,
+					'quantity' => $qty_int,
+				);
+			}
+
+			if ( $use_total_override ) {
+				$params['purchase']['products'] = array(
+					array(
+						'name'  => 'Order #' . $order->get_id(),
+						'price' => (int) round( $order->get_total() * 100 ),
+					),
 				);
 			}
 		}
@@ -2160,6 +2179,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$items = $renewal_order->get_items();
 
+		$use_total_override = false;
 		foreach ( $items as $item ) {
 			$price = round( $item->get_total() * 100 );
 			$qty   = $item->get_quantity();
@@ -2168,10 +2188,28 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$price = 0;
 			}
 
+			$qty_safe   = ( is_numeric( $qty ) && $qty > 0 ) ? (float) $qty : 1;
+			$unit_price = (int) round( $price / $qty_safe );
+			$qty_int    = max( 1, (int) $qty );
+
+			if ( 0 === $unit_price ) {
+				$use_total_override = true;
+				break;
+			}
+
 			$params['purchase']['products'][] = array(
 				'name'     => substr( $item->get_name(), 0, 256 ),
-				'price'    => round( $price / $qty ),
-				'quantity' => $qty,
+				'price'    => $unit_price,
+				'quantity' => $qty_int,
+			);
+		}
+
+		if ( $use_total_override ) {
+			$params['purchase']['products'] = array(
+				array(
+					'name'  => 'Order #' . $renewal_order->get_id(),
+					'price' => (int) round( $total_amount * 100 ),
+				),
 			);
 		}
 
@@ -3665,6 +3703,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$items = $order->get_items();
 
+		$use_total_override = false;
 		foreach ( $items as $item ) {
 			$price = round( $item->get_total() * 100 );
 			$qty   = $item->get_quantity();
@@ -3673,10 +3712,28 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$price = 0;
 			}
 
+			$qty_safe   = ( is_numeric( $qty ) && $qty > 0 ) ? (float) $qty : 1;
+			$unit_price = (int) round( $price / $qty_safe );
+			$qty_int    = max( 1, (int) $qty );
+
+			if ( 0 === $unit_price ) {
+				$use_total_override = true;
+				break;
+			}
+
 			$params['purchase']['products'][] = array(
 				'name'     => substr( $item->get_name(), 0, 256 ),
-				'price'    => round( $price / $qty ),
-				'quantity' => $qty,
+				'price'    => $unit_price,
+				'quantity' => $qty_int,
+			);
+		}
+
+		if ( $use_total_override ) {
+			$params['purchase']['products'] = array(
+				array(
+					'name'  => 'Order #' . $order->get_id(),
+					'price' => (int) round( $total * 100 ),
+				),
 			);
 		}
 
