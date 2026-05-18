@@ -27,6 +27,10 @@ resources/ export-ignore
 CLAUDE.md export-ignore
 .claude/ export-ignore
 
+# Exclude dev scripts and docs
+scripts/ export-ignore
+CONTRIBUTING.md export-ignore
+
 # Binary files
 *.png binary
 *.jpg binary
