@@ -21,10 +21,41 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
+# ─── Parse options ───
+
+YES=false
+CHANGELOG_FILE=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --yes|-y)
+            YES=true
+            shift
+            ;;
+        --changelog-file)
+            if [[ -n "${2:-}" ]]; then
+                CHANGELOG_FILE="$2"
+                shift 2
+            else
+                echo "Error: --changelog-file requires a file path"
+                exit 1
+            fi
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--yes] [--changelog-file FILE] <version>"
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
 # ─── Validate input ───
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <version>"
+    echo "Usage: $0 [--yes] [--changelog-file FILE] <version>"
     echo "Example: $0 2.0.4"
     exit 1
 fi
@@ -42,10 +73,13 @@ CURRENT_VERSION=$(grep -oP '^\s*Version:\s*\K[0-9.]+' chip-for-woocommerce.php)
 
 echo "🔢 Current version: $CURRENT_VERSION"
 echo "🔢 New version:     $NEW_VERSION"
-read -r -p "Continue? [y/N] " CONFIRM
-if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
-    echo "Aborted."
-    exit 1
+
+if ! $YES; then
+    read -r -p "Continue? [y/N] " CONFIRM
+    if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 1
+    fi
 fi
 
 # ─── Update version strings ───
@@ -70,13 +104,18 @@ rm -f package.json.bak
 
 # ─── Update changelog.txt ───
 
-TODAY=$(date +%Y-%m-%d)
-CHANGELOG_ENTRY="= ${NEW_VERSION} ${TODAY} =
+if [ -n "$CHANGELOG_FILE" ] && [ -f "$CHANGELOG_FILE" ]; then
+    echo "📝 Using AI-generated changelog from $CHANGELOG_FILE..."
+    CHANGELOG_ENTRY=$(cat "$CHANGELOG_FILE")
+else
+    TODAY=$(date +%Y-%m-%d)
+    CHANGELOG_ENTRY="= ${NEW_VERSION} ${TODAY} =
 * [Add your changelog entry here]
 "
+fi
 
 # Prepend the new entry after the "== Changelog ==" header
-if grep -q "^= ${NEW_VERSION} ${TODAY} =" changelog.txt; then
+if grep -q "^= ${NEW_VERSION} " changelog.txt; then
     echo "⚠️  Changelog entry for ${NEW_VERSION} already exists. Skipping."
 else
     echo "📝 Adding changelog entry..."
@@ -101,11 +140,14 @@ git add -A
 
 echo ""
 echo "✅ Version bumped to ${NEW_VERSION}"
-echo ""
-echo "Next steps:"
-echo "  1. Review the changelog entry in changelog.txt"
-echo "  2. git commit -m \"Bump version to ${NEW_VERSION}\""
-echo "  3. git tag v${NEW_VERSION}"
-echo "  4. git push origin main --tags"
-echo ""
-echo "The deploy workflow will then release to WordPress.org automatically."
+
+if ! $YES; then
+    echo ""
+    echo "Next steps:"
+    echo "  1. Review the changelog entry in changelog.txt"
+    echo "  2. git commit -m \"Bump version to ${NEW_VERSION}\""
+    echo "  3. git tag v${NEW_VERSION}"
+    echo "  4. git push origin main --tags"
+    echo ""
+    echo "The deploy workflow will then release to WordPress.org automatically."
+fi

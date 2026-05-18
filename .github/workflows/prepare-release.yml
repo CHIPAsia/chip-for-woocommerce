@@ -1,0 +1,131 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 2.0.4)'
+        required: true
+        type: string
+
+jobs:
+  bump-and-tag:
+    name: Bump Version, Generate Changelog, and Create Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Error: Version must be in X.Y.Z format (e.g., 2.0.4)"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+      - name: Check version does not already exist
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "❌ Error: Tag v${VERSION} already exists."
+            exit 1
+          fi
+          if grep -q "^= ${VERSION} " changelog.txt; then
+            echo "❌ Error: Changelog entry for ${VERSION} already exists."
+            exit 1
+          fi
+          echo "✅ Version ${VERSION} is new"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '^20.11.1'
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install requests
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+          echo "📎 Previous tag: ${PREVIOUS_TAG:-none}"
+
+      - name: Get commits since previous tag
+        id: commits
+        run: |
+          PREVIOUS_TAG="${{ steps.prev_tag.outputs.tag }}"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"- %s" --no-merges "$PREVIOUS_TAG..HEAD" > commits.txt
+          else
+            git log --pretty=format:"- %s" --no-merges > commits.txt
+          fi
+          echo "📋 Commits since last release:"
+          cat commits.txt
+
+      - name: Generate AI changelog
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_API_URL: ${{ vars.AI_API_URL }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          python scripts/generate_release_notes.py commits.txt "$VERSION" > changelog_entry.md
+          echo "📝 AI-generated changelog entry:"
+          cat changelog_entry.md
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version and update changelog
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          ./scripts/bump-version.sh --yes --changelog-file changelog_entry.md "$VERSION"
+
+      - name: Commit version bump
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          git commit -m "Bump version to ${VERSION}"
+
+      - name: Push to main and create tag
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          git push origin main
+          git tag -a "v${VERSION}" -m "Release ${VERSION}"
+          git push origin "v${VERSION}"
+          echo "✅ Pushed commit to main and created tag v${VERSION}"
+
+      - name: Summary
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "  Release ${VERSION} prepared"
+          echo "═══════════════════════════════════════"
+          echo ""
+          echo "What happened:"
+          echo "  • AI generated changelog from commits"
+          echo "  • Version bumped in all files"
+          echo "  • changelog.txt updated"
+          echo "  • Commit pushed to main"
+          echo "  • Tag v${VERSION} created and pushed"
+          echo ""
+          echo "Next (automatic):"
+          echo "  • deploy.yml triggers on tag v${VERSION}"
+          echo "  • Deploys to WordPress.org SVN"
+          echo "  • Creates GitHub release with AI notes"
