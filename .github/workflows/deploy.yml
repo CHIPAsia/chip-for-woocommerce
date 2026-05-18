@@ -130,6 +130,50 @@ jobs:
           cd ..
           echo "✅ Created release zip"
 
+      - name: Get commits since previous tag
+        id: commits
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"- %s" --no-merges "$PREVIOUS_TAG..HEAD" > commits.txt
+          else
+            git log --pretty=format:"- %s" --no-merges > commits.txt
+          fi
+          echo "📋 Commits to include:"
+          cat commits.txt
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install requests
+
+      - name: Generate release notes with AI
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_API_URL: ${{ vars.AI_API_URL }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          python scripts/generate_release_notes.py commits.txt "$VERSION" > release_notes.md
+          echo "📝 Generated release notes:"
+          cat release_notes.md
+
+      - name: Create or update GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release edit "$VERSION" --notes-file release_notes.md
+            echo "✅ Updated existing release"
+          else
+            gh release create "$VERSION" --title "$VERSION" --notes-file release_notes.md
+            echo "✅ Created new release"
+          fi
+
       - name: Upload release asset to GitHub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
