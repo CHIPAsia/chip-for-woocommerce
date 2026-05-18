@@ -23,6 +23,10 @@ phpcs.xml export-ignore
 README.md export-ignore
 resources/ export-ignore
 
+# Exclude AI assistant files
+CLAUDE.md export-ignore
+.claude/ export-ignore
+
 # Binary files
 *.png binary
 *.jpg binary
