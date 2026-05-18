@@ -1,0 +1,137 @@
+name: Deploy to WordPress.org
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org SVN
+    runs-on: ubuntu-latest
+    environment: wordpress-org
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '^20.11.1'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+
+      - name: Prepare plugin folder
+        run: |
+          mkdir -p dist/chip-for-woocommerce
+          git archive HEAD | tar -x -C dist/chip-for-woocommerce
+          mkdir -p dist/chip-for-woocommerce/assets/js/frontend
+          cp assets/js/frontend/* dist/chip-for-woocommerce/assets/js/frontend/
+          echo "✅ Plugin folder prepared"
+          ls -la dist/chip-for-woocommerce/assets/js/frontend/
+
+      - name: Extract version from tag
+        id: vars
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Version: $VERSION"
+
+      - name: Install SVN
+        run: sudo apt-get install -y subversion
+
+      - name: Checkout full SVN repository
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          svn checkout \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive \
+            https://plugins.svn.wordpress.org/chip-for-woocommerce/ \
+            svn-repo
+
+      - name: Update trunk
+        run: |
+          # Clear existing files in trunk (preserve .svn metadata)
+          cd svn-repo/trunk
+          find . -type f -not -path './.svn/*' -delete 2>/dev/null || true
+          find . -mindepth 1 -type d -not -path './.svn*' -empty -delete 2>/dev/null || true
+          cd ../..
+
+          # Copy new files into trunk
+          rsync -av \
+            --exclude='.git*' \
+            --exclude='.github' \
+            --exclude='ci-build' \
+            --exclude='dist' \
+            --exclude='node_modules' \
+            dist/chip-for-woocommerce/ \
+            svn-repo/trunk/
+
+      - name: Sync WordPress.org assets (screenshots, banners, icons)
+        run: |
+          # If a .wordpress-org directory exists in the repo, sync it to SVN assets/
+          if [ -d ".wordpress-org" ]; then
+            echo "📁 Syncing WordPress.org directory assets..."
+            # Clear existing assets (preserve .svn)
+            cd svn-repo/assets
+            find . -type f -not -path './.svn/*' -delete 2>/dev/null || true
+            cd ../..
+            rsync -av .wordpress-org/ svn-repo/assets/
+          else
+            echo "ℹ️ No .wordpress-org directory found; skipping assets sync."
+            echo "   Create .wordpress-org/ with banner-*.png, icon-*.png, screenshot-*.png to display on wordpress.org"
+          fi
+
+      - name: Create SVN tag and commit
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          cd svn-repo
+
+          # Add new files
+          svn add --force . > /dev/null 2>&1 || true
+
+          # Remove deleted files
+          svn status | grep '^!' | sed 's/^! *//' | while read -r f; do
+            svn delete "$f" --force
+          done
+
+          # Create tag from trunk
+          if [ ! -d "tags/$VERSION" ]; then
+            svn cp trunk "tags/$VERSION"
+            echo "🏷️ Created tag $VERSION"
+          else
+            echo "❌ Tag $VERSION already exists in SVN. Aborting."
+            exit 1
+          fi
+
+          # Commit everything (trunk + tag + assets)
+          svn commit \
+            -m "Release $VERSION" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive
+
+          echo "✅ Released $VERSION to WordPress.org"
+
+      - name: Create release zip
+        run: |
+          cd dist
+          zip -r ../chip-for-woocommerce.zip chip-for-woocommerce
+          cd ..
+          echo "✅ Created release zip"
+
+      - name: Upload release asset to GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" chip-for-woocommerce.zip --clobber || true
