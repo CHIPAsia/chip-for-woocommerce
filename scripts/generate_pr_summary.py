@@ -8,7 +8,7 @@ Usage:
 Environment variables:
     AI_API_KEY  - API key for the AI service (required)
     AI_API_URL  - Base URL for the AI API endpoint (required)
-    AI_MODEL    - Model identifier (default: gemini-2.0-flash-preview:cloud)
+    AI_MODEL    - Model identifier (default: gemini-3-flash-preview:cloud)
 
 The script reads a git diff and an optional current PR body, then sends them
 to the configured AI API to generate a structured PR description.
@@ -97,7 +97,7 @@ def main() -> int:
 
     api_key = os.getenv("AI_API_KEY")
     api_url = os.getenv("AI_API_URL")
-    model = os.getenv("AI_MODEL", "gemini-2.0-flash-preview:cloud")
+    model = os.getenv("AI_MODEL", "gemini-3-flash-preview:cloud")
 
     if not api_key:
         print("Error: AI_API_KEY environment variable not set.")
