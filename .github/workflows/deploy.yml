@@ -1,6 +1,16 @@
 name: Deploy to WordPress.org
 
 on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'trunk'
+        type: choice
+        options:
+          - trunk
+          - release
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -34,12 +44,38 @@ jobs:
           echo "✅ Plugin folder prepared"
           ls -la dist/chip-for-woocommerce/assets/js/frontend/
 
-      - name: Extract version from tag
+      - name: Determine stage and version
         id: vars
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            STAGE="${{ github.event.inputs.stage }}"
+          else
+            STAGE="release"
+          fi
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+          if [ "$STAGE" = "release" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(grep -oP '^\s*Version:\s*\K[0-9.]+' chip-for-woocommerce.php)
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Stage: $STAGE"
           echo "📦 Version: $VERSION"
+
+      - name: Revert stable tag for trunk deploy
+        if: steps.vars.outputs.stage == 'trunk'
+        run: |
+          # For trunk testing, keep Stable tag pointing to the previous version
+          # so users don't auto-update to the unreleased code.
+          PREVIOUS_STABLE=$(git show HEAD^:readme.txt 2>/dev/null | grep -oP '^Stable tag: \K[0-9.]+' || echo "")
+          if [ -n "$PREVIOUS_STABLE" ]; then
+            echo "🧪 Trunk mode: keeping Stable tag at ${PREVIOUS_STABLE}"
+            sed -i "s/^Stable tag: .*/Stable tag: ${PREVIOUS_STABLE}/" dist/chip-for-woocommerce/readme.txt
+            grep "^Stable tag:" dist/chip-for-woocommerce/readme.txt
+          else
+            echo "⚠️ Could not detect previous stable tag; leaving as-is"
+          fi
 
       - name: Install SVN
         run: sudo apt-get install -y subversion
@@ -74,22 +110,38 @@ jobs:
             dist/chip-for-woocommerce/ \
             svn-repo/trunk/
 
-      - name: Sync WordPress.org assets (screenshots, banners, icons)
+      - name: Sync WordPress.org assets
         run: |
-          # If a .wordpress-org directory exists in the repo, sync it to SVN assets/
           if [ -d ".wordpress-org" ]; then
             echo "📁 Syncing WordPress.org directory assets..."
-            # Clear existing assets (preserve .svn)
             cd svn-repo/assets
             find . -type f -not -path './.svn/*' -delete 2>/dev/null || true
             cd ../..
             rsync -av .wordpress-org/ svn-repo/assets/
           else
             echo "ℹ️ No .wordpress-org directory found; skipping assets sync."
-            echo "   Create .wordpress-org/ with banner-*.png, icon-*.png, screenshot-*.png to display on wordpress.org"
           fi
 
-      - name: Create SVN tag and commit
+      - name: Commit trunk only (test stage)
+        if: steps.vars.outputs.stage == 'trunk'
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          cd svn-repo
+          svn add --force . > /dev/null 2>&1 || true
+          svn status | grep '^!' | sed 's/^! *//' | while read -r f; do
+            svn delete "$f" --force
+          done
+          svn commit \
+            -m "Update trunk to ${{ steps.vars.outputs.version }} for testing" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive
+          echo "✅ Deployed trunk for testing. Stable tag unchanged."
+
+      - name: Create SVN tag and release
+        if: steps.vars.outputs.stage == 'release'
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
@@ -124,6 +176,7 @@ jobs:
           echo "✅ Released $VERSION to WordPress.org"
 
       - name: Create release zip
+        if: steps.vars.outputs.stage == 'release'
         run: |
           cd dist
           zip -r ../chip-for-woocommerce.zip chip-for-woocommerce
@@ -131,6 +184,7 @@ jobs:
           echo "✅ Created release zip"
 
       - name: Get commits since previous tag
+        if: steps.vars.outputs.stage == 'release'
         id: commits
         run: |
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -143,14 +197,17 @@ jobs:
           cat commits.txt
 
       - name: Set up Python
+        if: steps.vars.outputs.stage == 'release'
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install Python dependencies
+        if: steps.vars.outputs.stage == 'release'
         run: pip install requests
 
       - name: Generate release notes with AI
+        if: steps.vars.outputs.stage == 'release'
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           AI_API_URL: ${{ vars.AI_API_URL }}
@@ -162,6 +219,7 @@ jobs:
           cat release_notes.md
 
       - name: Create or update GitHub release
+        if: steps.vars.outputs.stage == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -175,6 +233,7 @@ jobs:
           fi
 
       - name: Upload release asset to GitHub
+        if: steps.vars.outputs.stage == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

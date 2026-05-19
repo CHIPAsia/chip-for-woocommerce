@@ -7,6 +7,11 @@ on:
         description: 'Version to release (e.g., 2.0.4)'
         required: true
         type: string
+      create_tag:
+        description: 'Create git tag immediately (auto-triggers deploy). Uncheck to test in SVN trunk first.'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   bump-and-tag:
@@ -102,17 +107,24 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           git commit -m "Bump version to ${VERSION}"
 
-      - name: Push to main and create tag
+      - name: Push to main
         run: |
           VERSION="${{ github.event.inputs.version }}"
           git push origin main
+          echo "✅ Pushed commit to main"
+
+      - name: Create git tag
+        if: github.event.inputs.create_tag == 'true'
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
           git tag -a "v${VERSION}" -m "Release ${VERSION}"
           git push origin "v${VERSION}"
-          echo "✅ Pushed commit to main and created tag v${VERSION}"
+          echo "✅ Created and pushed tag v${VERSION}"
 
       - name: Summary
         run: |
           VERSION="${{ github.event.inputs.version }}"
+          CREATE_TAG="${{ github.event.inputs.create_tag }}"
           echo ""
           echo "═══════════════════════════════════════"
           echo "  Release ${VERSION} prepared"
@@ -123,9 +135,17 @@ jobs:
           echo "  • Version bumped in all files"
           echo "  • changelog.txt updated"
           echo "  • Commit pushed to main"
-          echo "  • Tag v${VERSION} created and pushed"
-          echo ""
-          echo "Next (automatic):"
-          echo "  • deploy.yml triggers on tag v${VERSION}"
-          echo "  • Deploys to WordPress.org SVN"
-          echo "  • Creates GitHub release with AI notes"
+          if [ "$CREATE_TAG" = "true" ]; then
+            echo "  • Tag v${VERSION} created and pushed"
+            echo ""
+            echo "Next (automatic):"
+            echo "  • deploy.yml triggers on tag v${VERSION}"
+            echo "  • Deploys to WordPress.org SVN"
+            echo "  • Creates GitHub release with AI notes"
+          else
+            echo ""
+            echo "Next (manual):"
+            echo "  1. Run deploy.yml with stage=trunk to test in SVN"
+            echo "  2. After testing, run deploy.yml with stage=release"
+            echo "     OR create tag v${VERSION} manually to auto-trigger deploy"
+          fi
