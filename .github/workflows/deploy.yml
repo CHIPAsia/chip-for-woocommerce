@@ -238,7 +238,12 @@ jobs:
           AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
         run: |
           VERSION="${{ steps.vars.outputs.version }}"
+          TODAY=$(date +%Y-%m-%d)
           python scripts/generate_release_notes.py diff.txt "$VERSION" > release_notes.md
+
+          # Fix AI-hallucinated date to today's actual date
+          sed -i "s/^= ${VERSION} [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} /= ${VERSION} ${TODAY} =/" release_notes.md
+
           echo "📝 Generated release notes:"
           cat release_notes.md
 
