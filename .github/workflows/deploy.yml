@@ -188,7 +188,8 @@ jobs:
             --username "$SVN_USERNAME" \
             --password "$SVN_PASSWORD" \
             --non-interactive \
-            "^/trunk" "^/tags/$VERSION" \
+            "https://plugins.svn.wordpress.org/chip-for-woocommerce/trunk" \
+            "https://plugins.svn.wordpress.org/chip-for-woocommerce/tags/$VERSION" \
             -m "Create tag $VERSION"
           echo "🏷️ Created tag $VERSION"
 
