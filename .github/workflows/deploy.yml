@@ -80,17 +80,24 @@ jobs:
       - name: Install SVN
         run: sudo apt-get install -y subversion
 
-      - name: Checkout full SVN repository
+      - name: Sparse-checkout SVN (trunk + assets only)
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
         run: |
-          svn checkout \
+          # Checkout only the repo root skeleton (no tag history)
+          svn checkout --depth=empty \
             --username "$SVN_USERNAME" \
             --password "$SVN_PASSWORD" \
             --non-interactive \
             https://plugins.svn.wordpress.org/chip-for-woocommerce/ \
             svn-repo
+
+          cd svn-repo
+          svn update --set-depth=infinity trunk
+          svn update --set-depth=infinity assets
+          cd ..
+          echo "✅ Sparse-checkout complete"
 
       - name: Update trunk
         run: |
@@ -157,16 +164,26 @@ jobs:
             svn delete "$f" --force
           done
 
-          # Create tag from trunk
-          if [ ! -d "tags/$VERSION" ]; then
-            svn cp trunk "tags/$VERSION"
-            echo "🏷️ Created tag $VERSION"
-          else
+          # Create tag remotely (no local tags checkout needed)
+          svn ls \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive \
+            "https://plugins.svn.wordpress.org/chip-for-woocommerce/tags/$VERSION" >/dev/null 2>&1
+          if [ $? -eq 0 ]; then
             echo "❌ Tag $VERSION already exists in SVN. Aborting."
             exit 1
           fi
 
-          # Commit everything (trunk + tag + assets)
+          svn cp \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive \
+            "^/trunk" "^/tags/$VERSION" \
+            -m "Create tag $VERSION"
+          echo "🏷️ Created tag $VERSION"
+
+          # Commit everything (trunk + assets)
           svn commit \
             -m "Release $VERSION" \
             --username "$SVN_USERNAME" \
