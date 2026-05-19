@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 2.0.6 2026-05-19 =
+* Changed - Improved the automated release process to ensure release notes are consistently formatted and correctly generated.
+
 = 2.0.5 2026-05-19 ==
 * Fixed - Improved version tagging consistency during the automated release process.
 * Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.
