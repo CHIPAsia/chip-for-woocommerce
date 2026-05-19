@@ -7,18 +7,14 @@ on:
         description: 'Version to release (e.g., 2.0.4)'
         required: true
         type: string
-      create_tag:
-        description: 'Create git tag immediately (auto-triggers deploy). Uncheck to test in SVN trunk first.'
-        required: false
-        type: boolean
-        default: true
 
 jobs:
-  bump-and-tag:
-    name: Bump Version, Generate Changelog, and Create Tag
+  bump-and-pr:
+    name: Bump Version and Open PR
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -111,29 +107,50 @@ jobs:
           rm -f diff.txt changelog_entry.md
           echo "🧹 Removed temporary files"
 
-      - name: Commit version bump
+      - name: Create release branch and PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          git commit -m "Bump version to ${VERSION}"
+          BRANCH="release/v${VERSION}"
 
-      - name: Push to main
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          git push origin main
-          echo "✅ Pushed commit to main"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
 
-      - name: Create git tag
-        if: github.event.inputs.create_tag == 'true'
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          git tag -a "v${VERSION}" -m "Release ${VERSION}"
-          git push origin "v${VERSION}"
-          echo "✅ Created and pushed tag v${VERSION}"
+          # Check if PR already exists
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "⚠️ PR #$EXISTING_PR already exists for branch $BRANCH"
+            echo "   Update it manually or close and re-run this workflow."
+            exit 1
+          fi
+
+          # Extract changelog entry for PR body
+          CHANGELOG_BODY=$(awk '
+            /^== Changelog ==/ { getline; getline; print; exit }
+          ' readme.txt)
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Release v${VERSION}" \
+            --body "## Release v${VERSION}
+
+### Changelog
+${CHANGELOG_BODY}
+
+### Checklist
+- [ ] Review changelog accuracy
+- [ ] Verify version bumped in all files
+- [ ] After merge, create tag \`v${VERSION}\` to trigger deploy"
+
+          echo "✅ Created PR for v${VERSION}"
 
       - name: Summary
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          CREATE_TAG="${{ github.event.inputs.create_tag }}"
+          BRANCH="release/v${VERSION}"
           echo ""
           echo "═══════════════════════════════════════"
           echo "  Release ${VERSION} prepared"
@@ -143,18 +160,11 @@ jobs:
           echo "  • AI generated changelog from commits"
           echo "  • Version bumped in all files"
           echo "  • changelog.txt updated"
-          echo "  • Commit pushed to main"
-          if [ "$CREATE_TAG" = "true" ]; then
-            echo "  • Tag v${VERSION} created and pushed"
-            echo ""
-            echo "Next (automatic):"
-            echo "  • deploy.yml triggers on tag v${VERSION}"
-            echo "  • Deploys to WordPress.org SVN"
-            echo "  • Creates GitHub release with AI notes"
-          else
-            echo ""
-            echo "Next (manual):"
-            echo "  1. Run deploy.yml with stage=trunk to test in SVN"
-            echo "  2. After testing, run deploy.yml with stage=release"
-            echo "     OR create tag v${VERSION} manually to auto-trigger deploy"
-          fi
+          echo "  • Branch ${BRANCH} pushed"
+          echo "  • PR opened to main"
+          echo ""
+          echo "Next (manual):"
+          echo "  1. Review and merge the PR"
+          echo "  2. After merge, create tag: git tag -a v${VERSION} -m 'Release ${VERSION}'"
+          echo "  3. Push tag: git push origin v${VERSION}"
+          echo "  4. deploy.yml triggers automatically on the tag"
