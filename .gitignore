@@ -18,3 +18,7 @@ dist/
 
 # PHPUnit cache
 .phpunit.result.cache
+
+# Release workflow temporary files
+diff.txt
+changelog_entry.md
