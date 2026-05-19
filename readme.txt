@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.0
-Stable tag: 2.0.4
+Stable tag: 2.0.5
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -60,11 +60,10 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.4 2026-05-19 ==
-* Added - New plugin banners, icons, and screenshots for the WordPress.org plugin page.
-* Added - Automated unit testing suite to ensure long-term stability and reliability.
-* Changed - Modernized the build and deployment process for more consistent plugin updates.
-* Changed - Updated developer documentation and contribution guidelines.
+= 2.0.5 2026-05-19 ==
+* Fixed - Improved version tagging consistency during the automated release process.
+* Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.
+* Removed - Redundant external scripts and dependencies previously used for automated release note generation.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
