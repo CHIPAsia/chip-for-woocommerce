@@ -1,5 +1,11 @@
 == Changelog ==
 
+= 2.0.4 2026-05-19 ==
+* Added - New plugin banners, icons, and screenshots for the WordPress.org plugin page.
+* Added - Automated unit testing suite to ensure long-term stability and reliability.
+* Changed - Modernized the build and deployment process for more consistent plugin updates.
+* Changed - Updated developer documentation and contribution guidelines.
+
 = 2.0.3 2026-02-26 =
 * Fixed - Safe product price and quantity handling when building purchase products. Prevents division by zero when price or quantity is 0; falls back to total_override in process_payment, auto_charge, and process_pre_order_payments.
 
