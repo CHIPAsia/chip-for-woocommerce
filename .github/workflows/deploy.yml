@@ -203,48 +203,15 @@ jobs:
           cd ..
           echo "✅ Created release zip"
 
-      - name: Get diff since previous tag
+      - name: Extract changelog for release notes
         if: steps.vars.outputs.stage == 'release'
-        id: diff
-        run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -n "$PREVIOUS_TAG" ]; then
-            git diff "$PREVIOUS_TAG..HEAD" --stat > diff.txt
-            echo "" >> diff.txt
-            git diff "$PREVIOUS_TAG..HEAD" >> diff.txt
-          else
-            echo "No previous tag found; using last 20 commits as context." > diff.txt
-            echo "" >> diff.txt
-            git log --pretty=format:"- %s" --no-merges -n 20 >> diff.txt
-          fi
-          echo "📋 Diff since last release ($(wc -c < diff.txt) bytes):"
-          head -n 50 diff.txt
-
-      - name: Set up Python
-        if: steps.vars.outputs.stage == 'release'
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-
-      - name: Install Python dependencies
-        if: steps.vars.outputs.stage == 'release'
-        run: pip install requests
-
-      - name: Generate release notes with AI
-        if: steps.vars.outputs.stage == 'release'
-        env:
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          AI_API_URL: ${{ vars.AI_API_URL }}
-          AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
         run: |
           VERSION="${{ steps.vars.outputs.version }}"
-          TODAY=$(date +%Y-%m-%d)
-          python scripts/generate_release_notes.py diff.txt "$VERSION" > release_notes.md
 
-          # Fix AI-hallucinated date to today's actual date
-          sed -i "s/^= ${VERSION} [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} /= ${VERSION} ${TODAY} =/" release_notes.md
+          # Extract the latest changelog entry from changelog.txt (first entry after header)
+          sed -n '/^== Changelog ==/{n;:a;p;n;/^$/!ba}' changelog.txt > release_notes.md
 
-          echo "📝 Generated release notes:"
+          echo "📝 Release notes from changelog:"
           cat release_notes.md
 
       - name: Create or update GitHub release
