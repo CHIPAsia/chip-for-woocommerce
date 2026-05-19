@@ -66,17 +66,26 @@ jobs:
       - name: Revert stable tag for trunk deploy
         if: steps.vars.outputs.stage == 'trunk'
         run: |
-          # For trunk testing, keep Stable tag pointing to the previous released
-          # version so users don't auto-update to unreleased code.
-          # In Pattern 2, the latest git tag is always the previous release.
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$PREVIOUS_TAG" ]; then
-            PREVIOUS_STABLE=${PREVIOUS_TAG#v}
-            echo "🧪 Trunk mode: keeping Stable tag at ${PREVIOUS_STABLE}"
-            sed -i "s/^Stable tag: .*/Stable tag: ${PREVIOUS_STABLE}/" dist/chip-for-woocommerce/readme.txt
+          # For trunk testing, keep Stable tag pointing to the version currently
+          # live on WordPress.org (source of truth from SVN trunk readme.txt).
+          svn export --force \
+            --username "${{ secrets.SVN_USERNAME }}" \
+            --password "${{ secrets.SVN_PASSWORD }}" \
+            --non-interactive \
+            "https://plugins.svn.wordpress.org/chip-for-woocommerce/trunk/readme.txt" \
+            /tmp/svn-readme.txt >/dev/null 2>&1 || true
+
+          if [ -f /tmp/svn-readme.txt ]; then
+            CURRENT_STABLE=$(grep -m1 "^Stable tag:" /tmp/svn-readme.txt | awk '{print $3}')
+          fi
+
+          if [ -n "${CURRENT_STABLE:-}" ]; then
+            echo "🧪 Trunk mode: keeping Stable tag at ${CURRENT_STABLE}"
+            sed -i "s/^Stable tag: .*/Stable tag: ${CURRENT_STABLE}/" dist/chip-for-woocommerce/readme.txt
             grep "^Stable tag:" dist/chip-for-woocommerce/readme.txt
+            rm -f /tmp/svn-readme.txt
           else
-            echo "⚠️ No previous tag found; Stable tag left as-is"
+            echo "⚠️ Could not read current stable tag from SVN; leaving as-is"
           fi
 
       - name: Install SVN
