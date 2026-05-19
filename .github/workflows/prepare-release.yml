@@ -107,7 +107,7 @@ jobs:
           rm -f diff.txt changelog_entry.md
           echo "🧹 Removed temporary files"
 
-      - name: Create release branch and PR
+      - name: Commit changes to release branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -115,7 +115,16 @@ jobs:
           BRANCH="release/v${VERSION}"
 
           git checkout -b "$BRANCH"
+          git commit -m "Bump version to ${VERSION}"
           git push origin "$BRANCH"
+          echo "✅ Pushed branch ${BRANCH}"
+
+      - name: Create PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          BRANCH="release/v${VERSION}"
 
           # Check if PR already exists
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' || echo "")
@@ -126,10 +135,8 @@ jobs:
             exit 1
           fi
 
-          # Extract changelog entry for PR body
-          CHANGELOG_BODY=$(awk '
-            /^== Changelog ==/ { getline; getline; print; exit }
-          ' readme.txt)
+          # Extract full changelog entry for PR body (header + bullets until blank line)
+          CHANGELOG_BODY=$(sed -n '/^== Changelog ==/{n;n;:a;p;n;/^$/!ba}' readme.txt)
 
           gh pr create \
             --base main \
