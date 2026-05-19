@@ -54,10 +54,10 @@ jobs:
           fi
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
 
-          if [ "$STAGE" = "release" ]; then
+          if [ "$STAGE" = "release" ] && [ "${{ github.event_name }}" = "push" ]; then
             VERSION=${GITHUB_REF#refs/tags/v}
           else
-            VERSION=$(grep -oP '^\s*Version:\s*\K[0-9.]+' chip-for-woocommerce.php)
+            VERSION=$(grep "Version:" chip-for-woocommerce.php | head -1 | awk '{print $3}')
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Stage: $STAGE"
