@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@woocommerce/dependency-extraction-webpack-plugin": "^4.0.0",
-    "@wordpress/scripts": "^31.1.0",
+    "@wordpress/scripts": "^31.6.0",
     "cross-env": "^10.1.0",
     "webpack": "^5.103.0",
     "webpack-cli": "^6.0.1"
