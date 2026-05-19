@@ -69,17 +69,21 @@ jobs:
           echo "tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
           echo "📎 Previous tag: ${PREVIOUS_TAG:-none}"
 
-      - name: Get commits since previous tag
-        id: commits
+      - name: Get diff since previous tag
+        id: diff
         run: |
           PREVIOUS_TAG="${{ steps.prev_tag.outputs.tag }}"
           if [ -n "$PREVIOUS_TAG" ]; then
-            git log --pretty=format:"- %s" --no-merges "$PREVIOUS_TAG..HEAD" > commits.txt
+            git diff "$PREVIOUS_TAG..HEAD" --stat > diff.txt
+            echo "" >> diff.txt
+            git diff "$PREVIOUS_TAG..HEAD" >> diff.txt
           else
-            git log --pretty=format:"- %s" --no-merges > commits.txt
+            echo "No previous tag found; using last 20 commits as context." > diff.txt
+            echo "" >> diff.txt
+            git log --pretty=format:"- %s" --no-merges -n 20 >> diff.txt
           fi
-          echo "📋 Commits since last release:"
-          cat commits.txt
+          echo "📋 Diff since last release ($(wc -c < diff.txt) bytes):"
+          head -n 50 diff.txt
 
       - name: Generate AI changelog
         env:
@@ -88,7 +92,7 @@ jobs:
           AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          python scripts/generate_release_notes.py commits.txt "$VERSION" > changelog_entry.md
+          python scripts/generate_release_notes.py diff.txt "$VERSION" > changelog_entry.md
           echo "📝 AI-generated changelog entry:"
           cat changelog_entry.md
 

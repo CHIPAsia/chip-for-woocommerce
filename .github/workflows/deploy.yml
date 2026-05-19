@@ -183,18 +183,22 @@ jobs:
           cd ..
           echo "✅ Created release zip"
 
-      - name: Get commits since previous tag
+      - name: Get diff since previous tag
         if: steps.vars.outputs.stage == 'release'
-        id: commits
+        id: diff
         run: |
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -n "$PREVIOUS_TAG" ]; then
-            git log --pretty=format:"- %s" --no-merges "$PREVIOUS_TAG..HEAD" > commits.txt
+            git diff "$PREVIOUS_TAG..HEAD" --stat > diff.txt
+            echo "" >> diff.txt
+            git diff "$PREVIOUS_TAG..HEAD" >> diff.txt
           else
-            git log --pretty=format:"- %s" --no-merges > commits.txt
+            echo "No previous tag found; using last 20 commits as context." > diff.txt
+            echo "" >> diff.txt
+            git log --pretty=format:"- %s" --no-merges -n 20 >> diff.txt
           fi
-          echo "📋 Commits to include:"
-          cat commits.txt
+          echo "📋 Diff since last release ($(wc -c < diff.txt) bytes):"
+          head -n 50 diff.txt
 
       - name: Set up Python
         if: steps.vars.outputs.stage == 'release'
@@ -214,7 +218,7 @@ jobs:
           AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
         run: |
           VERSION="${{ steps.vars.outputs.version }}"
-          python scripts/generate_release_notes.py commits.txt "$VERSION" > release_notes.md
+          python scripts/generate_release_notes.py diff.txt "$VERSION" > release_notes.md
           echo "📝 Generated release notes:"
           cat release_notes.md
 

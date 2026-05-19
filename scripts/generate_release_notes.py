@@ -30,7 +30,7 @@ def generate_changelog(commits_text: str, tag: str, api_key: str, api_url: str, 
 
 Version: {tag}
 
-Commits since previous release:
+Git diff since previous release (showing actual code changes):
 {commits_text}
 
 Generate a WordPress plugin changelog entry following this EXACT format:
@@ -45,7 +45,7 @@ Rules:
 - Use "Added" for new features, "Fixed" for bug fixes, "Changed" for improvements.
 - Write in plain language that merchants (non-engineers) can understand.
 - Group related changes under single bullets.
-- Skip trivial commits like "merge branch", "wip", "update readme" unless they fix something real.
+- Focus on actual code changes in the diff, not just commit messages.
 - Skip internal-only refactors that don't affect users.
 - Each bullet must start with "* Added -", "* Fixed -", "* Changed -", or "* Removed -".
 - The first line must be "= {tag} <today's date> =" in YYYY-MM-DD format.
