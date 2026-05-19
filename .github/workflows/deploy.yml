@@ -167,16 +167,22 @@ jobs:
             svn delete "$f" --force
           done
 
-          # Create tag remotely (no local tags checkout needed)
-          svn ls \
+          # Check for duplicate tag
+          if svn ls \
             --username "$SVN_USERNAME" \
             --password "$SVN_PASSWORD" \
             --non-interactive \
-            "https://plugins.svn.wordpress.org/chip-for-woocommerce/tags/$VERSION" >/dev/null 2>&1
-          if [ $? -eq 0 ]; then
+            "https://plugins.svn.wordpress.org/chip-for-woocommerce/tags/$VERSION" >/dev/null 2>&1; then
             echo "❌ Tag $VERSION already exists in SVN. Aborting."
             exit 1
           fi
+
+          # Commit trunk + assets first, then create tag from the new HEAD
+          svn commit \
+            -m "Release $VERSION" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive
 
           svn cp \
             --username "$SVN_USERNAME" \
@@ -185,13 +191,6 @@ jobs:
             "^/trunk" "^/tags/$VERSION" \
             -m "Create tag $VERSION"
           echo "🏷️ Created tag $VERSION"
-
-          # Commit everything (trunk + assets)
-          svn commit \
-            -m "Release $VERSION" \
-            --username "$SVN_USERNAME" \
-            --password "$SVN_PASSWORD" \
-            --non-interactive
 
           echo "✅ Released $VERSION to WordPress.org"
 
