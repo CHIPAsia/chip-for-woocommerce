@@ -128,6 +128,30 @@ else
     mv changelog.txt.tmp changelog.txt
 fi
 
+# ─── Update readme.txt changelog ───
+
+echo "📝 Updating readme.txt changelog..."
+
+# Replace the latest changelog entry in readme.txt while keeping the link to full history
+awk -v entry="$CHANGELOG_ENTRY" '
+    /^== Changelog ==/ {
+        print
+        print ""
+        print entry
+        skip = 1
+        next
+    }
+    /^\[See changelog for all versions\]/ {
+        print ""
+        print
+        skip = 0
+        next
+    }
+    skip { next }
+    { print }
+' readme.txt > readme.txt.tmp
+mv readme.txt.tmp readme.txt
+
 # ─── Build assets ───
 
 echo "🔨 Running npm run build..."
