@@ -1,6 +1,6 @@
 <?php
 /**
- * Class Test_CHIP_WooCommerce_Plugin
+ * Class PluginTest
  *
  * Basic smoke tests to verify the plugin loads correctly.
  *
@@ -10,7 +10,7 @@
 /**
  * Plugin smoke test case.
  */
-class Test_CHIP_WooCommerce_Plugin extends PHPUnit\Framework\TestCase {
+class PluginTest extends PHPUnit\Framework\TestCase {
 
 	/**
 	 * Test that the main plugin constant is defined.

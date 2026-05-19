@@ -1,6 +1,6 @@
 <?php
 /**
- * Class Test_CHIP_Woocommerce_API
+ * Class APITest
  *
  * Tests for the CHIP WooCommerce API class.
  *
@@ -10,7 +10,7 @@
 /**
  * API class test case.
  */
-class Test_CHIP_Woocommerce_API extends PHPUnit\Framework\TestCase {
+class APITest extends PHPUnit\Framework\TestCase {
 
 	/**
 	 * Test that the API class can be instantiated.
