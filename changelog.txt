@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 2.0.5 2026-05-19 ==
+* Fixed - Improved version tagging consistency during the automated release process.
+* Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.
+* Removed - Redundant external scripts and dependencies previously used for automated release note generation.
+
 = 2.0.4 2026-05-19 ==
 * Added - New plugin banners, icons, and screenshots for the WordPress.org plugin page.
 * Added - Automated unit testing suite to ensure long-term stability and reliability.
