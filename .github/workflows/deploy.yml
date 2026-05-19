@@ -247,12 +247,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          if gh release view "$VERSION" > /dev/null 2>&1; then
-            gh release edit "$VERSION" --notes-file release_notes.md
+          VERSION="${{ steps.vars.outputs.version }}"
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            gh release edit "v$VERSION" --notes-file release_notes.md
             echo "✅ Updated existing release"
           else
-            gh release create "$VERSION" --title "$VERSION" --notes-file release_notes.md
+            gh release create "v$VERSION" --title "v$VERSION" --notes-file release_notes.md
             echo "✅ Created new release"
           fi
 
@@ -261,4 +261,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.ref_name }}" chip-for-woocommerce.zip --clobber || true
+          gh release upload "v${{ steps.vars.outputs.version }}" chip-for-woocommerce.zip --clobber || true
