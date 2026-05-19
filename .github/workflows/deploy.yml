@@ -217,8 +217,8 @@ jobs:
         run: |
           VERSION="${{ steps.vars.outputs.version }}"
 
-          # Extract the latest changelog entry from changelog.txt (first entry after header)
-          sed -n '/^== Changelog ==/{n;:a;p;n;/^$/!ba}' changelog.txt > release_notes.md
+          # Extract the latest changelog entry from changelog.txt (portable awk)
+          awk '/^== Changelog ==/ { getline; getline; print; while (getline > 0 && NF > 0) print }' changelog.txt > release_notes.md
 
           echo "📝 Release notes from changelog:"
           cat release_notes.md
