@@ -49,11 +49,6 @@ jobs:
           fi
           echo "✅ Version ${VERSION} is new"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '^24.11.0'
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -100,9 +95,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Install Node.js dependencies
-        run: npm install
 
       - name: Bump version and update changelog
         run: |
