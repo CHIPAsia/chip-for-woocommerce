@@ -156,11 +156,11 @@ mv readme.txt.tmp readme.txt
 
 # ─── Build assets ───
 
-if [ -d node_modules ] && [ -f package.json ]; then
+# Only build locally (interactive mode). In CI (--yes) built assets are
+# gitignored and never committed; deploy.yml rebuilds when packaging for SVN.
+if ! $YES && [ -d node_modules ] && [ -f package.json ]; then
     echo "🔨 Running npm run build..."
     npm run build
-else
-    echo "⚠️  node_modules not found; skipping build (run npm install locally if needed)"
 fi
 
 # ─── Stage changes ───
