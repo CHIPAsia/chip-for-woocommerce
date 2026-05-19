@@ -11,3 +11,7 @@ test_stub.php
 /assets/js/frontend/*.asset.php
 /vendor/
 composer.lock
+
+# CI / release staging directories
+ci-build/
+dist/
