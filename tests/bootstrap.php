@@ -62,6 +62,51 @@ if ( ! function_exists( 'add_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'is_admin' ) ) {
+	/**
+	 * Stub for is_admin().
+	 *
+	 * @return bool
+	 */
+	function is_admin() {
+		return false;
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	/**
+	 * Stub for add_filter().
+	 *
+	 * @param string   $tag      Filter hook name.
+	 * @param callable $callback Callback function.
+	 * @param int      $priority Priority of the filter.
+	 * @param int      $accepted_args Number of accepted arguments.
+	 * @return true
+	 */
+	function add_filter( $tag, $callback, $priority = 10, $accepted_args = 1 ) {
+		return true;
+	}
+}
+
+if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
+	/**
+	 * Minimal stub for WC_Payment_Gateway so gateway class can be loaded.
+	 */
+	class WC_Payment_Gateway {}
+}
+
+if ( ! class_exists( 'WC_Logger' ) ) {
+	/**
+	 * Minimal stub for WC_Logger so logger class can be loaded.
+	 */
+	class WC_Logger {
+		public function notice( $message, $context = array() ) {}
+		public function info( $message, $context = array() ) {}
+		public function error( $message, $context = array() ) {}
+		public function debug( $message, $context = array() ) {}
+	}
+}
+
 // Load Composer autoloader if available.
 $autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
 if ( file_exists( $autoloader ) ) {
@@ -72,3 +117,6 @@ if ( file_exists( $autoloader ) ) {
  * Load the main plugin file so classes are available for testing.
  */
 require_once dirname( __DIR__ ) . '/chip-for-woocommerce.php';
+
+// Trigger includes so all plugin classes are loaded.
+Chip_Woocommerce::get_instance();
