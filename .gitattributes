@@ -39,3 +39,5 @@ CONTRIBUTING.md export-ignore
 # WordPress.org SVN export rules
 /tests/ export-ignore
 /docs/ export-ignore
+phpunit.xml.dist export-ignore
+.phpunit.result.cache export-ignore

@@ -1,1 +1,0 @@
-{"version":1,"defects":[],"times":{"APITest::test_api_can_be_instantiated":0.014,"APITest::test_set_key_updates_credentials":0,"PluginTest::test_plugin_constant_defined":0,"PluginTest::test_api_class_exists":0,"PluginTest::test_gateway_class_exists":0,"PluginTest::test_main_class_exists":0}}
