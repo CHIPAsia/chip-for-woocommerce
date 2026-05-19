@@ -68,8 +68,8 @@ if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 1
 fi
 
-# Detect current version from the plugin header
-CURRENT_VERSION=$(grep -oP '^\s*Version:\s*\K[0-9.]+' chip-for-woocommerce.php)
+# Detect current version from the plugin header (portable: no grep -P)
+CURRENT_VERSION=$(grep "Version:" chip-for-woocommerce.php | head -1 | awk '{print $3}')
 
 echo "🔢 Current version: $CURRENT_VERSION"
 echo "🔢 New version:     $NEW_VERSION"
@@ -120,9 +120,10 @@ if grep -q "^= ${NEW_VERSION} " changelog.txt; then
 else
     echo "📝 Adding changelog entry..."
     # Use a temp file to prepend after the header line
-    awk -v entry="$CHANGELOG_ENTRY" '
+    export AWK_ENTRY="$CHANGELOG_ENTRY"
+    awk '
         NR==1 { print; next }
-        NR==2 { print; print entry; next }
+        NR==2 { print; print ENVIRON["AWK_ENTRY"]; next }
         { print }
     ' changelog.txt > changelog.txt.tmp
     mv changelog.txt.tmp changelog.txt
@@ -133,11 +134,12 @@ fi
 echo "📝 Updating readme.txt changelog..."
 
 # Replace the latest changelog entry in readme.txt while keeping the link to full history
-awk -v entry="$CHANGELOG_ENTRY" '
+export AWK_ENTRY="$CHANGELOG_ENTRY"
+awk '
     /^== Changelog ==/ {
         print
         print ""
-        print entry
+        print ENVIRON["AWK_ENTRY"]
         skip = 1
         next
     }
