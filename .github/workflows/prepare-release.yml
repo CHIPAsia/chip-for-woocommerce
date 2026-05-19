@@ -103,7 +103,7 @@ jobs:
       - name: Bump version and update changelog
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          ./scripts/bump-version.sh --yes --changelog-file changelog_entry.md "$VERSION"
+          bash -x ./scripts/bump-version.sh --yes --changelog-file changelog_entry.md "$VERSION"
 
       - name: Commit version bump
         run: |
