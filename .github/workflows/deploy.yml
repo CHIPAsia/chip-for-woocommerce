@@ -63,6 +63,9 @@ jobs:
           echo "📦 Stage: $STAGE"
           echo "📦 Version: $VERSION"
 
+      - name: Install SVN
+        run: sudo apt-get install -y subversion
+
       - name: Revert stable tag for trunk deploy
         if: steps.vars.outputs.stage == 'trunk'
         run: |
@@ -87,9 +90,6 @@ jobs:
           else
             echo "⚠️ Could not read current stable tag from SVN; leaving as-is"
           fi
-
-      - name: Install SVN
-        run: sudo apt-get install -y subversion
 
       - name: Sparse-checkout SVN (trunk + assets only)
         env:
