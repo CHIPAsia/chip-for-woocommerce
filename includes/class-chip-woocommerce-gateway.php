@@ -453,8 +453,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * Setting a status on PaymentResult will skip legacy payment processing,
 	 * preventing the default GET redirect behavior.
 	 *
-	 * @param \Automattic\WooCommerce\StoreApi\Payments\PaymentContext $context Payment context.
-	 * @param \Automattic\WooCommerce\StoreApi\Payments\PaymentResult  $result  Payment result.
+	 * @param \Automattic\WooCommerce\Blocks\Payments\PaymentContext $context Payment context.
+	 * @param \Automattic\WooCommerce\Blocks\Payments\PaymentResult  $result  Payment result.
 	 * @return void
 	 */
 	public function process_payment_with_context( $context, &$result ) {

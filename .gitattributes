@@ -23,6 +23,14 @@ phpcs.xml export-ignore
 README.md export-ignore
 resources/ export-ignore
 
+# Exclude AI assistant files
+CLAUDE.md export-ignore
+.claude/ export-ignore
+
+# Exclude dev scripts and docs
+scripts/ export-ignore
+CONTRIBUTING.md export-ignore
+
 # Binary files
 *.png binary
 *.jpg binary
@@ -31,3 +39,5 @@ resources/ export-ignore
 # WordPress.org SVN export rules
 /tests/ export-ignore
 /docs/ export-ignore
+phpunit.xml.dist export-ignore
+.phpunit.result.cache export-ignore

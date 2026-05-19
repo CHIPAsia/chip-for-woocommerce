@@ -1,0 +1,240 @@
+name: Deploy to WordPress.org
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'trunk'
+        type: choice
+        options:
+          - trunk
+          - release
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org SVN
+    runs-on: ubuntu-latest
+    environment: wordpress-org
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '^24.11.0'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build
+
+      - name: Prepare plugin folder
+        run: |
+          mkdir -p dist/chip-for-woocommerce
+          git archive HEAD | tar -x -C dist/chip-for-woocommerce
+          mkdir -p dist/chip-for-woocommerce/assets/js/frontend
+          cp assets/js/frontend/* dist/chip-for-woocommerce/assets/js/frontend/
+          echo "✅ Plugin folder prepared"
+          ls -la dist/chip-for-woocommerce/assets/js/frontend/
+
+      - name: Determine stage and version
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            STAGE="${{ github.event.inputs.stage }}"
+          else
+            STAGE="release"
+          fi
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+          if [ "$STAGE" = "release" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(grep -oP '^\s*Version:\s*\K[0-9.]+' chip-for-woocommerce.php)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Stage: $STAGE"
+          echo "📦 Version: $VERSION"
+
+      - name: Revert stable tag for trunk deploy
+        if: steps.vars.outputs.stage == 'trunk'
+        run: |
+          # For trunk testing, keep Stable tag pointing to the previous version
+          # so users don't auto-update to the unreleased code.
+          PREVIOUS_STABLE=$(git show HEAD^:readme.txt 2>/dev/null | grep -oP '^Stable tag: \K[0-9.]+' || echo "")
+          if [ -n "$PREVIOUS_STABLE" ]; then
+            echo "🧪 Trunk mode: keeping Stable tag at ${PREVIOUS_STABLE}"
+            sed -i "s/^Stable tag: .*/Stable tag: ${PREVIOUS_STABLE}/" dist/chip-for-woocommerce/readme.txt
+            grep "^Stable tag:" dist/chip-for-woocommerce/readme.txt
+          else
+            echo "⚠️ Could not detect previous stable tag; leaving as-is"
+          fi
+
+      - name: Install SVN
+        run: sudo apt-get install -y subversion
+
+      - name: Checkout full SVN repository
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          svn checkout \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive \
+            https://plugins.svn.wordpress.org/chip-for-woocommerce/ \
+            svn-repo
+
+      - name: Update trunk
+        run: |
+          # Clear existing files in trunk (preserve .svn metadata)
+          cd svn-repo/trunk
+          find . -type f -not -path './.svn/*' -delete 2>/dev/null || true
+          find . -mindepth 1 -type d -not -path './.svn*' -empty -delete 2>/dev/null || true
+          cd ../..
+
+          # Copy new files into trunk
+          rsync -av \
+            --exclude='.git*' \
+            --exclude='.github' \
+            --exclude='ci-build' \
+            --exclude='dist' \
+            --exclude='node_modules' \
+            dist/chip-for-woocommerce/ \
+            svn-repo/trunk/
+
+      - name: Sync WordPress.org assets
+        run: |
+          if [ -d ".wordpress-org" ]; then
+            echo "📁 Syncing WordPress.org directory assets..."
+            cd svn-repo/assets
+            find . -type f -not -path './.svn/*' -delete 2>/dev/null || true
+            cd ../..
+            rsync -av .wordpress-org/ svn-repo/assets/
+          else
+            echo "ℹ️ No .wordpress-org directory found; skipping assets sync."
+          fi
+
+      - name: Commit trunk only (test stage)
+        if: steps.vars.outputs.stage == 'trunk'
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          cd svn-repo
+          svn add --force . > /dev/null 2>&1 || true
+          svn status | grep '^!' | sed 's/^! *//' | while read -r f; do
+            svn delete "$f" --force
+          done
+          svn commit \
+            -m "Update trunk to ${{ steps.vars.outputs.version }} for testing" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive
+          echo "✅ Deployed trunk for testing. Stable tag unchanged."
+
+      - name: Create SVN tag and release
+        if: steps.vars.outputs.stage == 'release'
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          cd svn-repo
+
+          # Add new files
+          svn add --force . > /dev/null 2>&1 || true
+
+          # Remove deleted files
+          svn status | grep '^!' | sed 's/^! *//' | while read -r f; do
+            svn delete "$f" --force
+          done
+
+          # Create tag from trunk
+          if [ ! -d "tags/$VERSION" ]; then
+            svn cp trunk "tags/$VERSION"
+            echo "🏷️ Created tag $VERSION"
+          else
+            echo "❌ Tag $VERSION already exists in SVN. Aborting."
+            exit 1
+          fi
+
+          # Commit everything (trunk + tag + assets)
+          svn commit \
+            -m "Release $VERSION" \
+            --username "$SVN_USERNAME" \
+            --password "$SVN_PASSWORD" \
+            --non-interactive
+
+          echo "✅ Released $VERSION to WordPress.org"
+
+      - name: Create release zip
+        if: steps.vars.outputs.stage == 'release'
+        run: |
+          cd dist
+          zip -r ../chip-for-woocommerce.zip chip-for-woocommerce
+          cd ..
+          echo "✅ Created release zip"
+
+      - name: Get commits since previous tag
+        if: steps.vars.outputs.stage == 'release'
+        id: commits
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"- %s" --no-merges "$PREVIOUS_TAG..HEAD" > commits.txt
+          else
+            git log --pretty=format:"- %s" --no-merges > commits.txt
+          fi
+          echo "📋 Commits to include:"
+          cat commits.txt
+
+      - name: Set up Python
+        if: steps.vars.outputs.stage == 'release'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        if: steps.vars.outputs.stage == 'release'
+        run: pip install requests
+
+      - name: Generate release notes with AI
+        if: steps.vars.outputs.stage == 'release'
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_API_URL: ${{ vars.AI_API_URL }}
+          AI_MODEL: ${{ vars.AI_MODEL || 'gemini-3-flash-preview:cloud' }}
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          python scripts/generate_release_notes.py commits.txt "$VERSION" > release_notes.md
+          echo "📝 Generated release notes:"
+          cat release_notes.md
+
+      - name: Create or update GitHub release
+        if: steps.vars.outputs.stage == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release edit "$VERSION" --notes-file release_notes.md
+            echo "✅ Updated existing release"
+          else
+            gh release create "$VERSION" --title "$VERSION" --notes-file release_notes.md
+            echo "✅ Created new release"
+          fi
+
+      - name: Upload release asset to GitHub
+        if: steps.vars.outputs.stage == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" chip-for-woocommerce.zip --clobber || true

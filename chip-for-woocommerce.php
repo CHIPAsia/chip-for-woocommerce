@@ -10,7 +10,7 @@
  * Requires at least: 6.3
  *
  * WC requires at least: 5.1
- * WC tested up to: 10.4
+ * WC tested up to: 10.7
  * Requires Plugins: woocommerce
  *
  * Copyright: © 2026 CHIP
