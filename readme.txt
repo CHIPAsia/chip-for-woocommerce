@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.0
-Stable tag: 2.0.3
+Stable tag: 2.0.4
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -60,8 +60,12 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.3 2026-02-26 =
-* Fixed - Safe product price and quantity handling when building purchase products. Prevents division by zero when price or quantity is 0; falls back to total_override in process_payment, auto_charge, and process_pre_order_payments.
+= 2.0.4 2026-05-19 ==
+* Added - New branding assets including banners, icons, and screenshots for the WordPress.org plugin directory.
+* Added - New automated testing suite to improve plugin reliability and prevent future regressions.
+* Changed - Verified compatibility with WooCommerce 10.7.
+* Changed - Modernized the automated release and deployment workflow for more consistent updates.
+* Changed - Updated developer documentation and contribution guidelines to better support the community.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

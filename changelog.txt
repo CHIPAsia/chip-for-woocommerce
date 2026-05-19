@@ -1,5 +1,12 @@
 == Changelog ==
 
+= 2.0.4 2026-05-19 ==
+* Added - New branding assets including banners, icons, and screenshots for the WordPress.org plugin directory.
+* Added - New automated testing suite to improve plugin reliability and prevent future regressions.
+* Changed - Verified compatibility with WooCommerce 10.7.
+* Changed - Modernized the automated release and deployment workflow for more consistent updates.
+* Changed - Updated developer documentation and contribution guidelines to better support the community.
+
 = 2.0.3 2026-02-26 =
 * Fixed - Safe product price and quantity handling when building purchase products. Prevents division by zero when price or quantity is 0; falls back to total_override in process_payment, auto_charge, and process_pre_order_payments.
 
