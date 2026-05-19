@@ -114,6 +114,7 @@ jobs:
             --exclude='ci-build' \
             --exclude='dist' \
             --exclude='node_modules' \
+            --exclude='.wordpress-org' \
             dist/chip-for-woocommerce/ \
             svn-repo/trunk/
 

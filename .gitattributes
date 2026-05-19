@@ -37,6 +37,7 @@ CONTRIBUTING.md export-ignore
 *.woff2 binary
 
 # WordPress.org SVN export rules
+.wordpress-org/ export-ignore
 /tests/ export-ignore
 /docs/ export-ignore
 phpunit.xml.dist export-ignore
