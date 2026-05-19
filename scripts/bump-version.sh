@@ -123,7 +123,7 @@ else
     export AWK_ENTRY="$CHANGELOG_ENTRY"
     awk '
         NR==1 { print; next }
-        NR==2 { print; print ENVIRON["AWK_ENTRY"]; next }
+        NR==2 { print; print ENVIRON["AWK_ENTRY"]; print ""; next }
         { print }
     ' changelog.txt > changelog.txt.tmp
     mv changelog.txt.tmp changelog.txt
