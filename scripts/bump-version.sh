@@ -156,11 +156,11 @@ mv readme.txt.tmp readme.txt
 
 # ─── Build assets ───
 
-if command -v npm &> /dev/null && [ -f package.json ]; then
+if [ -d node_modules ] && [ -f package.json ]; then
     echo "🔨 Running npm run build..."
     npm run build
 else
-    echo "⚠️  npm not available or package.json missing; skipping build"
+    echo "⚠️  node_modules not found; skipping build (run npm install locally if needed)"
 fi
 
 # ─── Stage changes ───
