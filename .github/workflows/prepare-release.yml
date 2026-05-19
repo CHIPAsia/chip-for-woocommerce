@@ -138,20 +138,26 @@ jobs:
           # Extract full changelog entry for PR body (header + bullets until blank line)
           CHANGELOG_BODY=$(sed -n '/^== Changelog ==/{n;n;:a;p;n;/^$/!ba}' readme.txt)
 
+          # Write PR body to file (avoid heredoc to keep YAML indentation valid)
+          {
+            echo "## Release v${VERSION}"
+            echo ""
+            echo "### Changelog"
+            printf '%s\n' "${CHANGELOG_BODY}"
+            echo ""
+            echo "### Checklist"
+            echo "- [ ] Review changelog accuracy"
+            echo "- [ ] Verify version bumped in all files"
+            echo "- [ ] After merge, create tag \`v${VERSION}\` to trigger deploy"
+          } > pr_body.md
+
           gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "Release v${VERSION}" \
-            --body "## Release v${VERSION}
+            --body-file pr_body.md
 
-### Changelog
-${CHANGELOG_BODY}
-
-### Checklist
-- [ ] Review changelog accuracy
-- [ ] Verify version bumped in all files
-- [ ] After merge, create tag \`v${VERSION}\` to trigger deploy"
-
+          rm -f pr_body.md
           echo "✅ Created PR for v${VERSION}"
 
       - name: Summary
