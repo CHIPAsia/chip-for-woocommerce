@@ -38,7 +38,7 @@ The plugin must accept both `duitnow_qr` and `dnqr` in its payment-method whitel
 
 Introduce a single resolver helper that runs at the one site where the gateway serializes `payment_method_whitelist` for the `create_payment` call. All gateway variants (base + 6 clones) already share that code path, so the migration is implemented once and inherited everywhere.
 
-### The four unit-level changes
+### The unit-level changes
 
 | Unit | Change |
 |---|---|
@@ -46,7 +46,7 @@ Introduce a single resolver helper that runs at the one site where the gateway s
 | `Chip_Woocommerce_Gateway` (new protected method) `resolve_duitnow_methods( $whitelist, $currency, $amount )` | Encapsulates group expansion → API check → intersection → dnqr-priority → fallback. Returns the final whitelist to send. |
 | `Chip_Woocommerce_Gateway` (new protected property) `$resolved_dnqr_group` | Caches the resolver's dnqr-group output for `bypass_chip()` to read without re-hitting the API. |
 | `Chip_Woocommerce_Gateway` (new public method) `get_duitnow_qr_preferred()` | Returns the `?preferred=` value (`dnqr` or `duitnow_qr`) when the configured whitelist is a pure DuitNow QR group, `''` otherwise. |
-| `Chip_Woocommerce_Gateway::process_payment()` (L1771 area) | Replace `$params['payment_method_whitelist'] = $this->payment_method_whitelist;` with a call to the resolver; store the resolved subset on the instance. |
+| `Chip_Woocommerce_Gateway::process_payment()` (L1771-1772) | Replace `$params['payment_method_whitelist'] = $this->payment_method_whitelist;` with a call to the resolver; store the resolved subset on the instance. (L1785 subscription override is untouched.) |
 | `Chip_Woocommerce_Gateway::bypass_chip()` | Remove the `case 'duitnow-qr':` from the Razer e-wallet switch. Remove the L2981 single-method `duitnow_qr` branch. Add a new server-driven branch that uses `get_duitnow_qr_preferred()`. |
 | `Chip_Woocommerce_Gateway::list_razer_ewallets()` (L2930) | Remove the `duitnow-qr` entry entirely. |
 | `class-chip-woocommerce-gateway-6.php` | Change preset whitelist from `['duitnow_qr']` to `['duitnow_qr', 'dnqr']`. Title, description, logo, ID, and form fields stay the same. |
@@ -205,17 +205,32 @@ Remove the `duitnow-qr` entry entirely. Razer e-wallet dropdown is now strictly 
 
 ### 6. `process_payment()` change
 
-Wherever `$params['payment_method_whitelist'] = $this->payment_method_whitelist;` appears (around L1771), replace with:
+The single site to modify is L1771-1772:
 
 ```php
-$woocommerce_currency = get_woocommerce_currency();
-$order_total          = $order->get_total();
-$amount               = (int) round( $order_total * 100 ); // sen
-$resolved_whitelist   = $this->resolve_duitnow_methods( $this->payment_method_whitelist, $woocommerce_currency, $amount );
-$params['payment_method_whitelist'] = $resolved_whitelist;
+if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
+    $params['payment_method_whitelist'] = $this->payment_method_whitelist;
+}
+```
+
+becomes:
+
+```php
+if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
+    $woocommerce_currency = get_woocommerce_currency();
+    $order_total          = $order->get_total();
+    $amount               = (int) round( $order_total * 100 ); // sen
+    $params['payment_method_whitelist'] = $this->resolve_duitnow_methods(
+        $this->payment_method_whitelist,
+        $woocommerce_currency,
+        $amount
+    );
+}
 ```
 
 The currency/amount resolution follows the same shape as the existing `payment_recurring_methods()` call at L2097-2108.
+
+**Subscription override at L1785 is intentionally NOT modified.** That line sets `$params['payment_method_whitelist'] = $this->get_payment_method_for_recurring();` for subscription orders, and `get_payment_method_for_recurring()` (L3579) restricts the list to `visa`, `mastercard`, `maestro` only — DuitNow QR is never part of a recurring whitelist. The resolver does not need to run on the recurring path because the dnqr group cannot be selected by `get_payment_method_for_recurring()`.
 
 ### 7. `get_payment_method_list()` change
 
