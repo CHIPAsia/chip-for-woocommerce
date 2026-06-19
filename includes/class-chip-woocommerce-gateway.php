@@ -18,6 +18,14 @@ use Automattic\WooCommerce\Enums\OrderInternalStatus;
  */
 class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
+	/**
+	 * DuitNow QR group: payment-method identifiers that are interchangeable
+	 * for the merchant at runtime. dnqr is the modern identifier;
+	 * duitnow_qr is the legacy identifier kept for backward compatibility.
+	 *
+	 * @var array
+	 */
+	const DUITNOW_GROUP = array( 'duitnow_qr', 'dnqr' );
 
 	/**
 	 * Gateway ID (wc_gateway_chip).
@@ -218,6 +226,24 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @var array
 	 */
 	protected $unavailable_fpx_banks = array();
+
+	/**
+	 * Whether the merchant has enabled the DuitNow QR group via the
+	 * enable_dnqr_group form field. Injected into payment_method_whitelist
+	 * at load time by init_settings(). 'yes' | 'no'.
+	 *
+	 * @var string
+	 */
+	protected $enable_dnqr_group = 'no';
+
+	/**
+	 * Cached result of the dnqr resolver from the most recent resolve_duitnow_methods() call.
+	 * Used by bypass_chip() to pick the correct ?preferred=dnqr|duitnow_qr without
+	 * a second /payment_methods/ API call.
+	 *
+	 * @var array
+	 */
+	protected $resolved_dnqr_group = array();
 
 	/**
 	 * Unavailable FPX B2B1 bank codes.
@@ -3491,7 +3517,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'razer_maybankqr' => 'Maybank QRPay',
 			'razer_shopeepay' => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
-			'duitnow_qr'      => 'Duitnow QR',
 		);
 	}
 
