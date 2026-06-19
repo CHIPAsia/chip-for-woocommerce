@@ -2999,13 +2999,22 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						$preferred = 'razer_maybankqr';
 						break;
 					case 'duitnow-qr':
-						$preferred = 'duitnow_qr';
+						// Priority: dnqr if available, duitnow_qr fallback.
+						// Reuse the resolver output from process_payment().
+						$group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
+						$preferred = ! empty( $group ) ? $group[0] : 'duitnow_qr';
 						break;
 				}
 
 				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
-			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'duitnow_qr' === $this->payment_method_whitelist[0] ) {
-				$url .= '?preferred=duitnow_qr';
+			} else {
+				// Single-method DuitNow QR branch: trigger when the configured
+				// whitelist is purely the dnqr group (handles [duitnow_qr],
+				// [dnqr], and [duitnow_qr, dnqr] for the dnqr-only gateway).
+				$preferred = $this->get_duitnow_qr_preferred();
+				if ( '' !== $preferred ) {
+					$url .= '?preferred=' . $preferred;
+				}
 			}
 		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
 			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
@@ -3592,6 +3601,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		return $final;
+	}
+
+	/**
+	 * Get the ?preferred= value when the configured whitelist is a pure DuitNow QR group.
+	 *
+	 * Returns 'dnqr' (priority) or 'duitnow_qr' (fallback) when:
+	 *   - the configured whitelist intersects the dnqr group, AND
+	 *   - the configured whitelist has no other payment-method groups.
+	 *
+	 * Returns '' otherwise. Used by the single-method branch in bypass_chip().
+	 *
+	 * @return string 'dnqr' | 'duitnow_qr' | ''
+	 */
+	public function get_duitnow_qr_preferred(): string {
+		$whitelist = is_array( $this->payment_method_whitelist ) ? $this->payment_method_whitelist : array();
+		$has_dnqr  = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
+		if ( ! $has_dnqr ) {
+			return '';
+		}
+		// Group-count rule: only DuitNow QR, no other groups.
+		$other_groups = array_diff( $whitelist, self::DUITNOW_GROUP );
+		if ( ! empty( $other_groups ) ) {
+			return '';
+		}
+		$resolved = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
+		return ! empty( $resolved ) ? $resolved[0] : '';
 	}
 
 	/**
