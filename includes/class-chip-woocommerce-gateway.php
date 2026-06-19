@@ -286,10 +286,35 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->enable_auto_clear_cart    = $this->get_option( 'enable_auto_clear_cart' );
 
 		// Checkout experience settings.
-		$this->description              = $this->get_option( 'description' );
-		$this->bypass_chip              = $this->get_option( 'bypass_chip' );
-		$this->payment_method_whitelist = $this->get_option( 'payment_method_whitelist' );
-		$this->email_fallback           = $this->get_option( 'email_fallback' );
+		$this->description = $this->get_option( 'description' );
+		$this->bypass_chip = $this->get_option( 'bypass_chip' );
+
+		$whitelist = $this->get_option( 'payment_method_whitelist', array() );
+		if ( ! is_array( $whitelist ) ) {
+			$whitelist = array();
+		}
+		$enable_dnqr_group = $this->get_option( 'enable_dnqr_group', null );
+
+		// Backward-compat migration: legacy saved values contained 'duitnow_qr'
+		// in the multiselect. Treat that as enable_dnqr_group='yes' for one
+		// migration cycle, but do not mutate the saved option here.
+		if ( null === $enable_dnqr_group && in_array( 'duitnow_qr', $whitelist, true ) ) {
+			$enable_dnqr_group = 'yes';
+			$whitelist         = array_values( array_diff( $whitelist, array( 'duitnow_qr' ) ) );
+		}
+		if ( null === $enable_dnqr_group ) {
+			$enable_dnqr_group = 'no';
+		}
+
+		$this->enable_dnqr_group        = $enable_dnqr_group;
+		$this->payment_method_whitelist = $whitelist;
+		if ( 'yes' === $enable_dnqr_group ) {
+			$this->payment_method_whitelist = array_values(
+				array_unique( array_merge( $this->payment_method_whitelist, self::DUITNOW_GROUP ) )
+			);
+		}
+
+		$this->email_fallback = $this->get_option( 'email_fallback' );
 
 		// Payment method availability.
 		$this->available_recurring       = $this->get_option( 'available_recurring_payment_method' );
@@ -1075,6 +1100,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'disabled'    => empty( $this->available_payment_methods ),
 		);
 
+		$this->form_fields['enable_dnqr_group'] = array(
+			'title'       => __( 'DuitNow QR', 'chip-for-woocommerce' ),
+			'label'       => __( 'Accept DuitNow QR payments', 'chip-for-woocommerce' ),
+			'type'        => 'checkbox',
+			'description' => __( 'Uses dnqr when available for this merchant, falls back to duitnow_qr. Recommended.', 'chip-for-woocommerce' ),
+			'default'     => 'no',
+		);
+
 		$this->form_fields['email_fallback'] = array(
 			'title'       => __( 'Email Fallback', 'chip-for-woocommerce' ),
 			'type'        => 'email',
@@ -1795,7 +1828,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$chip = $this->api();
 
 		if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
-			$params['payment_method_whitelist'] = $this->payment_method_whitelist;
+			$woocommerce_currency               = get_woocommerce_currency();
+			$order_total                        = $order->get_total();
+			$amount                             = (int) round( $order_total * 100 ); // sen.
+			$params['payment_method_whitelist'] = $this->resolve_duitnow_methods(
+				$this->payment_method_whitelist,
+				$woocommerce_currency,
+				$amount
+			);
 		}
 
 		// Set skip_capture for authorize (delayed capture) payment action.
@@ -2953,7 +2993,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$ewallet_list['TNG-EWALLET'] = __( 'Touch \'n Go eWallet', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'duitnow_qr', $this->payment_method_whitelist, true ) ) {
+		if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
 			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
 		}
 
