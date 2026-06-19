@@ -3558,7 +3558,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			if ( ! is_array( $response ) || ! isset( $response['available_payment_methods'] ) ) {
 				// 4a. Fallback: return expanded whitelist unchanged.
 				$this->resolved_dnqr_group = $has_group_member ? self::DUITNOW_GROUP : array();
-				$this->log_info( sprintf( 'dnqr resolver: API failed, fallback to expanded whitelist=%s', implode( ',', $expanded ) ) );
+				$this->api()->log_info( sprintf( 'dnqr resolver: API failed, fallback to expanded whitelist=%s', implode( ',', $expanded ) ) );
 				return $expanded;
 			}
 			$available = $response['available_payment_methods']; // Example shape: list of method ids the merchant has.
@@ -3580,7 +3580,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$final = array_values( array_diff( $expanded, self::DUITNOW_GROUP ) );
 		$final = array_merge( $final, $resolved_group );
 
-		$this->log_info(
+		$this->api()->log_info(
 			sprintf(
 				'dnqr resolver: configured=%s expanded=%s available=%s sent=%s preferred=%s',
 				implode( ',', $whitelist ),
