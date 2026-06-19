@@ -17,7 +17,7 @@ CHIP - Digital Finance Platform. Securely accept one-time and subscription payme
 = Why Choose CHIP for WooCommerce? =
 
 * **WooCommerce Blocks Support** - Fully compatible with the new WooCommerce Blocks checkout experience
-* **Multiple Payment Methods** - Accept FPX, Credit/Debit Cards, DuitNow QR, E-Wallets, and more
+* **Multiple Payment Methods** - Accept FPX, Credit/Debit Cards, DuitNow QR (automatically uses dnqr when available), E-Wallets, and more
 * **Subscription Payments** - Native support for WooCommerce Subscriptions
 * **Tokenization** - Allow customers to save cards for faster checkout
 * **Direct Post Integration** - Secure card payments without redirecting customers

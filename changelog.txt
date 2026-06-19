@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 2.0.6 =
+* Added - dnqr payment method support. Merchants now see a single "DuitNow QR" checkbox in the gateway settings; the plugin automatically uses dnqr when the merchant has it, falling back to duitnow_qr. Existing merchants with duitnow_qr configured are auto-migrated.
+
 = 2.0.5 2026-05-19 ==
 * Fixed - Improved version tagging consistency during the automated release process.
 * Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.
