@@ -230,7 +230,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Whether the merchant has enabled the DuitNow QR group via the
 	 * enable_dnqr_group form field. Injected into payment_method_whitelist
-	 * at load time by init_settings(). 'yes' | 'no'.
+	 * at load time by the constructor's migration block (see __construct()).
+	 * 'yes' | 'no'.
 	 *
 	 * @var string
 	 */
@@ -3041,8 +3042,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					case 'duitnow-qr':
 						// Priority: dnqr if available, duitnow_qr fallback.
 						// Reuse the resolver output from process_payment().
-						$group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
-						$preferred = ! empty( $group ) ? $group[0] : 'duitnow_qr';
+						$group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : array( 'dnqr', 'duitnow_qr' );
+						$preferred = ! empty( $group ) ? $group[0] : 'dnqr';
 						break;
 				}
 
@@ -3591,10 +3592,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected function resolve_duitnow_methods( array $whitelist, string $currency, int $amount ): array {
 		// 1. Group expansion.
 		$has_group_member = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
-		$expanded         = $whitelist;
-		if ( $has_group_member ) {
-			$expanded = array_values( array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) ) );
+
+		// Short-circuit: a whitelist that does not intersect the dnqr group
+		// must be returned untouched (no API call, no group injection).
+		// This is what the spec prose requires: "[fpx, mastercard] is returned
+		// untouched (no API call)" and it guarantees that dnqr-group members
+		// can never appear in the final whitelist unless the merchant
+		// configured one of them.
+		if ( ! $has_group_member ) {
+			$this->resolved_dnqr_group = array();
+			return $whitelist;
 		}
+
+		$expanded = array_values( array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) ) );
 
 		// 2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
 		$cache_key = 'chip_pm_' . md5( $this->brand_id . '|' . $currency . '|' . intval( $amount / 100 ) );
