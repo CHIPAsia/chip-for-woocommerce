@@ -15,14 +15,14 @@ The plugin must accept both `duitnow_qr` and `dnqr` in its payment-method whitel
 - Make the gateway's `payment_method_whitelist` setting work for both old and new merchants without UI confusion.
 - Decide at runtime which concrete method to send to CHIP, using `/payment_methods/` as the source of truth.
 - Prefer `dnqr` when both are available; fall back to `duitnow_qr` when only that is available.
-- DuitNow QR is **not** a Razer e-wallet — it must be removed from the Razer e-wallet dropdown.
+- DuitNow QR **is** a Razer e-wallet option in the customer-facing dropdown. The `duitnow-qr` entry stays in `list_razer_ewallets()` and the Razer e-wallet switch in `bypass_chip()`. The migration adds dnqr-priority logic to both.
 - No DB migration, no settings-page migration, no breaking changes for existing merchants.
 
 ## Non-goals
 
 - Migrating stored order meta or settings values (none change).
 - Adding a new clone gateway (Gateway 6 stays the single DuitNow QR gateway; its preset is widened).
-- JS-side UI for a DuitNow QR button (auto-redirect on `Place Order` is sufficient).
+- JS-side UI for a DuitNow QR button (auto-redirect on `Place Order` is sufficient for the single-method DuitNow QR branch; the Razer e-wallet dropdown handles the e-wallet case).
 - Subscription / recurring-method behavior changes (the existing `payment_recurring_methods()` call site is untouched).
 
 ## Glossary
@@ -47,8 +47,8 @@ Introduce a single resolver helper that runs at the one site where the gateway s
 | `Chip_Woocommerce_Gateway` (new protected property) `$resolved_dnqr_group` | Caches the resolver's dnqr-group output for `bypass_chip()` to read without re-hitting the API. |
 | `Chip_Woocommerce_Gateway` (new public method) `get_duitnow_qr_preferred()` | Returns the `?preferred=` value (`dnqr` or `duitnow_qr`) when the configured whitelist is a pure DuitNow QR group, `''` otherwise. |
 | `Chip_Woocommerce_Gateway::process_payment()` (L1771-1772) | Replace `$params['payment_method_whitelist'] = $this->payment_method_whitelist;` with a call to the resolver; store the resolved subset on the instance. (L1785 subscription override is untouched.) |
-| `Chip_Woocommerce_Gateway::bypass_chip()` | Remove the `case 'duitnow-qr':` from the Razer e-wallet switch. Remove the L2981 single-method `duitnow_qr` branch. Add a new server-driven branch that uses `get_duitnow_qr_preferred()`. |
-| `Chip_Woocommerce_Gateway::list_razer_ewallets()` (L2930) | Remove the `duitnow-qr` entry entirely. |
+| `Chip_Woocommerce_Gateway::bypass_chip()` | Keep the `case 'duitnow-qr':` in the Razer e-wallet switch — apply priority: pick `dnqr` first, `duitnow_qr` fallback, based on `$this->resolved_dnqr_group`. Keep the L2981 single-method branch but trigger on "whitelist intersects the dnqr group AND has no other groups" and apply the same priority. |
+| `Chip_Woocommerce_Gateway::list_razer_ewallets()` (L2930) | Keep the `duitnow-qr` entry. Trigger condition: `array_intersect( $whitelist, DUITNOW_GROUP )` is non-empty (so the option shows when merchant configured either `duitnow_qr` or `dnqr` or both). |
 | `class-chip-woocommerce-gateway-6.php` | Change preset whitelist from `['duitnow_qr']` to `['duitnow_qr', 'dnqr']`. Title, description, logo, ID, and form fields stay the same. |
 
 ### What does NOT change
@@ -58,7 +58,7 @@ Introduce a single resolver helper that runs at the one site where the gateway s
 - `class-chip-woocommerce-gateway-blocks-support.php` — auto-redirect is server-side, no JS work needed.
 - All JS files in `resources/js/frontend/`.
 - Clones 2–5.
-- `?preferred=` for card, FPX, FPX B2B1, or Razer e-wallet flows.
+- `?preferred=` for card, FPX, FPX B2B1, and non-dnqr Razer e-wallet flows.
 
 ## Component design
 
@@ -141,7 +141,7 @@ protected function resolve_duitnow_methods( array $whitelist, string $currency, 
 
 ### 3. Helper — `get_duitnow_qr_preferred()`
 
-Returns the `?preferred=` value when the configured whitelist is a pure DuitNow QR group, `''` otherwise.
+Returns the `?preferred=` value when the configured whitelist is a pure DuitNow QR group, `''` otherwise. Used by the single-method branch in `bypass_chip()`. The Razer e-wallet switch reads `$this->resolved_dnqr_group` directly to avoid the group-count check (Razer e-wallet selection is always single-method at the customer level).
 
 ```php
 public function get_duitnow_qr_preferred(): string {
@@ -155,12 +155,14 @@ public function get_duitnow_qr_preferred(): string {
     if ( ! empty( $other_groups ) ) {
         return '';
     }
-    $resolved = isset( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
+    $resolved = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
     return ! empty( $resolved ) ? $resolved[0] : '';
 }
 ```
 
 ### 4. `bypass_chip()` rewrite
+
+The DuitNow QR Razer e-wallet switch case now reads `$this->resolved_dnqr_group` (set by the resolver during `process_payment()`) to pick the right `?preferred=` value. The single-method DuitNow QR branch (originally L2981) is extended to handle the dnqr group and applies the same priority.
 
 ```php
 public function bypass_chip( $url, $payment ) {
@@ -178,13 +180,19 @@ public function bypass_chip( $url, $payment ) {
                 case 'TNG-EWALLET':     $preferred = 'razer_tng';        break;
                 case 'ShopeePay':       $preferred = 'razer_shopeepay';  break;
                 case 'MB2U_QRPay-Push': $preferred = 'razer_maybankqr';  break;
-                // No 'duitnow-qr' case — DuitNow QR is server-driven now.
+                case 'duitnow-qr':
+                    // Priority: dnqr if available, duitnow_qr fallback.
+                    // Reuse the resolver output from process_payment().
+                    $group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
+                    $preferred = ! empty( $group ) ? $group[0] : 'duitnow_qr';
+                    break;
             }
             if ( '' !== $preferred ) {
                 $url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
             }
         } else {
-            // DuitNow QR branch: server-driven, no customer input.
+            // Single-method DuitNow QR branch (was L2981): trigger when the
+            // configured whitelist is purely the dnqr group.
             $preferred = $this->get_duitnow_qr_preferred();
             if ( '' !== $preferred ) {
                 $url .= '?preferred=' . $preferred;
@@ -197,11 +205,19 @@ public function bypass_chip( $url, $payment ) {
 }
 ```
 
-The L2981 single-method `duitnow_qr` branch is gone. It's replaced by `get_duitnow_qr_preferred()` which handles the wider dnqr group correctly.
+The L2981 single-method `duitnow_qr` branch is extended (not removed): its trigger is changed from "whitelist is exactly `[duitnow_qr]`" to "whitelist is purely the dnqr group" (via `get_duitnow_qr_preferred()`). It now handles `[duitnow_qr]`, `[dnqr]`, and `[duitnow_qr, dnqr]` (when the dnqr group is the only group configured).
 
 ### 5. `list_razer_ewallets()` change
 
-Remove the `duitnow-qr` entry entirely. Razer e-wallet dropdown is now strictly Atome, GrabPay, MB2U_QRPay-Push, ShopeePay, TNG-EWALLET.
+The `duitnow-qr` entry is kept. The trigger condition is widened to show the option when either dnqr-group member is in the configured whitelist:
+
+```php
+if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
+    $ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
+}
+```
+
+The frontend key stays `duitnow-qr` and the display label stays `Duitnow QR`. Customers see one dropdown option; the plugin picks the right API key at the bypass_chip site.
 
 ### 6. `process_payment()` change
 
@@ -268,26 +284,42 @@ All other Gateway 6 properties (title `'Duitnow QR'`, description `'Pay with Dui
 
 ## Data flow
 
-### Classic checkout, DuitNow QR-only gateway
+### Classic checkout, DuitNow QR-only gateway (single-method path)
 
-1. Customer places order on the WooCommerce checkout page.
+1. Customer places order on the WooCommerce checkout page. The configured whitelist is purely the dnqr group (e.g. `[duitnow_qr, dnqr]` from Gateway 6's preset).
 2. `process_payment()` runs. Currency and total are read from the order.
 3. Resolver expands `[duitnow_qr, dnqr]` → `[duitnow_qr, dnqr]` (already expanded).
 4. Resolver checks `chip_pm_${brand}_${currency}_${bucket}` transient. On miss, calls `/payment_methods/?brand_id=...&currency=...&amount=...`.
 5. Resolver intersects with API response. If API returned `[duitnow_qr, dnqr, fpx]`, intersected group is `[duitnow_qr, dnqr]`. Priority removes `duitnow_qr` → `[dnqr]`.
 6. Final whitelist `[dnqr]` goes into `$params['payment_method_whitelist']` for the `create_payment` API call.
 7. `$this->resolved_dnqr_group = [dnqr]` is stored on the instance.
-8. CHIP returns a `checkout_url`. `bypass_chip()` appends `?preferred=dnqr` (via `get_duitnow_qr_preferred()`).
+8. CHIP returns a `checkout_url`. `bypass_chip()` is invoked, sees the customer's POST has no `chip_razer_ewallet` value, falls into the single-method DuitNow QR branch. `get_duitnow_qr_preferred()` reads `$this->resolved_dnqr_group = [dnqr]` and returns `dnqr`. URL becomes `?preferred=dnqr`.
 9. Customer is redirected to CHIP's hosted page.
 10. Customer completes payment via QR scan.
 
+### Classic checkout, gateway with Razer e-wallets including DuitNow QR
+
+1. Customer places order. The configured whitelist includes `razer_grabpay`, `razer_tng`, and `duitnow_qr` (or `dnqr`).
+2. `process_payment()` runs. Resolver expands the dnqr group. After intersection + priority, the resolved group is e.g. `[dnqr]`. The final whitelist sent to CHIP is `[razer_grabpay, razer_tng, dnqr]`.
+3. Customer sees the Razer e-wallet dropdown with options including "Duitnow QR" (one entry — both `duitnow_qr` and `dnqr` collapse to the same dropdown option).
+4. Customer picks "Duitnow QR" from the dropdown. `$_POST['chip_razer_ewallet'] = 'duitnow-qr'`.
+5. `bypass_chip()` enters the Razer e-wallet switch. The `duitnow-qr` case reads `$this->resolved_dnqr_group = [dnqr]`, picks `dnqr` as `$preferred`. URL becomes `?preferred=dnqr&razer_bank_code=duitnow-qr`.
+6. Customer is redirected to CHIP's hosted page.
+
+### Single-method DuitNow QR fallback (no dropdown)
+
+A gateway configured with whitelist `[duitnow_qr]` only (legacy preset, before the Gateway 6 change ships) still works:
+1. Resolver expands `[duitnow_qr]` → `[duitnow_qr, dnqr]`. Intersects with API. If API returned `[duitnow_qr, dnqr]`, resolved group is `[dnqr]`.
+2. `bypass_chip()` enters the single-method DuitNow QR branch, `get_duitnow_qr_preferred()` returns `dnqr`. URL becomes `?preferred=dnqr`.
+3. Customer is redirected to CHIP.
+
 ### Blocks checkout
 
-Identical to classic. No JS-side change needed — `process_payment_with_context()` returns the redirect URL, Blocks follows it.
+Identical to classic. No JS-side change needed — `process_payment_with_context()` returns the redirect URL, Blocks follows it. The Razer e-wallet dropdown JS already handles `chip_razer_ewallet` POSTs, including the `duitnow-qr` value.
 
 ### Subscription / recurring
 
-The recurring flow (`payment_recurring_methods()` at L2108) is untouched. Recurring-methods metadata is computed via a separate `/payment_methods/?recurring=true` call during settings validation, not at purchase time.
+The recurring flow (`payment_recurring_methods()` at L2108) is untouched. Recurring-methods metadata is computed via a separate `/payment_methods/?recurring=true` call during settings validation, not at purchase time. `get_payment_method_for_recurring()` (L3579) restricts the whitelist to `visa`, `mastercard`, `maestro` only — DuitNow QR is never part of a recurring whitelist.
 
 ## Error handling
 
@@ -299,7 +331,7 @@ The recurring flow (`payment_recurring_methods()` at L2108) is untouched. Recurr
 | Transient write fails (DB issue) | Treated as cache miss; re-tries the API on next purchase. No user-facing error. |
 | Resolver called without a configured dnqr group | Group expansion is a no-op. Resolver returns the whitelist untouched. `$resolved_dnqr_group` is set to `[]`. |
 | Resolver called for a gateway with no `bypass_chip` | `$params['payment_method_whitelist']` is still set correctly; bypass_chip() never runs, so `$this->resolved_dnqr_group` is unused. |
-| Customer on Razer + DuitNow QR mixed gateway | Customer picks a Razer e-wallet; the DuitNow QR group is sent alongside but only the Razer e-wallet `?preferred=` is added. No DuitNow QR option in the Razer dropdown. |
+| Customer on Razer + DuitNow QR mixed gateway | Customer picks a Razer e-wallet from the dropdown; the DuitNow QR group is sent alongside but only the Razer e-wallet `?preferred=` is added. The dropdown's "Duitnow QR" entry is one option among the Razer e-wallets — if picked, it routes through the dnqr-priority case. |
 
 ## Behavioral reference table
 
@@ -325,7 +357,7 @@ The recurring flow (`payment_recurring_methods()` at L2108) is untouched. Recurr
 
 | File | Change |
 |---|---|
-| `includes/class-chip-woocommerce-gateway.php` | Add `DUITNOW_GROUP` const + `$resolved_dnqr_group` property. Add `resolve_duitnow_methods()`, `get_duitnow_qr_preferred()`. Modify `get_payment_method_list()` to include `dnqr`. Modify `process_payment()` to call resolver before assigning `$params['payment_method_whitelist']`. Modify `bypass_chip()`: remove `duitnow-qr` case from Razer switch, remove L2981 single-method branch, add new server-driven dnqr branch using `get_duitnow_qr_preferred()`. Remove the `duitnow-qr` entry from `list_razer_ewallets()`. |
+| `includes/class-chip-woocommerce-gateway.php` | Add `DUITNOW_GROUP` const + `$resolved_dnqr_group` property. Add `resolve_duitnow_methods()`, `get_duitnow_qr_preferred()`. Modify `get_payment_method_list()` to include `dnqr`. Modify `process_payment()` to call resolver before assigning `$params['payment_method_whitelist']`. Modify `bypass_chip()`: extend the `duitnow-qr` Razer e-wallet case to apply priority using `$this->resolved_dnqr_group`; extend the L2981 single-method branch trigger to handle the dnqr group. Modify `list_razer_ewallets()`: widen the trigger to `array_intersect( ..., DUITNOW_GROUP )`. |
 | `includes/class-chip-woocommerce-gateway-6.php` | Change preset whitelist from `['duitnow_qr']` to `['duitnow_qr', 'dnqr']`. Title, description, logo default, ID, form fields — all unchanged. |
 | `readme.txt` | Add a "Tweak" or "Add" line describing the migration. |
 | `changelog.txt` | Add a new line describing the dnqr group support. |
@@ -343,18 +375,19 @@ The recurring flow (`payment_recurring_methods()` at L2108) is untouched. Recurr
 
 The repo has no unit tests (`CLAUDE.md` confirms). Testing is manual + integration:
 
-1. **Gateway 6 default settings, merchant has both `duitnow_qr` and `dnqr`** — Customer is redirected with `?preferred=dnqr`. Payment on CHIP dashboard shows `dnqr`.
+1. **Gateway 6 default settings, merchant has both `duitnow_qr` and `dnqr`** — Customer clicks Place Order. Single-method DuitNow QR branch fires. Customer is redirected with `?preferred=dnqr`. Payment on CHIP dashboard shows `dnqr`.
 2. **Gateway 6 default settings, merchant has only `duitnow_qr`** — Customer is redirected with `?preferred=duitnow_qr`. Payment shows `duitnow_qr`.
-3. **Gateway 6 default settings, `/payment_methods/` API times out** — Customer is redirected with `?preferred=dnqr` (fallback). Payment may fail on CHIP if dnqr not actually available — accepted per fallback policy.
-4. **Base gateway, whitelist `[duitnow_qr, fpx]`** — No `?preferred=` (2 groups). API receives `[dnqr, fpx]` after expansion + intersection + priority.
-5. **Base gateway, whitelist `[duitnow_qr]`, merchant has both** — API receives `[dnqr]`. No Razer e-wallet dropdown involved. Customer redirected with `?preferred=dnqr`.
-6. **Base gateway, whitelist `[dnqr]`, merchant has only `duitnow_qr`** — API receives `[duitnow_qr]`. Customer redirected with `?preferred=duitnow_qr`.
-7. **Base gateway, whitelist `[visa, mastercard]`** — Resolver is a no-op. Card flow unchanged.
-8. **Subscription renewal** — Verify recurring `payment_recurring_methods()` call site at L2108 is not affected.
-9. **Cache hit/miss** — First purchase after settings save calls API; second purchase within 30 min uses cache. Verify via logs.
-10. **Razer dropdown no longer contains Duitnow QR** — For any gateway, the e-wallet dropdown only shows Atome, GrabPay, MB2U_QRPay-Push, ShopeePay, TNG-EWALLET.
-11. **Razer + DuitNow QR mixed gateway** — Customer picks a Razer e-wallet; the API receives both groups; no `?preferred=` is added (2 groups).
-12. **Admin UI** — Gateway 6 settings page shows the `[duitnow_qr, dnqr]` preset selected. The base gateway's multiselect shows the new "DuitNow QR (new)" option labeled `dnqr`.
+3. **Gateway 6 default settings, `/payment_methods/` API times out** — Customer is redirected with `?preferred=dnqr` (fallback, since `DUITNOW_GROUP[0] = 'dnqr'`). Payment may fail on CHIP if dnqr not actually available — accepted per fallback policy.
+4. **Gateway with Razer e-wallets including DuitNow QR, merchant has both** — Customer picks "Duitnow QR" from the Razer dropdown. Redirect URL has `?preferred=dnqr&razer_bank_code=duitnow-qr`. Payment on CHIP shows `dnqr`.
+5. **Gateway with Razer e-wallets including DuitNow QR, merchant has only `duitnow_qr`** — Customer picks "Duitnow QR" from the Razer dropdown. Redirect URL has `?preferred=duitnow_qr&razer_bank_code=duitnow-qr`. Payment shows `duitnow_qr`.
+6. **Gateway with Razer e-wallets, NO DuitNow QR configured** — Razer e-wallet dropdown does NOT include "Duitnow QR" entry. No regressions.
+7. **Base gateway, whitelist `[duitnow_qr, fpx]`** — No `?preferred=` (2 groups). API receives `[dnqr, fpx]` after expansion + intersection + priority.
+8. **Base gateway, whitelist `[dnqr]`, merchant has only `duitnow_qr`** — API receives `[duitnow_qr]`. No Razer e-wallet dropdown involved (no `razer_*` in whitelist). Single-method DuitNow QR branch fires. Customer redirected with `?preferred=duitnow_qr`.
+9. **Base gateway, whitelist `[visa, mastercard]`** — Resolver is a no-op. Card flow unchanged.
+10. **Subscription renewal** — Verify recurring `payment_recurring_methods()` call site at L2108 is not affected. `get_payment_method_for_recurring()` still restricts to cards.
+11. **Cache hit/miss** — First purchase after settings save calls API; second purchase within 30 min uses cache. Verify via logs.
+12. **Razer dropdown shows "Duitnow QR" when configured** — For any gateway where the whitelist intersects the dnqr group, the e-wallet dropdown includes the "Duitnow QR" option alongside Atome, GrabPay, MB2U_QRPay-Push, ShopeePay, TNG-EWALLET.
+13. **Admin UI** — Gateway 6 settings page shows the `[duitnow_qr, dnqr]` preset selected. The base gateway's multiselect shows the new "DuitNow QR (new)" option labeled `dnqr`.
 
 ## Risks and open questions
 
