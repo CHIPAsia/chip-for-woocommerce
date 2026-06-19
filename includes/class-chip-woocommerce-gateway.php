@@ -3521,6 +3521,80 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Resolve the configured payment_method_whitelist against the merchant's
+	 * actual /payment_methods/ response, with dnqr-priority for the DuitNow QR group.
+	 *
+	 * Steps:
+	 *   1. Group expansion: any dnqr-group member in the whitelist expands to the full group.
+	 *   2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
+	 *   3. Try cache. On miss, call /payment_methods/.
+	 *   4. Fallback: return expanded whitelist unchanged if the API fails.
+	 *   5. Intersect with available methods.
+	 *   6. Priority: dnqr wins when both are present.
+	 *   7. Cache the resolved group on $this->resolved_dnqr_group for bypass_chip().
+	 *   8. Build the final whitelist (original non-group entries + resolved group).
+	 *
+	 * @param array  $whitelist Configured payment_method_whitelist.
+	 * @param string $currency  Order currency code (e.g. 'MYR').
+	 * @param int    $amount    Order total in sen (e.g. 12345 = RM 123.45).
+	 * @return array            Final whitelist to send to CHIP.
+	 */
+	protected function resolve_duitnow_methods( array $whitelist, string $currency, int $amount ): array {
+		// 1. Group expansion.
+		$has_group_member = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
+		$expanded         = $whitelist;
+		if ( $has_group_member ) {
+			$expanded = array_values( array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) ) );
+		}
+
+		// 2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
+		$cache_key = 'chip_pm_' . md5( $this->brand_id . '|' . $currency . '|' . intval( $amount / 100 ) );
+
+		// 3. Try cache. If hit, use it. If miss, call /payment_methods/.
+		$available = get_transient( $cache_key );
+		if ( false === $available ) {
+			$chip     = $this->api();
+			$response = $chip->payment_methods( $currency, '', $amount ); // No language param.
+			if ( ! is_array( $response ) || ! isset( $response['available_payment_methods'] ) ) {
+				// 4a. Fallback: return expanded whitelist unchanged.
+				$this->resolved_dnqr_group = $has_group_member ? self::DUITNOW_GROUP : array();
+				$this->log_info( sprintf( 'dnqr resolver: API failed, fallback to expanded whitelist=%s', implode( ',', $expanded ) ) );
+				return $expanded;
+			}
+			$available = $response['available_payment_methods']; // Example shape: list of method ids the merchant has.
+			set_transient( $cache_key, $available, 30 * MINUTE_IN_SECONDS );
+		}
+
+		// 5. Intersect: keep only group members the merchant actually has.
+		$resolved_group = array_values( array_intersect( self::DUITNOW_GROUP, $available ) );
+
+		// 6. Priority: dnqr wins when both are present.
+		if ( in_array( 'dnqr', $resolved_group, true ) ) {
+			$resolved_group = array_values( array_diff( $resolved_group, array( 'duitnow_qr' ) ) );
+		}
+
+		// 7. Cache for bypass_chip() to read.
+		$this->resolved_dnqr_group = $resolved_group;
+
+		// 8. Build final whitelist: original entries (with group members stripped) + resolved group.
+		$final = array_values( array_diff( $expanded, self::DUITNOW_GROUP ) );
+		$final = array_merge( $final, $resolved_group );
+
+		$this->log_info(
+			sprintf(
+				'dnqr resolver: configured=%s expanded=%s available=%s sent=%s preferred=%s',
+				implode( ',', $whitelist ),
+				implode( ',', $expanded ),
+				implode( ',', (array) $available ),
+				implode( ',', $final ),
+				$resolved_group[0] ?? '(none)'
+			)
+		);
+
+		return $final;
+	}
+
+	/**
 	 * Add processing fee items to order.
 	 *
 	 * @param WC_Order $order Order object.
