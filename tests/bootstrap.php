@@ -107,11 +107,96 @@ if ( ! class_exists( 'WC_Logger' ) ) {
 	}
 }
 
+// In-memory transient storage for tests.
+if ( ! isset( $GLOBALS['__chip_test_transients'] ) ) {
+	$GLOBALS['__chip_test_transients'] = array();
+}
+
+// WordPress time constants used by the gateway at test time.
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( $key ) {
+		return $GLOBALS['__chip_test_transients'][ $key ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( $key, $value, $expiry = 0 ) {
+		$GLOBALS['__chip_test_transients'][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( $key ) {
+		unset( $GLOBALS['__chip_test_transients'][ $key ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_woocommerce_currency' ) ) {
+	function get_woocommerce_currency() {
+		return $GLOBALS['__chip_test_currency'] ?? 'MYR';
+	}
+}
+
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( $key, $default = false ) {
+		return $GLOBALS['__chip_test_options'][ $key ] ?? $default;
+	}
+}
+
+if ( ! function_exists( '__' ) ) {
+	/**
+	 * Stub for the WordPress __() translation function.
+	 *
+	 * @param string $text   Text to translate.
+	 * @param string $domain Text domain.
+	 * @return string
+	 */
+	function __( $text, $domain = '' ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'has_filter' ) ) {
+	/**
+	 * Stub for has_filter(). No filters are registered in tests.
+	 *
+	 * @param string   $tag     Filter hook name.
+	 * @param callable $function_to_check Optional callback to check.
+	 * @return bool
+	 */
+	function has_filter( $tag, $function_to_check = false ) {
+		return false;
+	}
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+	/**
+	 * Stub for apply_filters(). Returns the value unchanged.
+	 *
+	 * @param string $tag    Filter hook name.
+	 * @param mixed  $value  Value to filter.
+	 * @param mixed  ...$args Additional arguments.
+	 * @return mixed
+	 */
+	function apply_filters( $tag, $value, ...$args ) {
+		return $value;
+	}
+}
+
 // Load Composer autoloader if available.
 $autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
 if ( file_exists( $autoloader ) ) {
 	require_once $autoloader;
 }
+
+// Load the GatewayTestCase helper so child test classes can resolve the parent.
+require_once __DIR__ . '/GatewayTestCase.php';
 
 /**
  * Load the main plugin file so classes are available for testing.
