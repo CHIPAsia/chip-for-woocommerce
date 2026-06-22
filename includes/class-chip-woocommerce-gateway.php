@@ -3000,6 +3000,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) );
 			} elseif ( isset( $_POST['chip_razer_ewallet'] ) && ! empty( $_POST['chip_razer_ewallet'] ) ) {
 				$razer_ewallet = sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
+				$preferred     = '';
 				switch ( $razer_ewallet ) {
 					case 'Atome':
 						$preferred = 'razer_atome';
@@ -3024,7 +3025,17 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						break;
 				}
 
-				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
+				// DuitNow QR is its own payment method, not a Razer bank code.
+				// Append `?preferred=...` only -- no `&razer_bank_code=...` because
+				// that parameter is meaningless for DuitNow QR (it was a pre-PR
+				// bug to include it).
+				if ( '' !== $preferred ) {
+					if ( 'duitnow-qr' === $razer_ewallet ) {
+						$url .= '?preferred=' . $preferred;
+					} else {
+						$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
+					}
+				}
 			} else {
 				// Single-method DuitNow QR branch: trigger when the configured
 				// whitelist is purely the dnqr group (handles [duitnow_qr],

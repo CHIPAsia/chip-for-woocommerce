@@ -189,7 +189,14 @@ public function bypass_chip( $url, $payment ) {
                     break;
             }
             if ( '' !== $preferred ) {
-                $url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
+                // DuitNow QR is its own payment method, not a Razer bank code.
+                // Append `?preferred=...` only -- no `&razer_bank_code=...` for
+                // the DuitNow QR case.
+                if ( 'duitnow-qr' === $razer_ewallet ) {
+                    $url .= '?preferred=' . $preferred;
+                } else {
+                    $url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
+                }
             }
         } else {
             // Single-method DuitNow QR branch (was L2981): trigger when the
@@ -332,7 +339,7 @@ No code change required. Gateway 6's preset is already `array( 'duitnow_qr' )` -
 3. `process_payment()` runs. Resolver expands the dnqr group. After intersection + priority, the resolved group is e.g. `[dnqr]`. The final whitelist sent to CHIP is `[razer_grabpay, razer_tng, dnqr]`.
 4. Customer sees the Razer e-wallet dropdown with options including "Duitnow QR" (one entry — both `duitnow_qr` and `dnqr` collapse to the same dropdown option).
 5. Customer picks "Duitnow QR" from the dropdown. `$_POST['chip_razer_ewallet'] = 'duitnow-qr'`.
-6. `bypass_chip()` enters the Razer e-wallet switch. The `duitnow-qr` case reads `$this->resolved_dnqr_group = [dnqr]`, picks `dnqr` as `$preferred`. URL becomes `?preferred=dnqr&razer_bank_code=duitnow-qr`.
+6. `bypass_chip()` enters the Razer e-wallet switch. The `duitnow-qr` case reads `$this->resolved_dnqr_group = [dnqr]`, picks `dnqr` as `$preferred`. URL becomes `?preferred=dnqr` -- no `&razer_bank_code=...` suffix because DuitNow QR is its own payment method, not a Razer bank code.
 7. Customer is redirected to CHIP's hosted page.
 
 ### Legacy merchant migration path
@@ -409,8 +416,8 @@ The repo has no unit tests (`CLAUDE.md` confirms). Testing is manual + integrati
 1. **Gateway 6 default settings, merchant has both `duitnow_qr` and `dnqr`** — Customer clicks Place Order. Single-method DuitNow QR branch fires. Customer is redirected with `?preferred=dnqr`. Payment on CHIP dashboard shows `dnqr`.
 2. **Gateway 6 default settings, merchant has only `duitnow_qr`** — Customer is redirected with `?preferred=duitnow_qr`. Payment shows `duitnow_qr`.
 3. **Gateway 6 default settings, `/payment_methods/` API times out** — Customer is redirected with `?preferred=dnqr` (fallback, since `DUITNOW_GROUP[0] = 'dnqr'`). Payment may fail on CHIP if dnqr not actually available — accepted per fallback policy.
-4. **Gateway with Razer e-wallets including DuitNow QR, merchant has both** — Customer picks "Duitnow QR" from the Razer dropdown. Redirect URL has `?preferred=dnqr&razer_bank_code=duitnow-qr`. Payment on CHIP shows `dnqr`.
-5. **Gateway with Razer e-wallets including DuitNow QR, merchant has only `duitnow_qr`** — Customer picks "Duitnow QR" from the Razer dropdown. Redirect URL has `?preferred=duitnow_qr&razer_bank_code=duitnow-qr`. Payment shows `duitnow_qr`.
+4. **Gateway with Razer e-wallets including DuitNow QR, merchant has both** — Customer picks "Duitnow QR" from the Razer dropdown. Redirect URL has `?preferred=dnqr` (no `&razer_bank_code=...` — that parameter is meaningless for DuitNow QR). Payment on CHIP shows `dnqr`.
+5. **Gateway with Razer e-wallets including DuitNow QR, merchant has only `duitnow_qr`** — Customer picks "Duitnow QR" from the Razer dropdown. Redirect URL has `?preferred=duitnow_qr` (no `&razer_bank_code=...`). Payment shows `duitnow_qr`.
 6. **Gateway with Razer e-wallets, NO DuitNow QR configured** — Razer e-wallet dropdown does NOT include "Duitnow QR" entry. No regressions.
 7. **Base gateway, whitelist `[duitnow_qr, fpx]`** — No `?preferred=` (2 groups). API receives `[dnqr, fpx]` after expansion + intersection + priority.
 8. **Base gateway, whitelist `[dnqr]`, merchant has only `duitnow_qr`** — API receives `[duitnow_qr]`. No Razer e-wallet dropdown involved (no `razer_*` in whitelist). Single-method DuitNow QR branch fires. Customer redirected with `?preferred=duitnow_qr`.
