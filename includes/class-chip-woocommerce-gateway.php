@@ -3074,63 +3074,78 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function bypass_chip( $url, $payment ) {
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		if ( 'yes' === $this->bypass_chip && ! $payment['is_test'] ) {
-			if ( isset( $_POST['chip_fpx_bank'] ) && ! empty( $_POST['chip_fpx_bank'] ) ) {
-				$url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_bank'] ) );
-			} elseif ( isset( $_POST['chip_fpx_b2b1_bank'] ) && ! empty( $_POST['chip_fpx_b2b1_bank'] ) ) {
-				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) );
-			} elseif ( isset( $_POST['chip_razer_ewallet'] ) && ! empty( $_POST['chip_razer_ewallet'] ) ) {
-				$razer_ewallet = sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
-				$preferred     = '';
-				switch ( $razer_ewallet ) {
-					case 'Atome':
-						$preferred = 'razer_atome';
-						break;
-					case 'GrabPay':
-						$preferred = 'razer_grabpay';
-						break;
-					case 'TNG-EWALLET':
-						$preferred = 'razer_tng';
-						break;
-					case 'ShopeePay':
-						$preferred = 'razer_shopeepay';
-						break;
-					case 'MB2U_QRPay-Push':
-						$preferred = 'razer_maybankqr';
-						break;
-					case 'duitnow-qr':
-						// Priority: dnqr if available, duitnow_qr fallback.
-						// Reuse the resolver output from process_payment().
-						$group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : array( 'dnqr', 'duitnow_qr' );
-						$preferred = ! empty( $group ) ? $group[0] : 'dnqr';
-						break;
-				}
-
-				// DuitNow QR is its own payment method, not a Razer bank code.
-				// Append `?preferred=...` only -- no `&razer_bank_code=...` because
-				// that parameter is meaningless for DuitNow QR (it was a pre-PR
-				// bug to include it).
-				if ( '' !== $preferred ) {
-					if ( 'duitnow-qr' === $razer_ewallet ) {
-						$url .= '?preferred=' . $preferred;
-					} else {
-						$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
-					}
-				}
-			} else {
-				// Single-method DuitNow QR branch: trigger when the configured
-				// whitelist is purely the dnqr group (handles [duitnow_qr],
-				// [dnqr], and [duitnow_qr, dnqr] for the dnqr-only gateway).
-				$preferred = $this->get_duitnow_qr_preferred();
-				if ( '' !== $preferred ) {
-					$url .= '?preferred=' . $preferred;
-				}
-			}
-		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
-			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( 'yes' !== $this->bypass_chip || $payment['is_test'] ) {
+			return $this->maybe_atome_redirect( $url );
 		}
+		if ( ! isset( $_POST['chip_payment_method'] ) || empty( $_POST['chip_payment_method'] ) ) {
+			return $url;
+		}
+		$value = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
+		if ( false === strpos( $value, ':' ) ) {
+			if ( 'dnqr' === $value ) {
+				return $this->build_dnqr_url( $url );
+			}
+			// 'card' or any other unrecognised single-method tag: no redirect;
+			// the direct-post flow or default gateway behavior applies.
+			return $url;
+		}
+		[ $type, $code ] = explode( ':', $value, 2 );
+		switch ( $type ) {
+			case 'fpx':
+				return $url . '?preferred=fpx&fpx_bank_code=' . $code;
+			case 'fpx_b2b1':
+				return $url . '?preferred=fpx_b2b1&fpx_bank_code=' . $code;
+			case 'razer':
+				return $this->build_razer_url( $url, $code );
+		}
+		return $url;
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
+	}
+
+	/**
+	 * Build the redirect URL for a Razer e-wallet selection.
+	 *
+	 * @param string $url          Base redirect URL.
+	 * @param string $display_name Display name of the selected e-wallet (e.g. 'GrabPay').
+	 * @return string URL with the appropriate ?preferred=razer_<x>&razer_bank_code=... suffix.
+	 */
+	private function build_razer_url( $url, $display_name ) {
+		$map = array(
+			'Atome'           => 'razer_atome',
+			'GrabPay'         => 'razer_grabpay',
+			'ShopeePay'       => 'razer_shopeepay',
+			'TNG-EWALLET'     => 'razer_tng',
+			'MB2U_QRPay-Push' => 'razer_maybankqr',
+		);
+		if ( ! isset( $map[ $display_name ] ) ) {
+			return $url;
+		}
+		return $url . '?preferred=' . $map[ $display_name ] . '&razer_bank_code=' . $display_name;
+	}
+
+	/**
+	 * Build the redirect URL for a DuitNow QR selection.
+	 *
+	 * @param string $url Base redirect URL.
+	 * @return string URL with the appropriate ?preferred=dnqr (or duitnow_qr) suffix.
+	 */
+	private function build_dnqr_url( $url ) {
+		$preferred = $this->get_duitnow_qr_preferred();
+		return '' === $preferred ? $url : $url . '?preferred=' . $preferred;
+	}
+
+	/**
+	 * If this is the Atome clone (wc_gateway_chip_5), force a redirect to
+	 * ?preferred=razer_atome&razer_bank_code=Atome regardless of any POST data.
+	 *
+	 * @param string $url Base redirect URL.
+	 * @return string URL with the Atome redirect suffix, or the input URL unchanged.
+	 */
+	private function maybe_atome_redirect( $url ) {
+		if ( 'wc_gateway_chip_5' === $this->id ) {
+			return $url . '?preferred=razer_atome&razer_bank_code=Atome';
+		}
 		return $url;
 	}
 
