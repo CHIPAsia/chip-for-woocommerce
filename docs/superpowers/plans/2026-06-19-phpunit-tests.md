@@ -393,7 +393,8 @@ Create `tests/GetPaymentMethodListTest.php`:
 class GetPaymentMethodListTest extends GatewayTestCase {
 
 	/**
-	 * The list must contain all 12 expected method keys, in order.
+	 * The list must contain all 13 expected method keys, in order,
+	 * including the 'duitnow_qr' multiselect key for the dnqr group.
 	 */
 	public function test_contains_all_expected_methods() {
 		$gateway  = $this->newGateway();
@@ -416,8 +417,10 @@ class GetPaymentMethodListTest extends GatewayTestCase {
 	}
 
 	/**
-	 * The dnqr-group keys must not appear in the multiselect -- they're
-	 * controlled via constructor group expansion, not via the dropdown.
+	 * The 'dnqr' key must not appear in the multiselect -- it's
+	 * injected at runtime via the constructor's group expansion.
+	 * The 'duitnow_qr' key IS in the multiselect as the user-selectable
+	 * entry for the dnqr group.
 	 */
 	public function test_does_not_contain_dnqr_group_keys() {
 		$gateway = $this->newGateway();
@@ -630,7 +633,7 @@ class GetDuitNowQrPreferredTest extends GatewayTestCase {
 		$this->assertSame( 'duitnow_qr', $this->callGatewayMethod( $gateway, 'get_duitnow_qr_preferred' ) );
 	}
 
-	public function test_returns_empty_when_resolved_group_empty() {
+	public function test_falls_back_to_duitnow_qr_when_resolved_group_empty() {
 		$gateway = $this->newGateway( array(
 			'payment_method_whitelist' => array( 'duitnow_qr' ),
 			'resolved_dnqr_group'      => array(),

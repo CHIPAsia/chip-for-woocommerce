@@ -220,11 +220,11 @@ class DuitNowGroupTest extends GatewayTestCase {
 - Returns `''` when other groups are present in the whitelist.
 - Returns `'dnqr'` when resolver picked dnqr.
 - Returns `'duitnow_qr'` when resolver picked duitnow_qr.
-- Returns `''` when resolved group is empty (fallback path).
+- Returns `'duitnow_qr'` (the first element of `DUITNOW_GROUP`) when resolved group is empty -- a defensive default that mirrors the production code's `! empty( $resolved ) ? $resolved[0] : ''` logic at `includes/class-chip-woocommerce-gateway.php:3668-3671`. The helper is unreachable in practice because the resolver always populates `$resolved_dnqr_group` when the dnqr group is enabled, but the fallback keeps `bypass_chip()` safe if called outside the normal `process_payment()` flow.
 
 **`tests/GetPaymentMethodListTest.php`** (2 tests):
 
-- Contains all 12 expected method keys (fpx, fpx_b2b1, mastercard, maestro, visa, mpgs_google_pay, mpgs_apple_pay, razer_atome, razer_grabpay, razer_maybankqr, razer_shopeepay, razer_tng).
+- Contains all 13 expected method keys (the 12 listed below plus `duitnow_qr` as the user-selectable multiselect key for the dnqr group). The dnqr-group selection is represented by the `duitnow_qr` key only -- `dnqr` is never a multiselect option; it is injected at runtime via the constructor's group expansion.
 - Does NOT contain `'duitnow_qr'` or `'dnqr'` (the dnqr group is controlled via constructor expansion, not via the multiselect).
 
 **`tests/ListRazerEwalletsTest.php`** (4 tests):
