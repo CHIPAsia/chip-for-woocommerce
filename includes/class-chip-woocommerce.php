@@ -215,6 +215,10 @@ class Chip_Woocommerce {
 				$banks = $gateway_instance->list_razer_ewallets();
 				unset( $banks[''] );
 				break;
+			case 'unified':
+				$banks = $gateway_instance->list_unified_payment_methods();
+				unset( $banks[''] );
+				break;
 		}
 
 		return new WP_REST_Response( $banks, 200 );
