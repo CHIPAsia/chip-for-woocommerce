@@ -97,16 +97,33 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		// Determine which bank type is needed for lazy loading.
 		$bank_type = '';
 		if ( is_array( $whitelisted_payment_method ) && 'yes' === $bypass_chip ) {
+			$has_fpx = in_array( 'fpx', $whitelisted_payment_method, true ) || in_array( 'fpx_b2b1', $whitelisted_payment_method, true );
+			$has_razer = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0;
+			$has_card = count( array_intersect( $whitelisted_payment_method, array( 'visa', 'mastercard', 'maestro' ) ) ) > 0;
+
+			// Single-method cases: fpx, fpx_b2b1, razer, card (legacy 'fpx' / 'fpx_b2b1' / 'razer' / 'card' stand-alone flows).
 			if ( 1 === count( $whitelisted_payment_method ) ) {
 				if ( 'fpx' === $whitelisted_payment_method[0] ) {
 					$bank_type = 'fpx_b2c';
 				} elseif ( 'fpx_b2b1' === $whitelisted_payment_method[0] ) {
 					$bank_type = 'fpx_b2b1';
-				} elseif ( count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0 ) {
+				} elseif ( $has_razer && ! $has_card ) {
 					$bank_type = 'razer';
 				}
-			} elseif ( 0 === count( array_diff( $whitelisted_payment_method, $razer_ewallet_list ) ) ) {
-				$bank_type = 'razer';
+			}
+
+			// Mixed cases: card + dropdown, or multiple dropdown methods -> unified.
+			if ( '' === $bank_type ) {
+				$has_dropdown = $has_fpx || $has_razer;
+				$dropdown_count = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) );
+				if ( $has_fpx ) {
+					$dropdown_count++;
+				}
+				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
+					$bank_type = 'unified';
+				} elseif ( 0 === count( array_diff( $whitelisted_payment_method, $razer_ewallet_list ) ) ) {
+					$bank_type = 'razer';
+				}
 			}
 		}
 
@@ -152,19 +169,41 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
 
 		if ( is_array( $pm_whitelist ) && 'yes' === $bypass_chip ) {
-			if ( 1 === count( $pm_whitelist ) && 'fpx' === $pm_whitelist[0] ) {
-				$js_display = 'fpx';
-			} elseif ( 1 === count( $pm_whitelist ) && 'fpx_b2b1' === $pm_whitelist[0] ) {
-				$js_display = 'fpx_b2b1';
-			} elseif ( count( $pm_whitelist ) > 0 && 0 === count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) ) {
-				// All whitelisted methods are razer e-wallets.
-				$js_display = 'razer';
-			} elseif ( count( $pm_whitelist ) > 0 && 0 === count( array_diff( $pm_whitelist, $card_methods ) ) ) {
-				// All whitelisted methods are card methods - show card form.
-				$js_display = 'card';
-			} elseif ( count( $pm_whitelist ) >= 2 && count( array_intersect( $pm_whitelist, $card_methods ) ) > 0 ) {
-				// Mixed payment methods with at least one card method - show card form.
-				$js_display = 'card';
+			$has_fpx   = in_array( 'fpx', $pm_whitelist, true ) || in_array( 'fpx_b2b1', $pm_whitelist, true );
+			$has_razer = count( preg_grep( '/^razer_/', $pm_whitelist ) ) > 0;
+			$has_card  = count( array_intersect( $pm_whitelist, $card_methods ) ) > 0;
+
+			// Single-method cases.
+			if ( 1 === count( $pm_whitelist ) ) {
+				if ( 'fpx' === $pm_whitelist[0] ) {
+					$js_display = 'fpx';
+				} elseif ( 'fpx_b2b1' === $pm_whitelist[0] ) {
+					$js_display = 'fpx_b2b1';
+				} elseif ( $has_razer && ! $has_card ) {
+					$js_display = 'razer';
+				} elseif ( $has_card && ! $has_fpx && ! $has_razer ) {
+					$js_display = 'card';
+				}
+			}
+
+			// Mixed cases.
+			if ( '' === $js_display ) {
+				$dropdown_count = count( preg_grep( '/^razer_/', $pm_whitelist ) );
+				if ( $has_fpx ) {
+					$dropdown_count++;
+				}
+				$has_dnqr = in_array( 'duitnow_qr', $pm_whitelist, true ) || in_array( 'dnqr', $pm_whitelist, true );
+				if ( $has_dnqr ) {
+					$dropdown_count++;
+				}
+				$has_dropdown = $dropdown_count > 0;
+				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
+					$js_display = 'unified';
+				} elseif ( 0 === count( array_diff( $pm_whitelist, $razer_ewallet_list ) ) ) {
+					$js_display = 'razer';
+				} elseif ( $has_card && ! $has_dropdown ) {
+					$js_display = 'card';
+				}
 			}
 		}
 
