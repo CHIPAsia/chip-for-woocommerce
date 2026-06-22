@@ -228,16 +228,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $unavailable_fpx_banks = array();
 
 	/**
-	 * Whether the merchant has enabled the DuitNow QR group via the
-	 * enable_dnqr_group form field. Injected into payment_method_whitelist
-	 * at load time by the constructor's migration block (see __construct()).
-	 * 'yes' | 'no'.
-	 *
-	 * @var string
-	 */
-	protected $enable_dnqr_group = 'no';
-
-	/**
 	 * Cached result of the dnqr resolver from the most recent resolve_duitnow_methods() call.
 	 * Used by bypass_chip() to pick the correct ?preferred=dnqr|duitnow_qr without
 	 * a second /payment_methods/ API call.
@@ -294,26 +284,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( ! is_array( $whitelist ) ) {
 			$whitelist = array();
 		}
-		$enable_dnqr_group = $this->get_option( 'enable_dnqr_group', null );
 
-		// Backward-compat migration: legacy saved values contained 'duitnow_qr'
-		// in the multiselect. Treat that as enable_dnqr_group='yes' for one
-		// migration cycle, but do not mutate the saved option here.
-		if ( null === $enable_dnqr_group && in_array( 'duitnow_qr', $whitelist, true ) ) {
-			$enable_dnqr_group = 'yes';
-			$whitelist         = array_values( array_diff( $whitelist, array( 'duitnow_qr' ) ) );
-		}
-		if ( null === $enable_dnqr_group ) {
-			$enable_dnqr_group = 'no';
-		}
-
-		$this->enable_dnqr_group        = $enable_dnqr_group;
-		$this->payment_method_whitelist = $whitelist;
-		if ( 'yes' === $enable_dnqr_group ) {
-			$this->payment_method_whitelist = array_values(
-				array_unique( array_merge( $this->payment_method_whitelist, self::DUITNOW_GROUP ) )
+		// DuitNow QR group expansion: when the merchant selects 'duitnow_qr'
+		// in the multiselect, that selection means "the DuitNow QR group" —
+		// i.e. the plugin should pick whichever of {duitnow_qr, dnqr} the
+		// merchant actually has at runtime, prioritizing dnqr. Expand the
+		// single multiselect key into the full group at load time so the
+		// resolver and bypass_chip see the group semantics. The expansion
+		// is in-memory only and does not mutate the saved option.
+		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
+			$whitelist = array_values(
+				array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) )
 			);
 		}
+
+		$this->payment_method_whitelist = $whitelist;
 
 		$this->email_fallback = $this->get_option( 'email_fallback' );
 
@@ -1099,14 +1084,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'default'     => array( 'fpx' ),
 			'options'     => $this->available_payment_methods,
 			'disabled'    => empty( $this->available_payment_methods ),
-		);
-
-		$this->form_fields['enable_dnqr_group'] = array(
-			'title'       => __( 'DuitNow QR', 'chip-for-woocommerce' ),
-			'label'       => __( 'Accept DuitNow QR payments', 'chip-for-woocommerce' ),
-			'type'        => 'checkbox',
-			'description' => __( 'Uses dnqr when available for this merchant, falls back to duitnow_qr. Recommended.', 'chip-for-woocommerce' ),
-			'default'     => 'no',
 		);
 
 		$this->form_fields['email_fallback'] = array(
@@ -3567,6 +3544,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'razer_maybankqr' => 'Maybank QRPay',
 			'razer_shopeepay' => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
+			// DuitNow QR group: a single multiselect key that the gateway
+			// expands to {duitnow_qr, dnqr} at load time. The resolver
+			// picks whichever the merchant has, prioritizing dnqr.
+			'duitnow_qr'      => 'DuitNow QR',
 		);
 	}
 

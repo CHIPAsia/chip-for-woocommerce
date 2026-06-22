@@ -12,7 +12,7 @@ The plugin must accept both `duitnow_qr` and `dnqr` in its payment-method whitel
 ## Goals
 
 - Add `dnqr` as a recognized payment-method identifier alongside `duitnow_qr`.
-- Make the gateway's payment-method selection UI work for both old and new merchants with **no UI confusion**: a single "DuitNow QR" checkbox (separate from the existing multiselect) controls the dnqr group. The multiselect no longer exposes `duitnow_qr` or `dnqr` directly.
+- Make the gateway's payment-method whitelist work for both old and new merchants with **no separate checkbox**: a single "DuitNow QR" entry in the existing `payment_method_whitelist` multiselect covers both `duitnow_qr` and `dnqr`. The gateway expands the single key to the full dnqr group at load time.
 - Decide at runtime which concrete method to send to CHIP, using `/payment_methods/` as the source of truth.
 - Prefer `dnqr` when both are available; fall back to `duitnow_qr` when only that is available.
 - DuitNow QR **is** a Razer e-wallet option in the customer-facing dropdown. The `duitnow-qr` entry stays in `list_razer_ewallets()` and the Razer e-wallet switch in `bypass_chip()`. The migration adds dnqr-priority logic to both.
@@ -42,15 +42,15 @@ Introduce a single resolver helper that runs at the one site where the gateway s
 
 | Unit | Change |
 |---|---|
-| `Chip_Woocommerce_Gateway::get_payment_method_list()` | Remove `'duitnow_qr'` and `'dnqr'` from the list. The dnqr group is now controlled by a separate form field `enable_dnqr_group`. |
+| `Chip_Woocommerce_Gateway::get_payment_method_list()` | Add back `'duitnow_qr' => 'DuitNow QR'` as the single multiselect entry for the dnqr group. |
 | `Chip_Woocommerce_Gateway` (new protected method) `resolve_duitnow_methods( $whitelist, $currency, $amount )` | Encapsulates group expansion → API check → intersection → dnqr-priority → fallback. Returns the final whitelist to send. |
 | `Chip_Woocommerce_Gateway` (new protected property) `$resolved_dnqr_group` | Caches the resolver's dnqr-group output for `bypass_chip()` to read without re-hitting the API. |
 | `Chip_Woocommerce_Gateway` (new public method) `get_duitnow_qr_preferred()` | Returns the `?preferred=` value (`dnqr` or `duitnow_qr`) when the configured whitelist is a pure DuitNow QR group, `''` otherwise. |
-| `Chip_Woocommerce_Gateway` (new form field `enable_dnqr_group`) | Single boolean checkbox controlling whether the dnqr group is in the runtime whitelist. Replaces the multiselect entry for `duitnow_qr`. |
+| `Chip_Woocommerce_Gateway::init_settings()` / `__construct()` | If `duitnow_qr` is in the saved `payment_method_whitelist`, expand to `[duitnow_qr, dnqr]` in-memory only (no DB write). The merchant's saved option stays as-is. |
 | `Chip_Woocommerce_Gateway::process_payment()` (L1771-1772) | Replace `$params['payment_method_whitelist'] = $this->payment_method_whitelist;` with a call to the resolver; store the resolved subset on the instance. (L1785 subscription override is untouched.) |
 | `Chip_Woocommerce_Gateway::bypass_chip()` | Keep the `case 'duitnow-qr':` in the Razer e-wallet switch — apply priority: pick `dnqr` first, `duitnow_qr` fallback, based on `$this->resolved_dnqr_group`. Keep the L2981 single-method branch but trigger on "whitelist intersects the dnqr group AND has no other groups" and apply the same priority. |
 | `Chip_Woocommerce_Gateway::list_razer_ewallets()` (L2930) | Keep the `duitnow-qr` entry. Trigger condition: `array_intersect( $whitelist, DUITNOW_GROUP )` is non-empty (so the option shows when merchant configured either `duitnow_qr` or `dnqr` or both). |
-| `class-chip-woocommerce-gateway-6.php` | Change preset: set `enable_dnqr_group` default to `'yes'`. Title, description, logo, ID, and form fields stay the same. |
+| `class-chip-woocommerce-gateway-6.php` | No change needed — the preset already uses `payment_method_whitelist = ['duitnow_qr']`, which the constructor expands to the full dnqr group at load time. |
 
 ### What does NOT change
 
@@ -69,8 +69,7 @@ Introduce a single resolver helper that runs at the one site where the gateway s
 // New class constant on Chip_Woocommerce_Gateway.
 const DUITNOW_GROUP = array( 'duitnow_qr', 'dnqr' );
 
-// New instance properties.
-protected $enable_dnqr_group   = 'no';
+// New instance property.
 protected $resolved_dnqr_group = array();
 ```
 
@@ -252,7 +251,7 @@ The currency/amount resolution follows the same shape as the existing `payment_r
 
 ### 7. `get_payment_method_list()` change
 
-`duitnow_qr` and `dnqr` are **removed** from this list. The dnqr group is controlled by a separate `enable_dnqr_group` form field (Section 8).
+`duitnow_qr` is **added back** as a single multiselect entry labeled "DuitNow QR". The dnqr group semantics are exposed to merchants as a single selectable option — picking it means "the DuitNow QR group", which the constructor expands to `[duitnow_qr, dnqr]` at load time (Section 9). The resolver (Section 2) then picks `dnqr` if available, else `duitnow_qr`.
 
 ```php
 public function get_payment_method_list() {
@@ -269,87 +268,53 @@ public function get_payment_method_list() {
         'razer_maybankqr' => 'Maybank QRPay',
         'razer_shopeepay' => 'ShopeePay',
         'razer_tng'       => "Touch 'n Go eWallet",
+        'duitnow_qr'      => 'DuitNow QR',
     );
 }
 ```
 
-### 8. New form field `enable_dnqr_group`
+### 8. (Removed -- no separate enable_dnqr_group field)
 
-A separate single-checkbox form field added to `init_form_fields()`, placed near the `payment_method_whitelist` multiselect for visual grouping.
+Earlier designs introduced a separate enable_dnqr_group checkbox. The current design controls the dnqr group entirely through the existing payment_method_whitelist multiselect, so no additional form field is needed.
 
-```php
-$this->form_fields['enable_dnqr_group'] = array(
-    'title'       => __( 'DuitNow QR', 'chip-for-woocommerce' ),
-    'label'       => __( 'Accept DuitNow QR payments', 'chip-for-woocommerce' ),
-    'type'        => 'checkbox',
-    'description' => __( 'Uses dnqr when available for this merchant, falls back to duitnow_qr. Recommended.', 'chip-for-woocommerce' ),
-    'default'     => 'no',
-);
-```
+### 9. Effective whitelist -- constructor change
 
-For Gateway 6, `default` is overridden to `'yes'` (Section 9).
-
-### 9. Effective whitelist — constructor change
-
-The constructor (around L265) currently sets `$this->payment_method_whitelist = $this->get_option( 'payment_method_whitelist' );`. After the change, it builds the **effective whitelist** by:
-
-1. Reading the saved `payment_method_whitelist` option (multiselect — no dnqr-group keys).
-2. Reading the saved `enable_dnqr_group` option.
-3. **Backward compatibility migration:** if `enable_dnqr_group` is unset AND `duitnow_qr` is in the saved multiselect, treat `enable_dnqr_group` as `'yes'` and strip `duitnow_qr` from the multiselect value (one-time auto-migration at load time; doesn't write back to the DB).
-4. If `enable_dnqr_group === 'yes'`, inject `['duitnow_qr', 'dnqr']` into the whitelist.
+The constructor (`__construct()`) reads the saved `payment_method_whitelist` and then expands the dnqr group in-memory:
 
 ```php
-public function init_settings() {
-    parent::init_settings();
-    $whitelist = $this->get_option( 'payment_method_whitelist', array() );
-    if ( ! is_array( $whitelist ) ) {
-        $whitelist = array();
-    }
-    $enable_dnqr_group = $this->get_option( 'enable_dnqr_group', null );
-
-    // Backward-compat migration: legacy saved values contained 'duitnow_qr'
-    // in the multiselect. Treat that as enable_dnqr_group='yes' for one
-    // migration cycle, but do not mutate the saved option.
-    if ( null === $enable_dnqr_group && in_array( 'duitnow_qr', $whitelist, true ) ) {
-        $enable_dnqr_group = 'yes';
-        $whitelist         = array_values( array_diff( $whitelist, array( 'duitnow_qr' ) ) );
-    }
-    if ( null === $enable_dnqr_group ) {
-        $enable_dnqr_group = 'no';
-    }
-
-    $this->enable_dnqr_group       = $enable_dnqr_group;
-    $this->payment_method_whitelist = $whitelist;
-    if ( 'yes' === $enable_dnqr_group ) {
-        $this->payment_method_whitelist = array_values(
-            array_unique( array_merge( $this->payment_method_whitelist, self::DUITNOW_GROUP ) )
-        );
-    }
+$whitelist = $this->get_option( 'payment_method_whitelist', array() );
+if ( ! is_array( $whitelist ) ) {
+    $whitelist = array();
 }
+
+// DuitNow QR group expansion: when the merchant selects 'duitnow_qr'
+// in the multiselect, that selection means "the DuitNow QR group" —
+// i.e. the plugin should pick whichever of {duitnow_qr, dnqr} the
+// merchant actually has at runtime, prioritizing dnqr. Expand the
+// single multiselect key into the full group at load time so the
+// resolver and bypass_chip see the group semantics. The expansion
+// is in-memory only and does not mutate the saved option.
+if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
+    $whitelist = array_values(
+        array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) )
+    );
+}
+
+$this->payment_method_whitelist = $whitelist;
 ```
 
-The `parent::init_settings()` call (L262 area) is preserved. The new property `enable_dnqr_group` is added to the property block alongside `$resolved_dnqr_group` (Task 1).
-
-**Backward-compat note:** Existing merchants who saved `payment_method_whitelist = ['duitnow_qr']` continue to work without intervention. The legacy value is migrated at runtime on every request. The first time they save the gateway settings explicitly (any change to any field), the migration persists because the new `enable_dnqr_group = 'yes'` is written to the option.
+The expansion is in-memory only — the saved `payment_method_whitelist` option is not modified. There is no backward-compat migration path because there is no data-model change: any merchant who already has `duitnow_qr` in their multiselect continues to have it, and the expansion happens transparently at every request.
 
 ### 10. Gateway 6 preset change
 
-```php
-// class-chip-woocommerce-gateway-6.php
-// Replace the existing preset whitelist default with:
-$this->form_fields['enable_dnqr_group']['default'] = 'yes';
-// (payment_method_whitelist default stays as array() — the dnqr group is
-//  injected at runtime via enable_dnqr_group.)
-```
-
-All other Gateway 6 properties (title `'Duitnow QR'`, description `'Pay with Duitnow QR'`, logo default `'duitnow_only'`, id `'wc_gateway_chip_6'`, `PREFERRED_TYPE = 'Duitnow QR'`) stay the same. The merchant-facing UI is now: a checkbox "DuitNow QR — Accept DuitNow QR payments" pre-checked.
+No code change required. Gateway 6's preset is already `array( 'duitnow_qr' )` -- the constructor's group expansion (Section 9) automatically widens it to `[duitnow_qr, dnqr]` at load time.
 
 ## Data flow
 
 ### Classic checkout, DuitNow QR-only gateway (single-method path)
 
-1. Customer places order on the WooCommerce checkout page. The gateway is Gateway 6, with `enable_dnqr_group='yes'` and an empty multiselect.
-2. At load time, `init_settings()` injects the dnqr group into `$this->payment_method_whitelist`, so the effective whitelist is `[duitnow_qr, dnqr]`.
+1. Customer places order on the WooCommerce checkout page. The gateway is Gateway 6, with the multiselect preset `['duitnow_qr']`.
+2. At load time, `__construct()` expands the dnqr group, so the effective whitelist is `[duitnow_qr, dnqr]`.
 3. `process_payment()` runs. Currency and total are read from the order.
 4. Resolver expands `[duitnow_qr, dnqr]` → `[duitnow_qr, dnqr]` (already expanded).
 5. Resolver checks `chip_pm_${brand}_${currency}_${bucket}` transient. On miss, calls `/payment_methods/?brand_id=...&currency=...&amount=...`.
@@ -362,8 +327,8 @@ All other Gateway 6 properties (title `'Duitnow QR'`, description `'Pay with Dui
 
 ### Classic checkout, gateway with Razer e-wallets including DuitNow QR
 
-1. Customer places order. The configured settings: `enable_dnqr_group='yes'`, multiselect includes `razer_grabpay`, `razer_tng`.
-2. At load time, `init_settings()` injects the dnqr group. Effective whitelist: `[razer_grabpay, razer_tng, duitnow_qr, dnqr]`.
+1. Customer places order. The configured settings: multiselect includes `razer_grabpay`, `razer_tng`, and `duitnow_qr`.
+2. At load time, `__construct()` expands the dnqr group. Effective whitelist: `[razer_grabpay, razer_tng, duitnow_qr, dnqr]`.
 3. `process_payment()` runs. Resolver expands the dnqr group. After intersection + priority, the resolved group is e.g. `[dnqr]`. The final whitelist sent to CHIP is `[razer_grabpay, razer_tng, dnqr]`.
 4. Customer sees the Razer e-wallet dropdown with options including "Duitnow QR" (one entry — both `duitnow_qr` and `dnqr` collapse to the same dropdown option).
 5. Customer picks "Duitnow QR" from the dropdown. `$_POST['chip_razer_ewallet'] = 'duitnow-qr'`.
@@ -372,12 +337,11 @@ All other Gateway 6 properties (title `'Duitnow QR'`, description `'Pay with Dui
 
 ### Legacy merchant migration path
 
-A merchant who saved the gateway before this migration has `payment_method_whitelist = ['duitnow_qr']` in the saved option. No `enable_dnqr_group` value saved.
+A merchant who saved the gateway before this migration has `payment_method_whitelist = ['duitnow_qr']` in the saved option. No data-model change is required.
 
-1. At load time, `init_settings()` sees `enable_dnqr_group` is unset. It checks the saved multiselect, finds `duitnow_qr`, sets `enable_dnqr_group = 'yes'` (in-memory only — does not write to DB), and strips `duitnow_qr` from the in-memory whitelist.
-2. Effective whitelist becomes `[duitnow_qr, dnqr]` (after re-injection by the migration helper).
-3. The legacy merchant's checkout works exactly like the new Gateway 6 flow above.
-4. The next time the merchant saves the gateway settings (any field), `enable_dnqr_group = 'yes'` is persisted to the DB and `duitnow_qr` is permanently removed from the saved multiselect.
+1. At load time, `__construct()` reads the saved multiselect, finds `duitnow_qr`, and in-memory expands it to `[duitnow_qr, dnqr]`. The saved option is not mutated.
+2. The merchant's checkout works exactly like the new Gateway 6 flow above.
+3. The merchant never has to do anything explicit. Saving the gateway settings with the existing multiselect value (`['duitnow_qr']`) writes back the same value; the next request continues to expand it in-memory.
 
 ### Blocks checkout
 
@@ -401,27 +365,31 @@ The recurring flow (`payment_recurring_methods()` at L2108) is untouched. Recurr
 
 ## Behavioral reference table
 
-The "Configured" column reflects what the merchant sees: `enable_dnqr_group` (boolean) plus the multiselect (which no longer contains `duitnow_qr` or `dnqr`).
+The "Configured" column reflects what the merchant sees: the `payment_method_whitelist` multiselect (which contains `duitnow_qr` as the single dnqr-group entry). The constructor expands any `duitnow_qr` selection to `[duitnow_qr, dnqr]` at load time.
 
-| enable_dnqr_group | Multiselect | API returns | Effective whitelist | Final whitelist sent | `?preferred=` |
-|---|---|---|---|---|---|
-| `yes` | (anything) | `[duitnow_qr, dnqr]` | `[..., dnqr]` | `[..., dnqr]` | `dnqr` |
-| `yes` | (anything) | `[duitnow_qr]` | `[..., duitnow_qr]` | `[..., duitnow_qr]` | `duitnow_qr` |
-| `yes` | (anything) | API fails | `[..., dnqr, duitnow_qr]` (fallback) | `[..., dnqr, duitnow_qr]` | `dnqr` |
-| `yes` | (anything) | `[dnqr]` | `[..., dnqr]` | `[..., dnqr]` | `dnqr` |
-| `no` | `[fpx]` | `[fpx]` | `[fpx]` | `[fpx]` | `fpx` (existing FPX branch) |
-| `no` | `[fpx, mastercard]` | `[fpx, mastercard]` | `[fpx, mastercard]` | `[fpx, mastercard]` | (none — card uses `direct_post_url`) |
-| `no` | `[razer_grabpay]` | `[razer_grabpay]` | `[razer_grabpay]` | `[razer_grabpay]` | `razer_grabpay` (Razer branch) |
-| `no` | `[razer_grabpay, fpx]` | `[razer_grabpay, fpx]` | `[razer_grabpay, fpx]` | `[razer_grabpay, fpx]` | (none — 2 groups) |
+| Multiselect (saved) | After load-time expansion | API returns | Final whitelist sent | `?preferred=` |
+|---|---|---|---|---|
+| `[duitnow_qr]` | `[duitnow_qr, dnqr]` | `[duitnow_qr, dnqr]` | `[dnqr]` | `dnqr` |
+| `[duitnow_qr]` | `[duitnow_qr, dnqr]` | `[duitnow_qr]` | `[duitnow_qr]` | `duitnow_qr` |
+| `[duitnow_qr]` | `[duitnow_qr, dnqr]` | API fails | `[duitnow_qr, dnqr]` (fallback) | `dnqr` |
+| `[duitnow_qr]` | `[duitnow_qr, dnqr]` | `[dnqr]` | `[dnqr]` | `dnqr` |
+| `[duitnow_qr, fpx]` | `[duitnow_qr, dnqr, fpx]` | `[duitnow_qr, dnqr, fpx]` | `[dnqr, fpx]` | (none — 2 groups) |
+| `[duitnow_qr, dnqr, fpx]` | `[duitnow_qr, dnqr, fpx]` | `[dnqr, fpx]` | `[dnqr, fpx]` | (none — 2 groups) |
+| `[duitnow_qr, visa]` | `[duitnow_qr, dnqr, visa]` | `[duitnow_qr, dnqr, visa]` | `[dnqr, visa]` | (none — 2 groups) |
+| `[visa, mastercard]` | `[visa, mastercard]` | `[visa, mastercard]` | `[visa, mastercard]` | (none — card uses `direct_post_url`) |
+| `[fpx]` | `[fpx]` | `[fpx]` | `[fpx]` | `fpx` (existing FPX branch) |
+| `[fpx, mastercard]` | `[fpx, mastercard]` | `[fpx, mastercard]` | `[fpx, mastercard]` | (none — 2 groups) |
+| `[razer_grabpay]` | `[razer_grabpay]` | `[razer_grabpay]` | `[razer_grabpay]` | `razer_grabpay` (Razer branch) |
+| `[razer_grabpay, duitnow_qr]` | `[razer_grabpay, duitnow_qr, dnqr]` | `[razer_grabpay, dnqr]` | `[razer_grabpay, dnqr]` | (none — 2 groups) |
 
-**Legacy merchants** who saved the gateway before this migration may have `payment_method_whitelist` containing `duitnow_qr`. The runtime migration in `init_settings()` (Section 9) treats that as `enable_dnqr_group='yes'` and strips `duitnow_qr` from the multiselect value at load time, so the behavior matches the new model without a DB migration.
+**Legacy merchants** who saved the gateway before this migration have `payment_method_whitelist = ['duitnow_qr']`. The constructor expands it to `[duitnow_qr, dnqr]` at load time (in-memory only). Behavior matches the new model without a DB migration.
 
 ## Files changed
 
 | File | Change |
 |---|---|
-| `includes/class-chip-woocommerce-gateway.php` | Add `DUITNOW_GROUP` const, `$resolved_dnqr_group` and `$enable_dnqr_group` properties. Add `resolve_duitnow_methods()`, `get_duitnow_qr_preferred()`. Modify `get_payment_method_list()` to **remove** `duitnow_qr` and `dnqr`. Add new form field `enable_dnqr_group`. Modify `init_settings()` to build the effective whitelist (with backward-compat migration for legacy `payment_method_whitelist` containing `duitnow_qr`). Modify `process_payment()` to call resolver. Modify `bypass_chip()`: extend the `duitnow-qr` Razer e-wallet case to apply priority using `$this->resolved_dnqr_group`; extend the L2981 single-method branch trigger to handle the dnqr group. Modify `list_razer_ewallets()`: widen the trigger to `array_intersect( ..., DUITNOW_GROUP )`. |
-| `includes/class-chip-woocommerce-gateway-6.php` | Change preset: set `enable_dnqr_group` default to `'yes'`. Title, description, logo, ID, and form fields stay the same. |
+| `includes/class-chip-woocommerce-gateway.php` | Add `DUITNOW_GROUP` const and `$resolved_dnqr_group` property. Add `resolve_duitnow_methods()`, `get_duitnow_qr_preferred()`. Modify `get_payment_method_list()` to expose `'duitnow_qr' => 'DuitNow QR'` as the multiselect entry for the dnqr group. Modify `__construct()` to expand `duitnow_qr` to `[duitnow_qr, dnqr]` in-memory when present. Modify `process_payment()` to call resolver. Modify `bypass_chip()`: extend the `duitnow-qr` Razer e-wallet case to apply priority using `$this->resolved_dnqr_group`; extend the L2981 single-method branch trigger to handle the dnqr group. Modify `list_razer_ewallets()`: widen the trigger to `array_intersect( ..., DUITNOW_GROUP )`. |
+| `includes/class-chip-woocommerce-gateway-6.php` | No change needed. The preset already uses `payment_method_whitelist = ['duitnow_qr']` which the constructor expands at load time. |
 | `readme.txt` | Add a "Tweak" or "Add" line describing the migration. |
 | `changelog.txt` | Add a new line describing the dnqr group support. |
 | `README.md` | Optional — same content as readme.txt. |
@@ -450,8 +418,8 @@ The repo has no unit tests (`CLAUDE.md` confirms). Testing is manual + integrati
 10. **Subscription renewal** — Verify recurring `payment_recurring_methods()` call site at L2108 is not affected. `get_payment_method_for_recurring()` still restricts to cards.
 11. **Cache hit/miss** — First purchase after settings save calls API; second purchase within 30 min uses cache. Verify via logs.
 12. **Razer dropdown shows "Duitnow QR" when configured** — For any gateway where the whitelist intersects the dnqr group, the e-wallet dropdown includes the "Duitnow QR" option alongside Atome, GrabPay, MB2U_QRPay-Push, ShopeePay, TNG-EWALLET.
-13. **Admin UI** — Gateway 6 settings page shows the `enable_dnqr_group` checkbox pre-checked. The base gateway's settings page shows the `enable_dnqr_group` checkbox unchecked by default. The `payment_method_whitelist` multiselect does NOT contain `duitnow_qr` or `dnqr` as options.
-14. **Legacy merchant migration** — A gateway saved before this plugin version (with `payment_method_whitelist = ['duitnow_qr']` in the DB) continues to accept DuitNow QR payments without intervention. The runtime migration in `init_settings()` treats the legacy value as `enable_dnqr_group='yes'`. After the merchant saves any gateway settings, the migration persists.
+13. **Admin UI** — The `payment_method_whitelist` multiselect contains a single "DuitNow QR" option labeled `duitnow_qr`. For Gateway 6 it is pre-selected.
+14. **Legacy merchant migration** — A gateway saved before this plugin version (with `payment_method_whitelist = ['duitnow_qr']` in the DB) continues to accept DuitNow QR payments without intervention. The constructor's group expansion treats the legacy value as the dnqr group enabled. No DB migration, no UI change required.
 
 ## Risks and open questions
 
