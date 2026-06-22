@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.0
-Stable tag: 2.0.5
+Stable tag: 2.0.6
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -60,10 +60,10 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.5 2026-05-19 ==
-* Fixed - Improved version tagging consistency during the automated release process.
-* Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.
-* Removed - Redundant external scripts and dependencies previously used for automated release note generation.
+= 2.0.6 =
+* Added - dnqr payment method support. The DuitNow QR entry in the gateway's payment_method_whitelist multiselect resolves at runtime to whichever of {duitnow_qr, dnqr} the merchant has available, prioritizing dnqr.
+* Fixed - DuitNow QR redirect URLs no longer append '&razer_bank_code=duitnow-qr'.
+* Fixed - DuitNow and DuitNow-only logos now render at the same visual height as the other logos in the gateway settings preview.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

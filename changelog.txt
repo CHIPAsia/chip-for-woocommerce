@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 2.0.6 =
+* Added - dnqr payment method support. The DuitNow QR entry in the gateway's payment_method_whitelist multiselect now resolves at runtime to whichever of {duitnow_qr, dnqr} the merchant actually has available, prioritizing dnqr. A new resolver calls /payment_methods/ (with a 30-minute transient cache keyed by brand, currency, and amount-bucket) and short-circuits when no dnqr-group member is configured. The Razer e-wallet switch's case 'duitnow-qr' and the single-method DuitNow QR branch both apply the priority. No DB migration is required.
+* Fixed - DuitNow QR redirect URLs no longer append '&razer_bank_code=duitnow-qr'. DuitNow QR is its own payment method, not a Razer bank code, so the URL is now '?preferred=dnqr' (or '?preferred=duitnow_qr' as the fallback) with no bank-code suffix.
+* Fixed - DuitNow and DuitNow-only logos now render at the same visual height as the other logos in the gateway settings preview. The duitnow*.svg files had intrinsic sizes of 103x25 and 28x25 respectively, which made them appear undersized against the 50px-tall PNGs. Both SVGs are now sized to render at 50px tall. The preview img CSS was also changed from 'max-height: 50px' to 'height: 50px; width: auto' so all logos render at exactly 50px tall with proportional width.
+
 = 2.0.5 2026-05-19 ==
 * Fixed - Improved version tagging consistency during the automated release process.
 * Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.

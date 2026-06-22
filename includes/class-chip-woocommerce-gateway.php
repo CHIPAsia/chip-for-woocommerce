@@ -18,6 +18,14 @@ use Automattic\WooCommerce\Enums\OrderInternalStatus;
  */
 class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
+	/**
+	 * DuitNow QR group: payment-method identifiers that are interchangeable
+	 * for the merchant at runtime. dnqr is the modern identifier;
+	 * duitnow_qr is the legacy identifier kept for backward compatibility.
+	 *
+	 * @var array
+	 */
+	const DUITNOW_GROUP = array( 'duitnow_qr', 'dnqr' );
 
 	/**
 	 * Gateway ID (wc_gateway_chip).
@@ -220,6 +228,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $unavailable_fpx_banks = array();
 
 	/**
+	 * Cached result of the dnqr resolver from the most recent resolve_duitnow_methods() call.
+	 * Used by bypass_chip() to pick the correct ?preferred=dnqr|duitnow_qr without
+	 * a second /payment_methods/ API call.
+	 *
+	 * @var array
+	 */
+	protected $resolved_dnqr_group = array();
+
+	/**
 	 * Unavailable FPX B2B1 bank codes.
 	 *
 	 * @var array
@@ -260,10 +277,30 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->enable_auto_clear_cart    = $this->get_option( 'enable_auto_clear_cart' );
 
 		// Checkout experience settings.
-		$this->description              = $this->get_option( 'description' );
-		$this->bypass_chip              = $this->get_option( 'bypass_chip' );
-		$this->payment_method_whitelist = $this->get_option( 'payment_method_whitelist' );
-		$this->email_fallback           = $this->get_option( 'email_fallback' );
+		$this->description = $this->get_option( 'description' );
+		$this->bypass_chip = $this->get_option( 'bypass_chip' );
+
+		$whitelist = $this->get_option( 'payment_method_whitelist', array() );
+		if ( ! is_array( $whitelist ) ) {
+			$whitelist = array();
+		}
+
+		// DuitNow QR group expansion: when the merchant selects 'duitnow_qr'
+		// in the multiselect, that selection means "the DuitNow QR group" —
+		// i.e. the plugin should pick whichever of {duitnow_qr, dnqr} the
+		// merchant actually has at runtime, prioritizing dnqr. Expand the
+		// single multiselect key into the full group at load time so the
+		// resolver and bypass_chip see the group semantics. The expansion
+		// is in-memory only and does not mutate the saved option.
+		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
+			$whitelist = array_values(
+				array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) )
+			);
+		}
+
+		$this->payment_method_whitelist = $whitelist;
+
+		$this->email_fallback = $this->get_option( 'email_fallback' );
 
 		// Payment method availability.
 		$this->available_recurring       = $this->get_option( 'available_recurring_payment_method' );
@@ -1004,7 +1041,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'class'       => 'wc-enhanced-select chip-display-logo-select',
 			'description' => __( 'Select which logo appears on the checkout page.', 'chip-for-woocommerce' )
 				. '<div id="chip-logo-preview-' . esc_attr( $this->id ) . '" class="chip-logo-preview" style="margin-top: 10px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; text-align: center; min-height: 60px;">'
-				. '<img id="chip-logo-preview-img-' . esc_attr( $this->id ) . '" src="" alt="' . esc_attr__( 'Logo Preview', 'chip-for-woocommerce' ) . '" style="max-height: 50px; max-width: 100%;" />'
+				. '<img id="chip-logo-preview-img-' . esc_attr( $this->id ) . '" src="" alt="' . esc_attr__( 'Logo Preview', 'chip-for-woocommerce' ) . '" style="height: 50px; width: auto; max-width: 100%;" />'
 				. '</div>',
 			'default'     => 'fpx_only',
 			'options'     => array(
@@ -1769,7 +1806,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$chip = $this->api();
 
 		if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
-			$params['payment_method_whitelist'] = $this->payment_method_whitelist;
+			$woocommerce_currency               = get_woocommerce_currency();
+			$order_total                        = $order->get_total();
+			$amount                             = (int) round( $order_total * 100 ); // sen.
+			$params['payment_method_whitelist'] = $this->resolve_duitnow_methods(
+				$this->payment_method_whitelist,
+				$woocommerce_currency,
+				$amount
+			);
 		}
 
 		// Set skip_capture for authorize (delayed capture) payment action.
@@ -2927,7 +2971,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$ewallet_list['TNG-EWALLET'] = __( 'Touch \'n Go eWallet', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'duitnow_qr', $this->payment_method_whitelist, true ) ) {
+		if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
 			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
 		}
 
@@ -2956,6 +3000,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) );
 			} elseif ( isset( $_POST['chip_razer_ewallet'] ) && ! empty( $_POST['chip_razer_ewallet'] ) ) {
 				$razer_ewallet = sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
+				$preferred     = '';
 				switch ( $razer_ewallet ) {
 					case 'Atome':
 						$preferred = 'razer_atome';
@@ -2973,13 +3018,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						$preferred = 'razer_maybankqr';
 						break;
 					case 'duitnow-qr':
-						$preferred = 'duitnow_qr';
+						// Priority: dnqr if available, duitnow_qr fallback.
+						// Reuse the resolver output from process_payment().
+						$group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : array( 'dnqr', 'duitnow_qr' );
+						$preferred = ! empty( $group ) ? $group[0] : 'dnqr';
 						break;
 				}
 
-				$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
-			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'duitnow_qr' === $this->payment_method_whitelist[0] ) {
-				$url .= '?preferred=duitnow_qr';
+				// DuitNow QR is its own payment method, not a Razer bank code.
+				// Append `?preferred=...` only -- no `&razer_bank_code=...` because
+				// that parameter is meaningless for DuitNow QR (it was a pre-PR
+				// bug to include it).
+				if ( '' !== $preferred ) {
+					if ( 'duitnow-qr' === $razer_ewallet ) {
+						$url .= '?preferred=' . $preferred;
+					} else {
+						$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
+					}
+				}
+			} else {
+				// Single-method DuitNow QR branch: trigger when the configured
+				// whitelist is purely the dnqr group (handles [duitnow_qr],
+				// [dnqr], and [duitnow_qr, dnqr] for the dnqr-only gateway).
+				$preferred = $this->get_duitnow_qr_preferred();
+				if ( '' !== $preferred ) {
+					$url .= '?preferred=' . $preferred;
+				}
 			}
 		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
 			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
@@ -3491,8 +3555,120 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'razer_maybankqr' => 'Maybank QRPay',
 			'razer_shopeepay' => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
-			'duitnow_qr'      => 'Duitnow QR',
+			// DuitNow QR group: a single multiselect key that the gateway
+			// expands to {duitnow_qr, dnqr} at load time. The resolver
+			// picks whichever the merchant has, prioritizing dnqr.
+			'duitnow_qr'      => 'DuitNow QR',
 		);
+	}
+
+	/**
+	 * Resolve the configured payment_method_whitelist against the merchant's
+	 * actual /payment_methods/ response, with dnqr-priority for the DuitNow QR group.
+	 *
+	 * Steps:
+	 *   1. Group expansion: any dnqr-group member in the whitelist expands to the full group.
+	 *   2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
+	 *   3. Try cache. On miss, call /payment_methods/.
+	 *   4. Fallback: return expanded whitelist unchanged if the API fails.
+	 *   5. Intersect with available methods.
+	 *   6. Priority: dnqr wins when both are present.
+	 *   7. Cache the resolved group on $this->resolved_dnqr_group for bypass_chip().
+	 *   8. Build the final whitelist (original non-group entries + resolved group).
+	 *
+	 * @param array  $whitelist Configured payment_method_whitelist.
+	 * @param string $currency  Order currency code (e.g. 'MYR').
+	 * @param int    $amount    Order total in sen (e.g. 12345 = RM 123.45).
+	 * @return array            Final whitelist to send to CHIP.
+	 */
+	protected function resolve_duitnow_methods( array $whitelist, string $currency, int $amount ): array {
+		// 1. Group expansion.
+		$has_group_member = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
+
+		// Short-circuit: a whitelist that does not intersect the dnqr group
+		// must be returned untouched (no API call, no group injection).
+		// This is what the spec prose requires: "[fpx, mastercard] is returned
+		// untouched (no API call)" and it guarantees that dnqr-group members
+		// can never appear in the final whitelist unless the merchant
+		// configured one of them.
+		if ( ! $has_group_member ) {
+			$this->resolved_dnqr_group = array();
+			return $whitelist;
+		}
+
+		$expanded = array_values( array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) ) );
+
+		// 2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
+		$cache_key = 'chip_pm_' . md5( $this->brand_id . '|' . $currency . '|' . intval( $amount / 100 ) );
+
+		// 3. Try cache. If hit, use it. If miss, call /payment_methods/.
+		$available = get_transient( $cache_key );
+		if ( false === $available ) {
+			$chip     = $this->api();
+			$response = $chip->payment_methods( $currency, '', $amount ); // No language param.
+			if ( ! is_array( $response ) || ! isset( $response['available_payment_methods'] ) ) {
+				// 4a. Fallback: return expanded whitelist unchanged.
+				$this->resolved_dnqr_group = $has_group_member ? self::DUITNOW_GROUP : array();
+				$this->api()->log_info( sprintf( 'dnqr resolver: API failed, fallback to expanded whitelist=%s', implode( ',', $expanded ) ) );
+				return $expanded;
+			}
+			$available = $response['available_payment_methods']; // Example shape: list of method ids the merchant has.
+			set_transient( $cache_key, $available, 30 * MINUTE_IN_SECONDS );
+		}
+
+		// 5. Intersect: keep only group members the merchant actually has.
+		$resolved_group = array_values( array_intersect( self::DUITNOW_GROUP, $available ) );
+
+		// 6. Priority: dnqr wins when both are present.
+		if ( in_array( 'dnqr', $resolved_group, true ) ) {
+			$resolved_group = array_values( array_diff( $resolved_group, array( 'duitnow_qr' ) ) );
+		}
+
+		// 7. Cache for bypass_chip() to read.
+		$this->resolved_dnqr_group = $resolved_group;
+
+		// 8. Build final whitelist: original entries (with group members stripped) + resolved group.
+		$final = array_values( array_diff( $expanded, self::DUITNOW_GROUP ) );
+		$final = array_merge( $final, $resolved_group );
+
+		$this->api()->log_info(
+			sprintf(
+				'dnqr resolver: configured=%s expanded=%s available=%s sent=%s preferred=%s',
+				implode( ',', $whitelist ),
+				implode( ',', $expanded ),
+				implode( ',', (array) $available ),
+				implode( ',', $final ),
+				$resolved_group[0] ?? '(none)'
+			)
+		);
+
+		return $final;
+	}
+
+	/**
+	 * Get the ?preferred= value when the configured whitelist is a pure DuitNow QR group.
+	 *
+	 * Returns 'dnqr' (priority) or 'duitnow_qr' (fallback) when:
+	 *   - the configured whitelist intersects the dnqr group, AND
+	 *   - the configured whitelist has no other payment-method groups.
+	 *
+	 * Returns '' otherwise. Used by the single-method branch in bypass_chip().
+	 *
+	 * @return string 'dnqr' | 'duitnow_qr' | ''
+	 */
+	public function get_duitnow_qr_preferred(): string {
+		$whitelist = is_array( $this->payment_method_whitelist ) ? $this->payment_method_whitelist : array();
+		$has_dnqr  = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
+		if ( ! $has_dnqr ) {
+			return '';
+		}
+		// Group-count rule: only DuitNow QR, no other groups.
+		$other_groups = array_diff( $whitelist, self::DUITNOW_GROUP );
+		if ( ! empty( $other_groups ) ) {
+			return '';
+		}
+		$resolved = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : self::DUITNOW_GROUP;
+		return ! empty( $resolved ) ? $resolved[0] : '';
 	}
 
 	/**

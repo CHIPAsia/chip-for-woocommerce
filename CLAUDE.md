@@ -38,6 +38,20 @@ Updates version strings across `chip-for-woocommerce.php`, `readme.txt`, `packag
 
 Clones are loaded unless the `CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES` constant is defined.
 
+### DuitNow QR (`dnqr`) payment method
+
+The plugin supports both `duitnow_qr` (legacy) and `dnqr` (modern) as interchangeable identifiers that are sent to CHIP. They are exposed to merchants as a **single "DuitNow QR" group** controlled by the `duitnow_qr` entry in the `payment_method_whitelist` multiselect on the gateway settings page. When the merchant selects `duitnow_qr`, the runtime treats that as "the DuitNow QR group" and picks whichever of `{duitnow_qr, dnqr}` the merchant actually has, prioritizing `dnqr`. At runtime the gateway:
+
+1. Expands the dnqr group in `__construct()`: if `duitnow_qr` is in the configured `payment_method_whitelist`, the in-memory whitelist is widened to `['duitnow_qr', 'dnqr']`. The expansion is in-memory only — the saved option is not mutated.
+2. Calls `Chip_Woocommerce_Gateway::resolve_duitnow_methods( $whitelist, $currency, $amount )` to call `/payment_methods/` (30-min WordPress transient cache keyed by `brand_id|currency|amount-bucket`), intersect with the merchant's available methods, and pick `dnqr` when both are available (`duitnow_qr` otherwise).
+3. Caches the resolved dnqr-group subset on `$this->resolved_dnqr_group` for `bypass_chip()` to read without a second API call.
+
+The Razer e-wallet switch's `case 'duitnow-qr':` branch in `bypass_chip()` and the single-method DuitNow QR branch both apply the resolver's priority output. The resolver short-circuits and returns the whitelist untouched when no dnqr-group member is configured — non-DuitNow flows never hit the API.
+
+**No separate `enable_dnqr_group` option or checkbox.** The merchant controls the dnqr group entirely through the existing `payment_method_whitelist` multiselect; there is no migration path or backward-compat logic to maintain.
+
+Gateway 6 (the DuitNow QR-only clone) defaults `payment_method_whitelist = ['duitnow_qr']` via its preset; the constructor expands it to the full group at load time.
+
 ### External callbacks (CHIP → WordPress)
 CHIP sends payment results to `WC()->api_request_url( $this->id )`, which produces URLs like `https://store.com/wc-api/wc_gateway_chip/?id=123`. WooCommerce fires `do_action( 'woocommerce_api_wc_gateway_chip' )`, routed to `Chip_Woocommerce_Gateway::handle_callback()`. This is the legacy REST API stub kept in WooCommerce core specifically for payment gateway callbacks.
 
@@ -85,3 +99,4 @@ Several classes are loaded only inside `is_admin()`:
 - **WordPress.org assets**: The `.wordpress-org/` directory tracks banners, icons, and screenshots that are synced to SVN `assets/` by the deploy workflow.
 - **Security guards**: Every PHP file begins with `if ( ! defined( 'ABSPATH' ) ) { exit; }`.
 - **Deprecated hooks**: Version 2.0.0 renamed hooks from `wc_` to `chip_` prefixes. The old hooks still exist via `_deprecated_hook()` calls for backward compatibility.
+- **DuitNow QR identifier migration** (introduced in 2.0.6): `duitnow_qr` and `dnqr` are interchangeable payment-method identifiers; the gateway resolves them at runtime via `/payment_methods/`. Treat them as a single logical group — never send only one of them unless the merchant configured only that one.
