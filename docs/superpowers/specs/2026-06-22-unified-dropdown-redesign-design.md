@@ -454,6 +454,7 @@ NEW asset, 50x50 small icon. Used in the unified dropdown's DuitNow QR option. E
 3. **bypass_chip() tag parser must handle all method types correctly** including the Atome separate-gateway fallback. The spec lists every expected input → output mapping.
 4. **Card coexistence UX** — the dropdown sits above the card form. The customer picks one. Form validation only requires one (not both).
 5. **Backward compat for the old 3-POST-field design.** The old `chip_fpx_bank` / `chip_fpx_b2b1_bank` / `chip_razer_ewallet` POST fields are no longer used by the new code. Any external consumer (e.g. a custom checkout) using them would break. Since these are plugin-internal, this is acceptable.
+6. **Saved card tokenization** -- the Blocks UI shows saved cards (existing WC tokenization flow at L1334-1340) alongside the unified dropdown. Saved cards render as radio-button choices ABOVE the unified dropdown. The customer picks either a saved card (skips the dropdown entirely, reuses the saved card) or a new method from the dropdown below. The existing tokenization flow is unchanged; we don't need to alter the Blocks `CardForm` component or the WC tokenization hooks.
 7. **Classic checkout's Select2/selectWoo integration** has ~60 lines of JS and ~70 lines of CSS. The new unified dropdown needs the same treatment.
 
 ## Testing strategy
