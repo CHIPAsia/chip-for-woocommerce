@@ -1,0 +1,137 @@
+<?php
+/**
+ * Tests for Chip_Woocommerce_Gateway::bypass_chip() with the tag parser.
+ *
+ * @package CHIP_For_WooCommerce
+ */
+
+class BypassChipTagParserTest extends GatewayTestCase {
+
+	/**
+	 * Invoke bypass_chip with $_POST values pre-populated.
+	 *
+	 * bypass_chip() is a public method so we can call it directly.
+	 * We pre-populate $_POST via a helper because PHPUnit doesn't
+	 * automatically restore $_POST between tests.
+	 */
+	private function callBypass( Chip_Woocommerce_Gateway $gateway, ?string $tag_value ): string {
+		if ( null === $tag_value ) {
+			unset( $_POST['chip_payment_method'] );
+		} else {
+			$_POST['chip_payment_method'] = $tag_value;
+		}
+		return $this->callGatewayMethod(
+			$gateway,
+			'bypass_chip',
+			array( 'https://example.com/checkout', array( 'is_test' => false ) )
+		);
+	}
+
+	private function newGatewayWithBypass( string $bypass = 'yes', string $id = 'wc_gateway_chip' ): Chip_Woocommerce_Gateway {
+		return $this->newGateway( array(
+			'bypass_chip'              => $bypass,
+			'payment_method_whitelist' => array( 'fpx', 'card' ),
+		) );
+	}
+
+	public function test_returns_unchanged_url_when_post_missing() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, null );
+		$this->assertSame( 'https://example.com/checkout', $result );
+	}
+
+	public function test_returns_unchanged_url_when_post_empty() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, '' );
+		$this->assertSame( 'https://example.com/checkout', $result );
+	}
+
+	public function test_fpx_tag_builds_preferred_fpx_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'fpx:MB2U0227' );
+		$this->assertSame( 'https://example.com/checkout?preferred=fpx&fpx_bank_code=MB2U0227', $result );
+	}
+
+	public function test_fpx_b2b1_tag_builds_preferred_fpx_b2b1_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'fpx_b2b1:PBB0234' );
+		$this->assertSame( 'https://example.com/checkout?preferred=fpx_b2b1&fpx_bank_code=PBB0234', $result );
+	}
+
+	public function test_razer_grabpay_tag_builds_correct_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'razer:GrabPay' );
+		$this->assertSame( 'https://example.com/checkout?preferred=razer_grabpay&razer_bank_code=GrabPay', $result );
+	}
+
+	public function test_razer_tng_ewallet_tag_builds_correct_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'razer:TNG-EWALLET' );
+		$this->assertSame( 'https://example.com/checkout?preferred=razer_tng&razer_bank_code=TNG-EWALLET', $result );
+	}
+
+	public function test_razer_maybank_qrpay_tag_builds_correct_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'razer:MB2U_QRPay-Push' );
+		$this->assertSame( 'https://example.com/checkout?preferred=razer_maybankqr&razer_bank_code=MB2U_QRPay-Push', $result );
+	}
+
+	public function test_card_tag_returns_unchanged_url() {
+		// The 'card' tag is NOT a ?preferred= redirect. The direct-post flow
+		// handles card payments. bypass_chip returns the URL unchanged.
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'card' );
+		$this->assertSame( 'https://example.com/checkout', $result );
+	}
+
+	public function test_dnqr_tag_uses_resolver_to_choose_dnqr() {
+		// When the resolver has picked 'dnqr', bypass_chip uses it.
+		$gateway = $this->newGateway( array(
+			'bypass_chip'              => 'yes',
+			'payment_method_whitelist' => array( 'duitnow_qr' ),
+			'resolved_dnqr_group'      => array( 'dnqr' ),
+		) );
+		$result = $this->callBypass( $gateway, 'dnqr' );
+		$this->assertSame( 'https://example.com/checkout?preferred=dnqr', $result );
+	}
+
+	public function test_dnqr_tag_falls_back_to_duitnow_qr() {
+		// When the resolver picked 'duitnow_qr' (only that method is available
+		// for the merchant), bypass_chip uses it.
+		$gateway = $this->newGateway( array(
+			'bypass_chip'              => 'yes',
+			'payment_method_whitelist' => array( 'duitnow_qr' ),
+			'resolved_dnqr_group'      => array( 'duitnow_qr' ),
+		) );
+		$result = $this->callBypass( $gateway, 'dnqr' );
+		$this->assertSame( 'https://example.com/checkout?preferred=duitnow_qr', $result );
+	}
+
+	public function test_unknown_tag_returns_unchanged_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'bogus:xyz' );
+		$this->assertSame( 'https://example.com/checkout', $result );
+	}
+
+	public function test_atome_clone_forces_atome_redirect_when_bypass_disabled() {
+		// The wc_gateway_chip_5 (Atome) clone has bypass_chip=no and forces
+		// the Atome redirect regardless of POST data.
+		$gateway = $this->newGateway( array(
+			'id'                       => 'wc_gateway_chip_5',
+			'bypass_chip'              => 'no',
+			'payment_method_whitelist' => array( 'razer_atome' ),
+		) );
+		$result = $this->callBypass( $gateway, 'razer:Atome' );
+		$this->assertSame( 'https://example.com/checkout?preferred=razer_atome&razer_bank_code=Atome', $result );
+	}
+
+	public function test_atome_clone_forces_atome_redirect_when_bypass_enabled_no_post() {
+		$gateway = $this->newGateway( array(
+			'id'                       => 'wc_gateway_chip_5',
+			'bypass_chip'              => 'yes',
+			'payment_method_whitelist' => array( 'razer_atome' ),
+		) );
+		$result = $this->callBypass( $gateway, null );
+		$this->assertSame( 'https://example.com/checkout?preferred=razer_atome&razer_bank_code=Atome', $result );
+	}
+}

@@ -202,6 +202,30 @@ if ( ! function_exists( 'wc_print_r' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	/**
+	 * Stub for sanitize_text_field(). Returns the input unchanged.
+	 *
+	 * @param string $str String to sanitize.
+	 * @return string
+	 */
+	function sanitize_text_field( $str ) {
+		return is_string( $str ) ? trim( $str ) : '';
+	}
+}
+
+if ( ! function_exists( 'wp_unslash' ) ) {
+	/**
+	 * Stub for wp_unslash(). Returns the input unchanged.
+	 *
+	 * @param mixed $value Value to unslash.
+	 * @return mixed
+	 */
+	function wp_unslash( $value ) {
+		return $value;
+	}
+}
+
 if ( ! function_exists( 'wp_remote_request' ) ) {
 	/**
 	 * Stub for wp_remote_request(). Returns a WP_Error so callers see a

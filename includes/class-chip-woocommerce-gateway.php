@@ -2891,7 +2891,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return $this->maybe_atome_redirect( $url );
 		}
 		if ( ! isset( $_POST['chip_payment_method'] ) || empty( $_POST['chip_payment_method'] ) ) {
-			return $url;
+			return $this->maybe_atome_redirect( $url );
 		}
 		$value = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
 		if ( false === strpos( $value, ':' ) ) {
