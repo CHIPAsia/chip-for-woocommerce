@@ -1041,7 +1041,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'class'       => 'wc-enhanced-select chip-display-logo-select',
 			'description' => __( 'Select which logo appears on the checkout page.', 'chip-for-woocommerce' )
 				. '<div id="chip-logo-preview-' . esc_attr( $this->id ) . '" class="chip-logo-preview" style="margin-top: 10px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; text-align: center; min-height: 60px;">'
-				. '<img id="chip-logo-preview-img-' . esc_attr( $this->id ) . '" src="" alt="' . esc_attr__( 'Logo Preview', 'chip-for-woocommerce' ) . '" style="max-height: 50px; max-width: 100%;" />'
+				. '<img id="chip-logo-preview-img-' . esc_attr( $this->id ) . '" src="" alt="' . esc_attr__( 'Logo Preview', 'chip-for-woocommerce' ) . '" style="height: 50px; width: auto; max-width: 100%;" />'
 				. '</div>',
 			'default'     => 'fpx_only',
 			'options'     => array(
