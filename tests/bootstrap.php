@@ -107,6 +107,43 @@ if ( ! class_exists( 'WC_Logger' ) ) {
 	}
 }
 
+// In-memory transient storage for tests.
+if ( ! isset( $GLOBALS['__chip_test_transients'] ) ) {
+	$GLOBALS['__chip_test_transients'] = array();
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( $key ) {
+		return $GLOBALS['__chip_test_transients'][ $key ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( $key, $value, $expiry = 0 ) {
+		$GLOBALS['__chip_test_transients'][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( $key ) {
+		unset( $GLOBALS['__chip_test_transients'][ $key ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_woocommerce_currency' ) ) {
+	function get_woocommerce_currency() {
+		return $GLOBALS['__chip_test_currency'] ?? 'MYR';
+	}
+}
+
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( $key, $default = false ) {
+		return $GLOBALS['__chip_test_options'][ $key ] ?? $default;
+	}
+}
+
 // Load Composer autoloader if available.
 $autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
 if ( file_exists( $autoloader ) ) {
