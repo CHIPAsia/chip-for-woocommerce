@@ -28,6 +28,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	const DUITNOW_GROUP = array( 'duitnow_qr', 'dnqr' );
 
 	/**
+	 * Card group: payment-method identifiers that are interchangeable
+	 * for the merchant at runtime. Card is the user-selectable multiselect
+	 * key; visa/mastercard/maestro are injected at load time by the
+	 * constructor's group expansion.
+	 *
+	 * @var array
+	 */
+	const CARD_GROUP = array( 'visa', 'mastercard', 'maestro' );
+
+	/**
 	 * Gateway ID (wc_gateway_chip).
 	 *
 	 * @var string
@@ -285,8 +295,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$whitelist = array();
 		}
 
+		// Backward-compat migration: legacy saved values contained
+		// 'visa', 'mastercard', 'maestro' as separate multiselect keys.
+		// Collapse them to the single 'card' key in-memory. The next save
+		// of the gateway settings persists the new shape.
+		if ( count( array_intersect( $whitelist, self::CARD_GROUP ) ) > 0 ) {
+			$whitelist = array_values( array_diff( $whitelist, self::CARD_GROUP ) );
+			if ( ! in_array( 'card', $whitelist, true ) ) {
+				$whitelist[] = 'card';
+			}
+		}
+
 		// DuitNow QR group expansion: when the merchant selects 'duitnow_qr'
-		// in the multiselect, that selection means "the DuitNow QR group" —
+		// in the multiselect, that selection means "the DuitNow QR group" --
 		// i.e. the plugin should pick whichever of {duitnow_qr, dnqr} the
 		// merchant actually has at runtime, prioritizing dnqr. Expand the
 		// single multiselect key into the full group at load time so the
@@ -295,6 +316,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
 			$whitelist = array_values(
 				array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) )
+			);
+		}
+
+		// Card group expansion: when the merchant selects 'card' in the
+		// multiselect, that selection means "the Card group" -- i.e. the
+		// plugin should accept visa, mastercard, and maestro. Expand the
+		// single multiselect key into the full group at load time.
+		if ( in_array( 'card', $whitelist, true ) ) {
+			$whitelist = array_values(
+				array_unique( array_merge( $whitelist, self::CARD_GROUP ) )
 			);
 		}
 
@@ -2985,6 +3016,57 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the unified list of payment methods for the unified dropdown.
+	 *
+	 * Returns a flat array keyed by tag-encoded values (e.g. 'fpx:MB2U0227',
+	 * 'fpx_b2b1:PBB0234', 'razer:GrabPay', 'dnqr', 'card'). Each entry's value
+	 * is the customer-facing display label. Used by the REST endpoint type
+	 * 'unified' and by classic checkout's payment_fields().
+	 *
+	 * @return array
+	 */
+	public function list_unified_payment_methods(): array {
+		$list = array();
+
+		// FPX B2C banks.
+		foreach ( $this->list_fpx_banks() as $code => $label ) {
+			if ( '' === $code ) {
+				continue;
+			}
+			$list[ 'fpx:' . $code ] = $label;
+		}
+
+		// FPX B2B1 banks.
+		foreach ( $this->list_fpx_b2b1_banks() as $code => $label ) {
+			if ( '' === $code ) {
+				continue;
+			}
+			$list[ 'fpx_b2b1:' . $code ] = $label;
+		}
+
+		// Razer e-wallets (excluding the DuitNow QR entry -- it has its own
+		// tag format 'dnqr' with no inner code).
+		foreach ( $this->list_razer_ewallets() as $code => $label ) {
+			if ( '' === $code || 'duitnow-qr' === $code || __( 'Choose your e-wallet', 'chip-for-woocommerce' ) === $label ) {
+				continue;
+			}
+			$list[ 'razer:' . $code ] = $label;
+		}
+
+		// DuitNow QR (only if the dnqr group is enabled in the whitelist).
+		if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
+			$list['dnqr'] = __( 'DuitNow QR', 'chip-for-woocommerce' );
+		}
+
+		// Card (only if the card group is enabled in the whitelist).
+		if ( count( array_intersect( $this->payment_method_whitelist, self::CARD_GROUP ) ) > 0 ) {
+			$list['card'] = __( 'Card (Visa/Mastercard/Maestro)', 'chip-for-woocommerce' );
+		}
+
+		return $list;
+	}
+
+	/**
 	 * Bypass CHIP payment page if configured.
 	 *
 	 * @param string $url     Checkout URL.
@@ -3545,19 +3627,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		return array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
-			'mastercard'      => 'Mastercard',
-			'maestro'         => 'Maestro',
-			'visa'            => 'Visa',
-			'mpgs_google_pay' => 'Google Pay',
-			'mpgs_apple_pay'  => 'Apple Pay',
+			'card'            => 'Card',
 			'razer_atome'     => 'Atome',
 			'razer_grabpay'   => 'GrabPay',
 			'razer_maybankqr' => 'Maybank QRPay',
 			'razer_shopeepay' => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
-			// DuitNow QR group: a single multiselect key that the gateway
-			// expands to {duitnow_qr, dnqr} at load time. The resolver
-			// picks whichever the merchant has, prioritizing dnqr.
 			'duitnow_qr'      => 'DuitNow QR',
 		);
 	}
