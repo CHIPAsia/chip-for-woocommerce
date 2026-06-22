@@ -3628,6 +3628,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
 			'card'            => 'Card',
+			'mpgs_google_pay' => 'Google Pay',
+			'mpgs_apple_pay'  => 'Apple Pay',
 			'razer_atome'     => 'Atome',
 			'razer_grabpay'   => 'GrabPay',
 			'razer_maybankqr' => 'Maybank QRPay',
