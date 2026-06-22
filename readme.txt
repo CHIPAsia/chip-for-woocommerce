@@ -61,7 +61,9 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 == Changelog ==
 
 = 2.0.6 =
-* Added - dnqr payment method support. Merchants now see a single "DuitNow QR" checkbox in the gateway settings; the plugin automatically uses dnqr when the merchant has it, falling back to duitnow_qr. Existing merchants with duitnow_qr configured are auto-migrated.
+* Added - dnqr payment method support. The DuitNow QR entry in the gateway's payment_method_whitelist multiselect resolves at runtime to whichever of {duitnow_qr, dnqr} the merchant has available, prioritizing dnqr.
+* Fixed - DuitNow QR redirect URLs no longer append '&razer_bank_code=duitnow-qr'.
+* Fixed - DuitNow and DuitNow-only logos now render at the same visual height as the other logos in the gateway settings preview.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
