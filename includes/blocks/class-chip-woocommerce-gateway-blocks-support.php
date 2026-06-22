@@ -97,9 +97,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		// Determine which bank type is needed for lazy loading.
 		$bank_type = '';
 		if ( is_array( $whitelisted_payment_method ) && 'yes' === $bypass_chip ) {
-			$has_fpx = in_array( 'fpx', $whitelisted_payment_method, true ) || in_array( 'fpx_b2b1', $whitelisted_payment_method, true );
+			$has_fpx   = in_array( 'fpx', $whitelisted_payment_method, true ) || in_array( 'fpx_b2b1', $whitelisted_payment_method, true );
 			$has_razer = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0;
-			$has_card = count( array_intersect( $whitelisted_payment_method, array( 'visa', 'mastercard', 'maestro' ) ) ) > 0;
+			$has_card  = count( array_intersect( $whitelisted_payment_method, array( 'visa', 'mastercard', 'maestro' ) ) ) > 0;
 
 			// Single-method cases: fpx, fpx_b2b1, razer, card (legacy 'fpx' / 'fpx_b2b1' / 'razer' / 'card' stand-alone flows).
 			if ( 1 === count( $whitelisted_payment_method ) ) {
@@ -114,10 +114,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 
 			// Mixed cases: card + dropdown, or multiple dropdown methods -> unified.
 			if ( '' === $bank_type ) {
-				$has_dropdown = $has_fpx || $has_razer;
+				$has_dropdown   = $has_fpx || $has_razer;
 				$dropdown_count = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) );
 				if ( $has_fpx ) {
-					$dropdown_count++;
+					++$dropdown_count;
 				}
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
 					$bank_type = 'unified';
@@ -190,11 +190,11 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			if ( '' === $js_display ) {
 				$dropdown_count = count( preg_grep( '/^razer_/', $pm_whitelist ) );
 				if ( $has_fpx ) {
-					$dropdown_count++;
+					++$dropdown_count;
 				}
 				$has_dnqr = in_array( 'duitnow_qr', $pm_whitelist, true ) || in_array( 'dnqr', $pm_whitelist, true );
 				if ( $has_dnqr ) {
-					$dropdown_count++;
+					++$dropdown_count;
 				}
 				$has_dropdown = $dropdown_count > 0;
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
