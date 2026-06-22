@@ -2832,26 +2832,34 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	public function list_unified_payment_methods(): array {
 		$list = array();
 
-		// FPX B2C banks.
-		foreach ( $this->list_fpx_banks() as $code => $label ) {
-			if ( '' === $code ) {
-				continue;
+		// FPX B2C banks (only if 'fpx' is in the whitelist).
+		if ( in_array( 'fpx', $this->payment_method_whitelist, true ) ) {
+			foreach ( $this->list_fpx_banks() as $code => $label ) {
+				if ( '' === $code ) {
+					continue;
+				}
+				$list[ 'fpx:' . $code ] = $label;
 			}
-			$list[ 'fpx:' . $code ] = $label;
 		}
 
-		// FPX B2B1 banks.
-		foreach ( $this->list_fpx_b2b1_banks() as $code => $label ) {
-			if ( '' === $code ) {
-				continue;
+		// FPX B2B1 banks (only if 'fpx_b2b1' is in the whitelist).
+		if ( in_array( 'fpx_b2b1', $this->payment_method_whitelist, true ) ) {
+			foreach ( $this->list_fpx_b2b1_banks() as $code => $label ) {
+				if ( '' === $code ) {
+					continue;
+				}
+				$list[ 'fpx_b2b1:' . $code ] = $label;
 			}
-			$list[ 'fpx_b2b1:' . $code ] = $label;
 		}
 
-		// Razer e-wallets (excluding the DuitNow QR entry -- it has its own
-		// tag format 'dnqr' with no inner code).
+		// Razer e-wallets (only for keys the merchant has enabled in the whitelist).
 		foreach ( $this->list_razer_ewallets() as $code => $label ) {
 			if ( '' === $code || 'duitnow-qr' === $code || __( 'Choose your e-wallet', 'chip-for-woocommerce' ) === $label ) {
+				continue;
+			}
+			// Map display code to whitelist key.
+			$whitelist_key = 'razer_' . strtolower( str_replace( '-', '_', $code ) );
+			if ( ! in_array( $whitelist_key, $this->payment_method_whitelist, true ) ) {
 				continue;
 			}
 			$list[ 'razer:' . $code ] = $label;
