@@ -1349,6 +1349,22 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Whether the gateway should render the unified dropdown in classic checkout.
+	 *
+	 * True when at least one dropdown-eligible method (FPX, Razer, or DuitNow QR)
+	 * is in the whitelist and bypass_chip is enabled.
+	 *
+	 * @return bool
+	 */
+	private function has_unified_dropdown(): bool {
+		if ( 'yes' !== $this->bypass_chip ) {
+			return false;
+		}
+		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng', 'duitnow_qr' );
+		return count( array_intersect( $this->payment_method_whitelist, $dropdown_methods ) ) > 0;
+	}
+
+	/**
 	 * Output payment fields on checkout.
 	 *
 	 * @return void
@@ -1373,215 +1389,28 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		} else {
 			parent::payment_fields();
 
-			// Check for razer.
-			$pattern  = '/^razer_/';
-			$is_razer = false;
-
-			// Check if payment_met empty.
-			if ( is_array( $this->payment_method_whitelist ) ) {
-				$output = preg_grep( $pattern, $this->payment_method_whitelist );
-
-				if ( count( $output ) > 0 ) {
-					$is_razer = true;
+			if ( 'yes' === $this->bypass_chip ) {
+				if ( $this->has_unified_dropdown() ) {
+					$unified = $this->list_unified_payment_methods();
+					$options = array( '' => __( 'Choose a payment method', 'chip-for-woocommerce' ) );
+					foreach ( $unified as $value => $label ) {
+						$options[ $value ] = $label;
+					}
+					woocommerce_form_field(
+						'chip_payment_method',
+						array(
+							'type'     => 'select',
+							'class'    => array( 'chip-unified-payment-method' ),
+							'label'    => __( 'Payment Method', 'chip-for-woocommerce' ),
+							'options'  => $options,
+							'required' => true,
+						)
+					);
 				}
 			}
 
-			$select_field_id = '';
-
-			if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
-				$select_field_id = 'chip_fpx_bank';
-				woocommerce_form_field(
-					$select_field_id,
-					array(
-						'type'     => 'select',
-						'required' => true,
-						'label'    => __( 'Internet Banking', 'chip-for-woocommerce' ),
-						'options'  => $this->list_fpx_banks(),
-						'class'    => array( 'form-row-wide' ),
-					)
-				);
-			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx_b2b1' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
-				$select_field_id = 'chip_fpx_b2b1_bank';
-				woocommerce_form_field(
-					$select_field_id,
-					array(
-						'type'     => 'select',
-						'required' => true,
-						'label'    => __( 'Corporate Internet Banking', 'chip-for-woocommerce' ),
-						'options'  => $this->list_fpx_b2b1_banks(),
-						'class'    => array( 'form-row-wide' ),
-					)
-				);
-			} elseif ( is_array( $this->payment_method_whitelist ) && $is_razer && 'yes' === $this->bypass_chip ) {
-				$select_field_id = 'chip_razer_ewallet';
-				woocommerce_form_field(
-					$select_field_id,
-					array(
-						'type'     => 'select',
-						'required' => true,
-						'label'    => __( 'E-Wallet', 'chip-for-woocommerce' ),
-						'options'  => $this->list_razer_ewallets(),
-						'class'    => array( 'form-row-wide' ),
-					)
-				);
-			}
-
-			// Initialize Select2 (selectWoo) on the dropdown for better UX.
-			if ( '' !== $select_field_id ) {
-				$placeholder       = '';
-				$unavailable_banks = array();
-				$show_bank_logos   = false;
-				$bank_logo_base    = '';
-
-				if ( 'chip_fpx_bank' === $select_field_id ) {
-					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
-					$unavailable_banks = $this->get_unavailable_fpx_banks();
-					$show_bank_logos   = true;
-					$bank_logo_base    = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
-				} elseif ( 'chip_fpx_b2b1_bank' === $select_field_id ) {
-					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
-					$unavailable_banks = $this->get_unavailable_fpx_b2b1_banks();
-					$show_bank_logos   = true;
-					$bank_logo_base    = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
-				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
-					$placeholder     = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
-					$show_bank_logos = true;
-					$bank_logo_base  = CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/';
-				}
-				?>
-				<script type="text/javascript">
-					jQuery( function( $ ) {
-						var $select = $( '#<?php echo esc_js( $select_field_id ); ?>' );
-						var unavailableBanks = <?php echo wp_json_encode( $unavailable_banks ); ?>;
-						var showBankLogos = <?php echo $show_bank_logos ? 'true' : 'false'; ?>;
-						var bankLogoBase = '<?php echo esc_js( $bank_logo_base ); ?>';
-
-						// Disable unavailable bank options.
-						if ( unavailableBanks && unavailableBanks.length > 0 ) {
-							unavailableBanks.forEach( function( bankCode ) {
-								$select.find( 'option[value="' + bankCode + '"]' ).prop( 'disabled', true );
-							});
-						}
-
-						// Custom template for bank options with logos (dropdown).
-						function formatBankResult( option ) {
-							if ( ! option.id || ! showBankLogos ) {
-								return option.text;
-							}
-
-							var logoUrl = bankLogoBase + option.id + '.png';
-							var $option = $(
-								'<span class="chip-bank-option">' +
-									'<img src="' + logoUrl + '" class="chip-bank-logo" onerror="this.style.display=\'none\'" />' +
-									'<span class="chip-bank-name">' + option.text + '</span>' +
-								'</span>'
-							);
-
-							return $option;
-						}
-
-						// Custom template for selected bank (input display) - text only to avoid rendering issues.
-						function formatBankSelection( option ) {
-							return option.text || '';
-						}
-
-						// Add icon container before the select for displaying selected bank logo.
-						var $iconContainer = $('<span class="chip-selected-bank-icon"><img src="" alt="" /></span>');
-						$select.closest('.form-row').find('.woocommerce-input-wrapper').prepend($iconContainer);
-						$iconContainer.hide();
-
-						// Update icon when selection changes.
-						$select.on('change', function() {
-							var selectedValue = $(this).val();
-							if ( selectedValue && showBankLogos ) {
-								var logoUrl = bankLogoBase + selectedValue + '.png';
-								$iconContainer.find('img').attr('src', logoUrl);
-								$iconContainer.show();
-							} else {
-								$iconContainer.hide();
-							}
-						});
-
-						$select.selectWoo({
-							placeholder: '<?php echo esc_js( $placeholder ); ?>',
-							allowClear: false,
-							width: 'resolve',
-							templateResult: formatBankResult,
-							templateSelection: formatBankSelection
-						});
-					});
-				</script>
-				<style>
-					.chip-bank-option {
-						display: flex;
-						align-items: center;
-						gap: 10px;
-					}
-					.chip-bank-logo {
-						width: 32px;
-						height: 32px;
-						object-fit: contain;
-						flex-shrink: 0;
-					}
-					.chip-bank-name {
-						flex: 1;
-					}
-					.select2-results__option .chip-bank-option,
-					.select2-selection__rendered .chip-bank-option {
-						display: flex;
-						align-items: center;
-					}
-					/* Selected bank icon container */
-					#chip_fpx_bank_field .woocommerce-input-wrapper,
-					#chip_fpx_b2b1_bank_field .woocommerce-input-wrapper,
-					#chip_razer_ewallet_field .woocommerce-input-wrapper {
-						position: relative;
-						display: flex;
-						align-items: center;
-					}
-					.chip-selected-bank-icon {
-						position: absolute;
-						left: 12px;
-						top: 50%;
-						transform: translateY(-50%);
-						z-index: 10;
-						pointer-events: none;
-					}
-					.chip-selected-bank-icon img {
-						width: 32px;
-						height: 32px;
-						object-fit: contain;
-						display: block;
-					}
-					/* Make select wider and add padding for the icon */
-					#chip_fpx_bank_field .select2-container,
-					#chip_fpx_b2b1_bank_field .select2-container,
-					#chip_razer_ewallet_field .select2-container {
-						min-width: 100% !important;
-						width: 100% !important;
-					}
-					#chip_fpx_bank_field .select2-selection--single,
-					#chip_fpx_b2b1_bank_field .select2-selection--single,
-					#chip_razer_ewallet_field .select2-selection--single {
-						padding-left: 56px !important;
-						min-height: 48px !important;
-						display: flex !important;
-						align-items: center !important;
-					}
-					#chip_fpx_bank_field .select2-selection__rendered,
-					#chip_fpx_b2b1_bank_field .select2-selection__rendered,
-					#chip_razer_ewallet_field .select2-selection__rendered {
-						padding-left: 0 !important;
-						line-height: 1.4 !important;
-					}
-					/* Dropdown options styling */
-					.select2-results__option .chip-bank-logo {
-						width: 32px;
-						height: 32px;
-					}
-				</style>
-				<?php
-			}
+			// Note: selectWoo initialization for the unified dropdown is added
+			// in resources/js/frontend/chip-unified-dropdown.js (Task 9).
 			// Note: wc_gateway_chip_5 requires no additional fields.
 		}
 
@@ -1632,41 +1461,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * Validate payment fields.
 	 *
 	 * @return bool
-	 * @throws Exception When required field is missing.
+	 * @throws \Exception When the unified dropdown is rendered and the customer
+	 *                   did not select a payment method.
 	 */
 	public function validate_fields() {
-		// Check and throw error if payment method not selected.
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		$fpx_bank      = isset( $_POST['chip_fpx_bank'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_fpx_bank'] ) ) : '';
-		$fpx_b2b1_bank = isset( $_POST['chip_fpx_b2b1_bank'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) ) : '';
-
-		if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'yes' === $this->bypass_chip ) {
-			if ( 'fpx' === $this->payment_method_whitelist[0] && 0 === strlen( $fpx_bank ) ) {
-				throw new Exception( esc_html__( 'Internet Banking is a required field.', 'chip-for-woocommerce' ) );
-			} elseif ( 'fpx_b2b1' === $this->payment_method_whitelist[0] && 0 === strlen( $fpx_b2b1_bank ) ) {
-				throw new Exception( esc_html__( 'Corporate Internet Banking is a required field.', 'chip-for-woocommerce' ) );
-			}
-		}
-
-		// Check for razer.
-		$pattern  = '/^razer_/';
-		$is_razer = false;
-
-		// Check if payment_met empty.
-		if ( is_array( $this->payment_method_whitelist ) ) {
-			$output = preg_grep( $pattern, $this->payment_method_whitelist );
-
-			if ( count( $output ) > 0 ) {
-				$is_razer = true;
-			}
-		}
-
-		$razer_ewallet = isset( $_POST['chip_razer_ewallet'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) ) : '';
-		if ( is_array( $this->payment_method_whitelist ) && 'yes' === $this->bypass_chip && $is_razer && 0 === strlen( $razer_ewallet ) ) {
-			throw new Exception( esc_html__( 'E-Wallet is a required field.', 'chip-for-woocommerce' ) );
+		if ( $this->has_unified_dropdown() && empty( $_POST['chip_payment_method'] ) ) {
+			throw new \Exception( esc_html__( 'Please choose a payment method.', 'chip-for-woocommerce' ) );
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
-
+		// Card form validation is handled client-side by direct-post.js (existing).
 		return true;
 	}
 
