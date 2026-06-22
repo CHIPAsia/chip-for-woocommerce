@@ -150,6 +150,9 @@ if ( file_exists( $autoloader ) ) {
 	require_once $autoloader;
 }
 
+// Load the GatewayTestCase helper so child test classes can resolve the parent.
+require_once __DIR__ . '/GatewayTestCase.php';
+
 /**
  * Load the main plugin file so classes are available for testing.
  */
