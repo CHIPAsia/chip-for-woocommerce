@@ -189,6 +189,91 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_print_r' ) ) {
+	/**
+	 * Stub for wc_print_r(). Returns a string representation of the value.
+	 *
+	 * @param mixed $value Value to print.
+	 * @param bool  $return Whether to return the string.
+	 * @return string
+	 */
+	function wc_print_r( $value, $return = false ) {
+		return print_r( $value, true );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_request' ) ) {
+	/**
+	 * Stub for wp_remote_request(). Returns a WP_Error so callers see a
+	 * failed request without actually hitting the network.
+	 *
+	 * @param string $url  URL.
+	 * @param array  $args Args.
+	 * @return WP_Error
+	 */
+	function wp_remote_request( $url, $args = array() ) {
+		return new WP_Error( 'http_request_failed', 'Stub: no network in tests.' );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	/**
+	 * Stub for wp_remote_retrieve_body(). Returns empty string.
+	 *
+	 * @param mixed $response Response.
+	 * @return string
+	 */
+	function wp_remote_retrieve_body( $response ) {
+		return '';
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+	/**
+	 * Stub for wp_remote_retrieve_response_code(). Returns 0.
+	 *
+	 * @param mixed $response Response.
+	 * @return int
+	 */
+	function wp_remote_retrieve_response_code( $response ) {
+		return 0;
+	}
+}
+
+if ( ! class_exists( 'WP_Error' ) ) {
+	/**
+	 * Minimal WP_Error stub for tests.
+	 */
+	class WP_Error {
+		public $errors = array();
+		public $error_data = array();
+		public function __construct( $code = '', $message = '', $data = null ) {
+			$this->errors[ $code ][] = $message;
+			if ( null !== $data ) {
+				$this->error_data[ $code ] = $data;
+			}
+		}
+		public function get_error_message() {
+			foreach ( $this->errors as $code => $messages ) {
+				return $messages[0];
+			}
+			return '';
+		}
+	}
+}
+
+if ( ! function_exists( 'is_wp_error' ) ) {
+	/**
+	 * Stub for is_wp_error(). Returns true for WP_Error instances.
+	 *
+	 * @param mixed $thing Thing to check.
+	 * @return bool
+	 */
+	function is_wp_error( $thing ) {
+		return $thing instanceof WP_Error;
+	}
+}
+
 // Load Composer autoloader if available.
 $autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
 if ( file_exists( $autoloader ) ) {
