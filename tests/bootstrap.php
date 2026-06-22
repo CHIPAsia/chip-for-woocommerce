@@ -112,6 +112,11 @@ if ( ! isset( $GLOBALS['__chip_test_transients'] ) ) {
 	$GLOBALS['__chip_test_transients'] = array();
 }
 
+// WordPress time constants used by the gateway at test time.
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
 if ( ! function_exists( 'get_transient' ) ) {
 	function get_transient( $key ) {
 		return $GLOBALS['__chip_test_transients'][ $key ] ?? false;
