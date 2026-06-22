@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.0
-Stable tag: 2.0.5
+Stable tag: 2.0.6
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -17,7 +17,7 @@ CHIP - Digital Finance Platform. Securely accept one-time and subscription payme
 = Why Choose CHIP for WooCommerce? =
 
 * **WooCommerce Blocks Support** - Fully compatible with the new WooCommerce Blocks checkout experience
-* **Multiple Payment Methods** - Accept FPX, Credit/Debit Cards, DuitNow QR (automatically uses dnqr when available), E-Wallets, and more
+* **Multiple Payment Methods** - Accept FPX, Credit/Debit Cards, DuitNow QR, E-Wallets, and more
 * **Subscription Payments** - Native support for WooCommerce Subscriptions
 * **Tokenization** - Allow customers to save cards for faster checkout
 * **Direct Post Integration** - Secure card payments without redirecting customers
@@ -60,10 +60,8 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.5 2026-05-19 ==
-* Fixed - Improved version tagging consistency during the automated release process.
-* Changed - Updated the deployment workflow to source release notes directly from the plugin's changelog for better accuracy.
-* Removed - Redundant external scripts and dependencies previously used for automated release note generation.
+= 2.0.6 =
+* Added - dnqr payment method support. Merchants now see a single "DuitNow QR" checkbox in the gateway settings; the plugin automatically uses dnqr when the merchant has it, falling back to duitnow_qr. Existing merchants with duitnow_qr configured are auto-migrated.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
