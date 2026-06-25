@@ -537,21 +537,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		// Check if payment methods include card methods that support direct post.
-		$card_methods = array( 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' );
+		// The constructor expands a saved ['card'] to ['card', 'visa', 'mastercard',
+		// 'maestro'] in memory, so the whitelist can contain the 'card' aggregator
+		// as well as the legacy card-network keys and the MPGS keys.
 		$pm_whitelist = $this->get_payment_method_whitelist();
 
 		if ( ! is_array( $pm_whitelist ) || empty( $pm_whitelist ) ) {
 			return;
 		}
 
-		// Check if all whitelisted methods are card methods.
-		$is_card_only = true;
-		foreach ( $pm_whitelist as $pm ) {
-			if ( ! in_array( $pm, $card_methods, true ) ) {
-				$is_card_only = false;
-				break;
-			}
-		}
+		// Whitelist is card-only iff it contains no methods outside the union of
+		// the legacy CARD_GROUP, the MPGS keys, and the 'card' aggregator.
+		$allowed_for_card_only = array_merge( self::CARD_GROUP, array( 'mpgs_google_pay', 'mpgs_apple_pay', 'card' ) );
+		$is_card_only          = empty( array_diff( $pm_whitelist, $allowed_for_card_only ) );
 
 		if ( ! $is_card_only ) {
 			return;
