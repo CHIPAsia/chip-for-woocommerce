@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.0
-Stable tag: 2.0.6
+Stable tag: 2.1.0
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -60,10 +60,18 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.0.6 =
-* Added - dnqr payment method support. The DuitNow QR entry in the gateway's payment_method_whitelist multiselect resolves at runtime to whichever of {duitnow_qr, dnqr} the merchant has available, prioritizing dnqr.
-* Fixed - DuitNow QR redirect URLs no longer append '&razer_bank_code=duitnow-qr'.
-* Fixed - DuitNow and DuitNow-only logos now render at the same visual height as the other logos in the gateway settings preview.
+= 2.1.0 =
+* Added - Unified payment method dropdown. The classic and Blocks checkout now renders a single dropdown listing all eligible payment methods (FPX banks, Razer e-wallets, DuitNow QR, Card) instead of three separate POST fields. The selected value is submitted as a tag-encoded `chip_payment_method` field (e.g. `fpx:MB2U0227`, `fpx_b2b1:PBB0234`, `razer:GrabPay`, `dnqr`, `card`).
+* Added - Card group. The Card entry in the `payment_method_whitelist` multiselect now expands at runtime to the full `{visa, mastercard, maestro}` group, matching the existing DuitNow QR group pattern. Saved values containing the legacy `visa`/`mastercard`/`maestro` multiselect keys are auto-migrated in memory to the new `card` key on the next load.
+* Added - REST endpoint type `unified`. `GET /chip/v1/banks/unified/<gateway>` returns the merchant's eligible payment methods as a flat `{ tag: label }` object, used by the unified dropdown for lazy loading.
+* Added - Blocks support class `unified` mode. Mixed whitelists (Card plus one or more dropdown methods, or two or more dropdown methods) now render the unified dropdown alongside the card form in Blocks checkout. Saved cards coexist with the dropdown.
+* Added - Shared `UnifiedPaymentMethodList` React component used by all five clone gateway bundles, exposed via `wp.element.createElement` and registered as a webpack `dependencies` injection so the shared bundle loads before each clone bundle in the browser.
+* Changed - `bypass_chip()` rewritten as a tag parser that handles `fpx:CODE`, `fpx_b2b1:CODE`, `razer:WALLET`, `dnqr`, `card`, plus the legacy single-method values.
+* Changed - Card option label clarified to "Card (Visa, Mastercard, Maestro)" in the unified dropdown for explicit disclosure of the accepted card networks.
+* Changed - Replaced the placeholder `assets/duitnow_qr.png` with a proper 50x50 DuitNow logo rendered from the existing `duitnow_only.svg`, matching the visual style of the other dropdown option icons.
+* Fixed - `is_card_only_whitelist()` and `process_payment_with_context()` correctly handle the constructor-expanded `['card']` whitelist so the card-only merchant flow (delayed capture, Blocks checkout direct POST) works after the Card group refactor.
+* Fixed - Blocks support class `js_display` decision now uses the in-memory expanded whitelist so saved `['card']` and `['fpx', 'card']` merchants correctly render `js_display='unified'` instead of an empty value.
+* Fixed - Shared `unified-payment-method-list` bundle is now enqueued via a webpack `SharedBundleDependencyPlugin` that injects the dependency into each clone's `.asset.php`, so the component renders at runtime instead of returning `null`.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
