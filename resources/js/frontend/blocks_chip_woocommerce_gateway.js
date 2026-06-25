@@ -777,17 +777,22 @@ const RazerEWalletList = (props) => {
 
 const ContentContainer = (props) => {
   const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
+  const { eventRegistration, emitResponse } = props || {};
+  const { onPaymentSetup } = eventRegistration || {};
   return (
     <>
       <Content />
       {settings.js_display === "unified" ? (
-        <UnifiedPaymentMethodList
-          nonce={window['gateway_' + PAYMENT_METHOD_NAME]?.nonce}
-          banksApi={window['gateway_' + PAYMENT_METHOD_NAME]?.banks_api}
-          logoBaseUrl={gatewayConfig.logo_base_url}
-          cardLogosUrl={gatewayConfig.card_logos_url}
-          placeholder={__("Choose a payment method", "chip-for-woocommerce")}
-        />
+        <>
+          <UnifiedPaymentMethodList
+            nonce={window['gateway_' + PAYMENT_METHOD_NAME]?.nonce}
+            banksApi={window['gateway_' + PAYMENT_METHOD_NAME]?.banks_api}
+            placeholder={__("Choose a payment method", "chip-for-woocommerce")}
+            onPaymentSetup={onPaymentSetup}
+            emitResponse={emitResponse}
+          />
+          <CardForm {...props} />
+        </>
       ) : null}
       {settings.js_display === "fpx" ? <FpxBankList {...props} /> : null}
       {settings.js_display === "fpx_b2b1" ? (

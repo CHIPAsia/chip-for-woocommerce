@@ -114,9 +114,14 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 
 			// Mixed cases: card + dropdown, or multiple dropdown methods -> unified.
 			if ( '' === $bank_type ) {
-				$has_dropdown   = $has_fpx || $has_razer;
+				$has_dnqr       = in_array( 'duitnow_qr', $whitelisted_payment_method, true )
+					|| in_array( 'dnqr', $whitelisted_payment_method, true );
+				$has_dropdown   = $has_fpx || $has_razer || $has_dnqr;
 				$dropdown_count = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) );
 				if ( $has_fpx ) {
+					++$dropdown_count;
+				}
+				if ( $has_dnqr ) {
 					++$dropdown_count;
 				}
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
@@ -160,7 +165,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			return array();
 		}
 
-		$pm_whitelist = $this->get_setting( 'payment_method_whitelist' );
+		$pm_whitelist = $this->gateway->get_payment_method_whitelist();
 		$bypass_chip  = $this->get_setting( 'bypass_chip' );
 		$js_display   = '';
 

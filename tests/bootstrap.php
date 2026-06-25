@@ -92,7 +92,43 @@ if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 	/**
 	 * Minimal stub for WC_Payment_Gateway so gateway class can be loaded.
 	 */
-	class WC_Payment_Gateway {}
+	class WC_Payment_Gateway {
+		/**
+		 * Stub for WC_Payment_Gateway::supports().
+		 *
+		 * @param string $feature Feature name.
+		 * @return bool
+		 */
+		public function supports( $feature ) {
+			return in_array( $feature, $this->supports ?? array(), true );
+		}
+	}
+}
+
+// Minimal stub for the WooCommerce Blocks payment method type so the
+// blocks-support class can be loaded by the test suite.
+if ( ! class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+	eval( <<<'PHP'
+	namespace Automattic\WooCommerce\Blocks\Payments\Integrations {
+		abstract class AbstractPaymentMethodType {
+			protected $name     = '';
+			protected $settings = array();
+			protected function get_setting( $name, $default = '' ) {
+				return isset( $this->settings[ $name ] ) ? $this->settings[ $name ] : $default;
+			}
+			public function get_name() { return $this->name; }
+			public function is_active() { return true; }
+			public function get_payment_method_script_handles() { return array(); }
+			public function get_payment_method_script_handles_for_admin() { return $this->get_payment_method_script_handles(); }
+			public function get_supported_features() { return array( 'products' ); }
+			public function get_payment_method_data() { return array(); }
+			public function get_script_handles() { return $this->get_payment_method_script_handles(); }
+			public function get_editor_script_handles() { return $this->get_payment_method_script_handles_for_admin(); }
+			public function get_script_data() { return $this->get_payment_method_data(); }
+		}
+	}
+PHP
+	);
 }
 
 if ( ! class_exists( 'WC_Logger' ) ) {
@@ -295,6 +331,73 @@ if ( ! function_exists( 'is_wp_error' ) ) {
 	 */
 	function is_wp_error( $thing ) {
 		return $thing instanceof WP_Error;
+	}
+}
+
+if ( ! function_exists( 'wp_register_script' ) ) {
+	/**
+	 * Stub for wp_register_script() in tests. Records the registration
+	 * but does not enqueue anything.
+	 *
+	 * @return void
+	 */
+	function wp_register_script( $handle, $src, $deps = array(), $ver = false, $args = false ) {
+		if ( ! isset( $GLOBALS['__chip_test_scripts'] ) ) {
+			$GLOBALS['__chip_test_scripts'] = array();
+		}
+		$GLOBALS['__chip_test_scripts'][ $handle ] = array(
+			'src'  => $src,
+			'deps' => $deps,
+			'ver'  => $ver,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_localize_script' ) ) {
+	/**
+	 * Stub for wp_localize_script() in tests.
+	 *
+	 * @return void
+	 */
+	function wp_localize_script( $handle, $object_name, $data ) {
+		if ( ! isset( $GLOBALS['__chip_test_localized'] ) ) {
+			$GLOBALS['__chip_test_localized'] = array();
+		}
+		$GLOBALS['__chip_test_localized'][ $handle ][ $object_name ] = $data;
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	/**
+	 * Stub for rest_url() in tests.
+	 *
+	 * @param string $path Optional REST path.
+	 * @return string
+	 */
+	function rest_url( $path = '' ) {
+		return 'http://example.com/wp-json/' . ltrim( $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+	/**
+	 * Stub for wp_create_nonce() in tests. Returns a fixed string.
+	 *
+	 * @return string
+	 */
+	function wp_create_nonce( $action = '' ) {
+		return 'test_nonce';
+	}
+}
+
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	/**
+	 * Stub for is_user_logged_in() in tests. Returns false by default.
+	 *
+	 * @return bool
+	 */
+	function is_user_logged_in() {
+		return false;
 	}
 }
 

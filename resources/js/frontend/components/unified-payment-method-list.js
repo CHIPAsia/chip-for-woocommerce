@@ -7,19 +7,23 @@
  * with a tag-encoded format (e.g. 'fpx:MB2U0227', 'dnqr', 'card').
  *
  * Props:
- *   - nonce         (string)  X-WP-Nonce for the REST request
- *   - banksApi      (string)  Full REST URL to the unified banks endpoint
- *   - logoBaseUrl   (string)  Base URL for bank/ewallet logo PNGs
- *   - cardLogosUrl  (string)  Base URL for card brand SVGs
- *   - placeholder   (string)  Placeholder text for the empty option
+ *   - nonce           (string)  X-WP-Nonce for the REST request
+ *   - banksApi        (string)  Full REST URL to the unified banks endpoint
+ *   - placeholder     (string)  Placeholder text for the empty option
+ *   - onPaymentSetup  (func)    WooCommerce Blocks onPaymentSetup callback
+ *   - emitResponse    (object)  WooCommerce Blocks emitResponse helpers
+ *   - requiredMessage (string)  Custom error message when no value chosen
  */
 ( function( wp ) {
     'use strict';
     var el = wp.element.createElement;
     var useState = wp.element.useState;
     var useEffect = wp.element.useEffect;
+    var useCallback = wp.element.useCallback;
 
     function UnifiedPaymentMethodList( props ) {
+        var value        = useState( '' );
+        var setValue     = value[ 1 ];
         var options      = useState( [] );
         var setOptions   = options[ 1 ];
         var loading      = useState( true );
@@ -51,6 +55,40 @@
                 } );
         }, [ props.banksApi ] );
 
+        // Forward the chosen value to WooCommerce Blocks via onPaymentSetup.
+        // Without this, the underlying <select name="chip_payment_method">
+        // is not submitted -- only paymentMethodData returned by this hook is.
+        var onPaymentSetup = props && props.onPaymentSetup;
+        var emitResponse   = props && props.emitResponse;
+        var onSubmit       = useCallback( function() {
+            if ( ! value[ 0 ] ) {
+                return {
+                    type: emitResponse && emitResponse.responseTypes
+                        ? emitResponse.responseTypes.ERROR
+                        : 'error',
+                    message: props.requiredMessage || 'Please choose a payment method',
+                };
+            }
+            return {
+                type: emitResponse && emitResponse.responseTypes
+                    ? emitResponse.responseTypes.SUCCESS
+                    : 'success',
+                meta: { paymentMethodData: { chip_payment_method: value[ 0 ] } },
+            };
+        }, [ value[ 0 ], emitResponse ] );
+
+        useEffect( function() {
+            if ( typeof onPaymentSetup !== 'function' ) {
+                return undefined;
+            }
+            var unsubscribe = onPaymentSetup( onSubmit );
+            return function() {
+                if ( typeof unsubscribe === 'function' ) {
+                    unsubscribe();
+                }
+            };
+        }, [ onPaymentSetup, onSubmit ] );
+
         if ( fetchError ) {
             return el( 'div', { className: 'woocommerce-error' }, fetchError );
         }
@@ -68,6 +106,8 @@
                 className:   'chip-unified-payment-method',
                 'data-testid': 'chip-unified-payment-method',
                 required:    true,
+                value:       value[ 0 ],
+                onChange:    function( e ) { setValue( e.target.value ); },
             },
             el( 'option', { value: '' }, props.placeholder || 'Choose a payment method' ),
             currentState.map( function( opt ) {

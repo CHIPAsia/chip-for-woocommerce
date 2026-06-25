@@ -1303,22 +1303,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return bool True if whitelist contains only card methods.
 	 */
 	private function is_card_only_whitelist() {
-		$allowed_card_methods = array( 'visa', 'mastercard', 'maestro' );
-		$whitelist            = $this->payment_method_whitelist;
+		$whitelist = $this->payment_method_whitelist;
 
 		// If whitelist is empty or not an array, return false.
 		if ( empty( $whitelist ) || ! is_array( $whitelist ) ) {
 			return false;
 		}
 
-		// Check if all items in whitelist are allowed card methods.
-		foreach ( $whitelist as $method ) {
-			if ( ! in_array( $method, $allowed_card_methods, true ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		// Whitelist is card-only iff it contains no methods outside the
+		// card group (which includes the 'card' aggregator key plus the
+		// three card-network identifiers). The constructor expands a saved
+		// ['card'] to ['card', 'visa', 'mastercard', 'maestro'] in memory.
+		$card_group_with_aggregator = array_merge( array( 'card' ), self::CARD_GROUP );
+		return empty( array_diff( $whitelist, $card_group_with_aggregator ) );
 	}
 
 	/**
@@ -3486,6 +3483,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array            Final whitelist to send to CHIP.
 	 */
 	protected function resolve_duitnow_methods( array $whitelist, string $currency, int $amount ): array {
+		// Strip the 'card' aggregator key before sending the whitelist to
+		// CHIP. CHIP's API expects only the resolved card-network
+		// identifiers (visa/mastercard/maestro); the 'card' key is the
+		// in-memory aggregator set up by the constructor's group
+		// expansion and is not a value CHIP recognises. The runtime
+		// continues to use the expanded list locally.
+		$whitelist = array_values( array_diff( $whitelist, array( 'card' ) ) );
+
 		// 1. Group expansion.
 		$has_group_member = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
 
