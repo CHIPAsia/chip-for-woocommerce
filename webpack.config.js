@@ -54,6 +54,7 @@ module.exports = {
 		'frontend/blocks_chip_woocommerce_gateway_4': './resources/js/frontend/blocks_chip_woocommerce_gateway_4.js',
 		'frontend/blocks_chip_woocommerce_gateway_5': './resources/js/frontend/blocks_chip_woocommerce_gateway_5.js',
 		'frontend/blocks_chip_woocommerce_gateway_6': './resources/js/frontend/blocks_chip_woocommerce_gateway_6.js',
+		'frontend/unified-payment-method-list': './resources/js/frontend/components/unified-payment-method-list.js',
 	},
 	output: {
 		path: path.resolve( __dirname, 'assets/js' ),
