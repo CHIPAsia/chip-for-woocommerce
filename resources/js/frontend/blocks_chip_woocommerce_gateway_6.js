@@ -7,6 +7,11 @@ import { useState, useEffect, useCallback } from "@wordpress/element";
 const PAYMENT_METHOD_NAME = 'wc_gateway_chip_6';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
+// Retrieve the shared UnifiedPaymentMethodList component registered by the
+// shared bundle (Task 9). The getter form (1 arg) returns the registered
+// component from the wp global element registry.
+var UnifiedPaymentMethodList = wp.element.createElement( 'UnifiedPaymentMethodList' );
+
 // Add card form and select input styles to match WooCommerce Blocks styling.
 const cardFormStyles = `
   .wc-block-components-card-form {
@@ -680,18 +685,28 @@ const CardForm = (props) => {
 };
 
 const ContentContainer = (props) => {
+  const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
   return (
     <>
       <Content />
+      {settings.js_display === "unified" ? (
+        <UnifiedPaymentMethodList
+          nonce={window['gateway_' + PAYMENT_METHOD_NAME]?.nonce}
+          banksApi={window['gateway_' + PAYMENT_METHOD_NAME]?.banks_api}
+          logoBaseUrl={gatewayConfig.logo_base_url}
+          cardLogosUrl={gatewayConfig.card_logos_url}
+          placeholder={__("Choose a payment method", "chip-for-woocommerce")}
+        />
+      ) : null}
       {settings.js_display === "fpx" ? <FpxBankList {...props} /> : null}
       {settings.js_display === "fpx_b2b1" ? (
         <Fpxb2b1BankList {...props} />
         ) : null}
       {settings.js_display === "razer" ? (
-        <RazerEWalletList {...props} /> 
+        <RazerEWalletList {...props} />
         ) : null}
       {settings.js_display === "card" ? (
-        <CardForm {...props} /> 
+        <CardForm {...props} />
         ) : null}
     </>
   );
