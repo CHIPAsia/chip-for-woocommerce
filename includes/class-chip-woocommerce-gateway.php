@@ -3449,7 +3449,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		return array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
-			'card'            => 'Card',
+			'card'            => 'Card (Visa, Mastercard, Maestro)',
 			'mpgs_google_pay' => 'Google Pay',
 			'mpgs_apple_pay'  => 'Apple Pay',
 			'razer_atome'     => 'Atome',

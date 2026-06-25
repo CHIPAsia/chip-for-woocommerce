@@ -13,7 +13,7 @@ class GetPaymentMethodListTest extends GatewayTestCase {
 		$expected = array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
-			'card'            => 'Card',
+			'card'            => 'Card (Visa, Mastercard, Maestro)',
 			'mpgs_google_pay' => 'Google Pay',
 			'mpgs_apple_pay'  => 'Apple Pay',
 			'razer_atome'     => 'Atome',
