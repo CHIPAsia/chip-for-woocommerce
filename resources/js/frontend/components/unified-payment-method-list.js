@@ -13,108 +13,119 @@
  *   - onPaymentSetup  (func)    WooCommerce Blocks onPaymentSetup callback
  *   - emitResponse    (object)  WooCommerce Blocks emitResponse helpers
  *   - requiredMessage (string)  Custom error message when no value chosen
+ *
+ * Consumed by the 5 clone bundles (gateway 1/2/3/4/6) via:
+ *   `import UnifiedPaymentMethodList from 'chip/unified-payment-method-list';`
+ *
+ * Webpack treats `chip/unified-payment-method-list` as an external in the
+ * clone entries and resolves it to `window.chip.UnifiedPaymentMethodList` at
+ * runtime. This shared bundle exposes its default export at that global via
+ * a per-entry `library` config in webpack.config.js. The shared bundle must
+ * load BEFORE the clone bundles; the PHP blocks-support class appends
+ * `chip-unified-payment-method-list` to each clone's `dependencies` array to
+ * guarantee that load order.
  */
-( function( wp ) {
-    'use strict';
-    var el = wp.element.createElement;
-    var useState = wp.element.useState;
-    var useEffect = wp.element.useEffect;
-    var useCallback = wp.element.useCallback;
+import { useState, useEffect, useCallback } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 
-    function UnifiedPaymentMethodList( props ) {
-        var value        = useState( '' );
-        var setValue     = value[ 1 ];
-        var options      = useState( [] );
-        var setOptions   = options[ 1 ];
-        var loading      = useState( true );
-        var setLoading   = loading[ 1 ];
-        var error        = useState( null );
-        var setError     = error[ 1 ];
-        var currentState = options[ 0 ];
-        var isLoading    = loading[ 0 ];
-        var fetchError   = error[ 0 ];
+const UnifiedPaymentMethodList = ( props ) => {
+    const [ options, setOptions ] = useState( [] );
+    const [ loading, setLoading ] = useState( true );
+    const [ error, setError ]     = useState( null );
+    const [ value, setValue ]     = useState( '' );
 
-        useEffect( function() {
-            if ( ! props.banksApi ) {
+    useEffect( () => {
+        if ( ! props.banksApi ) {
+            setLoading( false );
+            return undefined;
+        }
+        setLoading( true );
+        fetch( props.banksApi, { headers: { 'X-WP-Nonce': props.nonce } } )
+            .then( ( r ) => r.json() )
+            .then( ( data ) => {
+                const entries = Object.entries( data ).map( ( [ tag, label ] ) => ( {
+                    value: tag,
+                    label,
+                } ) );
+                setOptions( entries );
                 setLoading( false );
-                return;
-            }
-            setLoading( true );
-            fetch( props.banksApi, { headers: { 'X-WP-Nonce': props.nonce } } )
-                .then( function( r ) { return r.json(); } )
-                .then( function( data ) {
-                    var entries = Object.entries( data ).map( function( pair ) {
-                        return { value: pair[0], label: pair[1] };
-                    } );
-                    setOptions( entries );
-                    setLoading( false );
-                } )
-                .catch( function( err ) {
-                    setError( err.message || 'Failed to load payment methods' );
-                    setLoading( false );
-                } );
-        }, [ props.banksApi ] );
-
-        // Forward the chosen value to WooCommerce Blocks via onPaymentSetup.
-        // Without this, the underlying <select name="chip_payment_method">
-        // is not submitted -- only paymentMethodData returned by this hook is.
-        var onPaymentSetup = props && props.onPaymentSetup;
-        var emitResponse   = props && props.emitResponse;
-        var onSubmit       = useCallback( function() {
-            if ( ! value[ 0 ] ) {
-                return {
-                    type: emitResponse && emitResponse.responseTypes
-                        ? emitResponse.responseTypes.ERROR
-                        : 'error',
-                    message: props.requiredMessage || 'Please choose a payment method',
-                };
-            }
-            return {
-                type: emitResponse && emitResponse.responseTypes
-                    ? emitResponse.responseTypes.SUCCESS
-                    : 'success',
-                meta: { paymentMethodData: { chip_payment_method: value[ 0 ] } },
-            };
-        }, [ value[ 0 ], emitResponse ] );
-
-        useEffect( function() {
-            if ( typeof onPaymentSetup !== 'function' ) {
-                return undefined;
-            }
-            var unsubscribe = onPaymentSetup( onSubmit );
-            return function() {
-                if ( typeof unsubscribe === 'function' ) {
-                    unsubscribe();
-                }
-            };
-        }, [ onPaymentSetup, onSubmit ] );
-
-        if ( fetchError ) {
-            return el( 'div', { className: 'woocommerce-error' }, fetchError );
-        }
-        if ( isLoading ) {
-            return el( 'div', { className: 'chip-loading' }, 'Loading…' );
-        }
-        if ( currentState.length === 0 ) {
-            return null;
-        }
-
-        return el(
-            'select',
-            {
-                name:        'chip_payment_method',
-                className:   'chip-unified-payment-method',
-                'data-testid': 'chip-unified-payment-method',
-                required:    true,
-                value:       value[ 0 ],
-                onChange:    function( e ) { setValue( e.target.value ); },
-            },
-            el( 'option', { value: '' }, props.placeholder || 'Choose a payment method' ),
-            currentState.map( function( opt ) {
-                return el( 'option', { key: opt.value, value: opt.value }, opt.label );
             } )
+            .catch( ( err ) => {
+                setError(
+                    err.message ||
+                        __( 'Failed to load payment methods', 'chip-for-woocommerce' )
+                );
+                setLoading( false );
+            } );
+
+        return () => {
+            // No cleanup needed; fetch results that arrive after unmount
+            // are ignored by React because the component state is gone.
+        };
+    }, [ props.banksApi ] );
+
+    const emitResponse = props.emitResponse;
+    const onSubmit = useCallback( () => {
+        if ( ! value ) {
+            return {
+                type: emitResponse?.responseTypes?.ERROR || 'error',
+                message:
+                    props.requiredMessage ||
+                    __( 'Please choose a payment method', 'chip-for-woocommerce' ),
+            };
+        }
+        return {
+            type: emitResponse?.responseTypes?.SUCCESS || 'success',
+            meta: { paymentMethodData: { chip_payment_method: value } },
+        };
+    }, [ value, emitResponse ] );
+
+    useEffect( () => {
+        if ( typeof props.onPaymentSetup !== 'function' ) {
+            return undefined;
+        }
+        const unsubscribe = props.onPaymentSetup( onSubmit );
+        return () => {
+            if ( typeof unsubscribe === 'function' ) {
+                unsubscribe();
+            }
+        };
+    }, [ props.onPaymentSetup, onSubmit ] );
+
+    if ( error ) {
+        return <div className="woocommerce-error">{ error }</div>;
+    }
+    if ( loading ) {
+        return (
+            <div className="chip-loading">
+                { __( 'Loading…', 'chip-for-woocommerce' ) }
+            </div>
         );
     }
+    if ( options.length === 0 ) {
+        return null;
+    }
 
-    wp.element.createElement( 'UnifiedPaymentMethodList', UnifiedPaymentMethodList );
-} )( window.wp );
+    return (
+        <select
+            name="chip_payment_method"
+            className="chip-unified-payment-method"
+            data-testid="chip-unified-payment-method"
+            required
+            value={ value }
+            onChange={ ( e ) => setValue( e.target.value ) }
+        >
+            <option value="">
+                { props.placeholder ||
+                    __( 'Choose a payment method', 'chip-for-woocommerce' ) }
+            </option>
+            { options.map( ( opt ) => (
+                <option key={ opt.value } value={ opt.value }>
+                    { opt.label }
+                </option>
+            ) ) }
+        </select>
+    );
+};
+
+export default UnifiedPaymentMethodList;

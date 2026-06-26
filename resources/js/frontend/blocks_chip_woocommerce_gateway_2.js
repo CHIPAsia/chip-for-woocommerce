@@ -1,3 +1,4 @@
+import UnifiedPaymentMethodList from "chip/unified-payment-method-list";
 import { registerPaymentMethod } from "@woocommerce/blocks-registry";
 import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
@@ -6,11 +7,6 @@ import { useState, useEffect, useCallback } from "@wordpress/element";
 
 const PAYMENT_METHOD_NAME = 'wc_gateway_chip_2';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
-
-// Retrieve the shared UnifiedPaymentMethodList component registered by the
-// shared bundle (Task 9). The getter form (1 arg) returns the registered
-// component from the wp global element registry.
-var UnifiedPaymentMethodList = wp.element.createElement( 'UnifiedPaymentMethodList' );
 
 // Add card form and select input styles to match WooCommerce Blocks styling.
 const cardFormStyles = `

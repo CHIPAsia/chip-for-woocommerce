@@ -80,10 +80,40 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			);
 		$script_url        = CHIP_WOOCOMMERCE_URL . $script_path;
 
+		// The clone bundles `import UnifiedPaymentMethodList from
+		// 'chip/unified-payment-method-list'`, which webpack resolves to
+		// `window.chip.UnifiedPaymentMethodList`. The shared bundle exposes
+		// its default export at that global (see webpack.config.js). We list
+		// the shared bundle's handle here so WordPress loads it BEFORE the
+		// clone, otherwise `window.chip.UnifiedPaymentMethodList` would be
+		// undefined when the clone runs.
+		$shared_script_path       = 'assets/js/frontend/unified-payment-method-list.js';
+		$shared_script_asset_path = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/js/frontend/unified-payment-method-list.asset.php';
+		$shared_script_asset      = file_exists( $shared_script_asset_path )
+			? require $shared_script_asset_path
+			: array(
+				'dependencies' => array(),
+				'version'      => CHIP_WOOCOMMERCE_MODULE_VERSION,
+			);
+		$shared_script_url        = CHIP_WOOCOMMERCE_URL . $shared_script_path;
+
+		wp_register_script(
+			'chip-unified-payment-method-list',
+			$shared_script_url,
+			$shared_script_asset['dependencies'],
+			$shared_script_asset['version'],
+			true
+		);
+
+		$clone_dependencies = array_merge(
+			$script_asset['dependencies'],
+			array( 'chip-unified-payment-method-list' )
+		);
+
 		wp_register_script(
 			"wc-{$this->name}-blocks",
 			$script_url,
-			$script_asset['dependencies'],
+			$clone_dependencies,
 			$script_asset['version'],
 			true
 		);
