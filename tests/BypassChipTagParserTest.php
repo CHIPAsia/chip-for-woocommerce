@@ -134,4 +134,50 @@ class BypassChipTagParserTest extends GatewayTestCase {
 		$result = $this->callBypass( $gateway, null );
 		$this->assertSame( 'https://example.com/checkout?preferred=razer_atome&razer_bank_code=Atome', $result );
 	}
+
+	/**
+	 * Legacy POST field names (chip_fpx_bank, chip_fpx_b2b1_bank,
+	 * chip_razer_ewallet) are not read by bypass_chip(); only the unified
+	 * chip_payment_method tag is consulted. These tests pin that behaviour
+	 * so the legacy fields cannot accidentally be re-introduced as a hidden
+	 * source of truth.
+	 */
+	public function test_legacy_fpx_post_field_is_ignored() {
+		$_POST['chip_fpx_bank']       = 'MB2U0227';
+		$_POST['chip_payment_method'] = 'fpx:MBB0228';
+		try {
+			$gateway = $this->newGatewayWithBypass();
+			$result  = $this->callBypass( $gateway, 'fpx:MBB0228' );
+			$this->assertStringContainsString( 'fpx_bank_code=MBB0228', $result );
+			$this->assertStringNotContainsString( 'MB2U0227', $result );
+		} finally {
+			unset( $_POST['chip_fpx_bank'], $_POST['chip_payment_method'] );
+		}
+	}
+
+	public function test_legacy_fpx_b2b1_post_field_is_ignored() {
+		$_POST['chip_fpx_b2b1_bank'] = 'MB2U0227';
+		$_POST['chip_payment_method'] = 'fpx_b2b1:PBB0234';
+		try {
+			$gateway = $this->newGatewayWithBypass();
+			$result  = $this->callBypass( $gateway, 'fpx_b2b1:PBB0234' );
+			$this->assertStringContainsString( 'fpx_bank_code=PBB0234', $result );
+			$this->assertStringNotContainsString( 'MB2U0227', $result );
+		} finally {
+			unset( $_POST['chip_fpx_b2b1_bank'], $_POST['chip_payment_method'] );
+		}
+	}
+
+	public function test_legacy_razer_ewallet_post_field_is_ignored() {
+		$_POST['chip_razer_ewallet'] = 'MB2U_QRPay-Push';
+		$_POST['chip_payment_method'] = 'razer:GrabPay';
+		try {
+			$gateway = $this->newGatewayWithBypass();
+			$result  = $this->callBypass( $gateway, 'razer:GrabPay' );
+			$this->assertStringContainsString( 'razer_bank_code=GrabPay', $result );
+			$this->assertStringNotContainsString( 'MB2U_QRPay-Push', $result );
+		} finally {
+			unset( $_POST['chip_razer_ewallet'], $_POST['chip_payment_method'] );
+		}
+	}
 }
