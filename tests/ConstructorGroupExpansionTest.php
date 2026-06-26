@@ -121,6 +121,38 @@ class ConstructorGroupExpansionTest extends GatewayTestCase {
 		);
 	}
 
+	public function test_backward_compat_collapses_single_legacy_card_key() {
+		// A merchant who saved just ['visa'] in the old multiselect form
+		// (only Visa enabled) should also be collapsed to ['card'] so the
+		// Card group is the single source of truth.
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'card', 'visa', 'mastercard', 'maestro' ),
+			$this->processWhitelist( $gateway, array( 'visa' ) )
+		);
+	}
+
+	public function test_backward_compat_collapses_two_legacy_card_keys() {
+		// A merchant who saved ['visa', 'mastercard'] (no maestro)
+		// should also be collapsed to ['card'] -- the merchant
+		// implicitly wants the Card group.
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'card', 'visa', 'mastercard', 'maestro' ),
+			$this->processWhitelist( $gateway, array( 'visa', 'mastercard' ) )
+		);
+	}
+
+	public function test_backward_compat_collapses_visa_and_maestro() {
+		// A merchant who saved ['visa', 'maestro'] (skipped mastercard)
+		// should also be collapsed to ['card'].
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'card', 'visa', 'mastercard', 'maestro' ),
+			$this->processWhitelist( $gateway, array( 'visa', 'maestro' ) )
+		);
+	}
+
 	public function test_backward_compat_preserves_other_methods() {
 		$gateway = $this->newGateway();
 		$this->assertSame(
