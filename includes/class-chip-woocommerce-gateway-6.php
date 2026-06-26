@@ -1,8 +1,8 @@
 <?php
 /**
- * CHIP for WooCommerce Gateway - Duitnow QR
+ * CHIP for WooCommerce Gateway - DuitNow QR
  *
- * WooCommerce payment gateway class for Duitnow QR payments.
+ * WooCommerce payment gateway class for DuitNow QR payments.
  *
  * @package CHIP for WooCommerce
  */
@@ -12,14 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Chip_Woocommerce_Gateway_6 class for Duitnow QR payments.
+ * Chip_Woocommerce_Gateway_6 class for DuitNow QR payments.
  */
 class Chip_Woocommerce_Gateway_6 extends Chip_Woocommerce_Gateway {
 
 	/**
 	 * Preferred payment type.
 	 */
-	const PREFERRED_TYPE = 'Duitnow QR';
+	const PREFERRED_TYPE = 'DuitNow QR';
 
 	/**
 	 * Initialize gateway ID.
@@ -36,7 +36,7 @@ class Chip_Woocommerce_Gateway_6 extends Chip_Woocommerce_Gateway {
 	 * @return void
 	 */
 	protected function init_title() {
-		$this->title = __( 'Duitnow QR', 'chip-for-woocommerce' );
+		$this->title = __( 'DuitNow QR', 'chip-for-woocommerce' );
 	}
 
 	/**
@@ -48,6 +48,6 @@ class Chip_Woocommerce_Gateway_6 extends Chip_Woocommerce_Gateway {
 		parent::init_form_fields();
 		$this->form_fields['display_logo']['default']             = 'duitnow_only';
 		$this->form_fields['payment_method_whitelist']['default'] = array( 'duitnow_qr' );
-		$this->form_fields['description']['default']              = __( 'Pay with Duitnow QR', 'chip-for-woocommerce' );
+		$this->form_fields['description']['default']              = __( 'Pay with DuitNow QR', 'chip-for-woocommerce' );
 	}
 }

@@ -2802,7 +2802,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
-			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
+			$ewallet_list['duitnow-qr'] = __( 'DuitNow QR', 'chip-for-woocommerce' );
 		}
 
 		if ( has_filter( 'wc_' . $this->id . '_list_razer_ewallets' ) ) {
