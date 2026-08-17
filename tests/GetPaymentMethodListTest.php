@@ -22,6 +22,7 @@ class GetPaymentMethodListTest extends GatewayTestCase {
 			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'DuitNow QR',
+			'crypto_coin'     => 'Crypto Coin',
 		);
 		$this->assertSame( $expected, $actual );
 	}

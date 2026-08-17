@@ -3540,6 +3540,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'DuitNow QR',
+			'crypto_coin'     => 'Crypto Coin',
 		);
 	}
 
