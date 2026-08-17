@@ -3522,7 +3522,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'razer_grabpay'   => 'GrabPay',
 			'razer_maybankqr' => 'Maybank QRPay',
 			'razer_shopeepay' => 'ShopeePay',
-			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'DuitNow QR',
 		);
