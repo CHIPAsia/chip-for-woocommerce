@@ -13,8 +13,10 @@ class ConstructorGroupExpansionTest extends GatewayTestCase {
 	 * The real constructor:
 	 *   1. Applies a backward-compat migration (collapses legacy
 	 *      [visa, mastercard, maestro] to [card]).
-	 *   2. Expands 'duitnow_qr' to DUITNOW_GROUP.
-	 *   3. Expands 'card' to CARD_GROUP.
+	 *   2. Migrates legacy 'razer_shopeepay' to 'shopee_pay' in-memory.
+	 *   3. Expands 'duitnow_qr' to DUITNOW_GROUP.
+	 *   4. Expands 'shopee_pay' to SHOPEE_GROUP.
+	 *   5. Expands 'card' to CARD_GROUP.
 	 *
 	 * We can't run the real constructor (depends on WC_Payment_Gateway),
 	 * so we replicate the logic here.
@@ -27,10 +29,25 @@ class ConstructorGroupExpansionTest extends GatewayTestCase {
 				$whitelist[] = 'card';
 			}
 		}
+		// Backward-compat: legacy 'razer_shopeepay' -> 'shopee_pay'.
+		if ( in_array( 'razer_shopeepay', $whitelist, true ) && ! in_array( 'shopee_pay', $whitelist, true ) ) {
+			$whitelist = array_map(
+				static function ( $method ) {
+					return 'razer_shopeepay' === $method ? 'shopee_pay' : $method;
+				},
+				$whitelist
+			);
+		}
 		// duitnow_qr group expansion.
 		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
 			$whitelist = array_values(
 				array_unique( array_merge( $whitelist, Chip_Woocommerce_Gateway::DUITNOW_GROUP ) )
+			);
+		}
+		// shopee_pay group expansion.
+		if ( count( array_intersect( $whitelist, Chip_Woocommerce_Gateway::SHOPEE_GROUP ) ) > 0 ) {
+			$whitelist = array_values(
+				array_unique( array_merge( $whitelist, Chip_Woocommerce_Gateway::SHOPEE_GROUP ) )
 			);
 		}
 		// card group expansion.
@@ -76,6 +93,44 @@ class ConstructorGroupExpansionTest extends GatewayTestCase {
 		$this->assertSame(
 			array( 'duitnow_qr', 'dnqr' ),
 			$this->processWhitelist( $gateway, array( 'duitnow_qr', 'dnqr' ) )
+		);
+	}
+
+	public function test_shopee_pay_expansion() {
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'shopee_pay', 'razer_shopeepay' ),
+			$this->processWhitelist( $gateway, array( 'shopee_pay' ) )
+		);
+	}
+
+	public function test_backward_compat_migrates_legacy_razer_shopeepay_to_shopee_pay() {
+		// A merchant who saved the legacy 'razer_shopeepay' key is migrated
+		// in-memory to 'shopee_pay', then expanded to the full group. The
+		// dashboard now stores 'shopee_pay'.
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'shopee_pay', 'razer_shopeepay' ),
+			$this->processWhitelist( $gateway, array( 'razer_shopeepay' ) )
+		);
+	}
+
+	public function test_backward_compat_migrates_legacy_key_alongside_other_methods() {
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'fpx', 'shopee_pay', 'razer_shopeepay' ),
+			$this->processWhitelist( $gateway, array( 'fpx', 'razer_shopeepay' ) )
+		);
+	}
+
+	public function test_backward_compat_is_idempotent_when_shopee_pay_present() {
+		// When 'shopee_pay' is already in the whitelist, the migration is a
+		// no-op and the group expansion still works. SHOPEE_GROUP order
+		// ({razer_shopeepay, shopee_pay}) is preserved by the merge.
+		$gateway = $this->newGateway();
+		$this->assertSame(
+			array( 'razer_shopeepay', 'shopee_pay' ),
+			$this->processWhitelist( $gateway, array( 'razer_shopeepay', 'shopee_pay' ) )
 		);
 	}
 

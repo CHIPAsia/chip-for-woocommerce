@@ -41,15 +41,16 @@ class ResolveShopeeMethodsTest extends GatewayTestCase {
 	}
 
 	public function test_prefers_shopee_pay_when_both_available() {
-		// Input [razer_shopeepay, shopee_pay] (post-load-time expansion),
-		// API returns [razer_shopeepay, shopee_pay] -> output [shopee_pay]
-		// (razer_shopeepay dropped due to shopee_pay priority).
+		// Input [shopee_pay] (modern dashboard key; expanded to the full
+		// group internally), API returns [razer_shopeepay, shopee_pay]
+		// -> output [shopee_pay] (razer_shopeepay dropped due to
+		// shopee_pay priority).
 		$gateway = $this->gatewayWithApi( array( 'available_payment_methods' => array( 'razer_shopeepay', 'shopee_pay' ) ) );
 
 		$result = $this->callGatewayMethod(
 			$gateway,
 			'resolve_payment_method_groups',
-			array( array( 'razer_shopeepay', 'shopee_pay' ), 'MYR', 12345 )
+			array( array( 'shopee_pay' ), 'MYR', 12345 )
 		);
 
 		$this->assertSame( array( 'shopee_pay' ), $result );
@@ -60,19 +61,39 @@ class ResolveShopeeMethodsTest extends GatewayTestCase {
 	}
 
 	public function test_falls_back_to_razer_shopeepay_when_modern_unavailable() {
-		// Input [razer_shopeepay, shopee_pay], API returns [razer_shopeepay]
+		// Input [shopee_pay], API returns [razer_shopeepay]
 		// -> output [razer_shopeepay] (shopee_pay not available).
 		$gateway = $this->gatewayWithApi( array( 'available_payment_methods' => array( 'razer_shopeepay' ) ) );
 
 		$result = $this->callGatewayMethod(
 			$gateway,
 			'resolve_payment_method_groups',
-			array( array( 'razer_shopeepay', 'shopee_pay' ), 'MYR', 12345 )
+			array( array( 'shopee_pay' ), 'MYR', 12345 )
 		);
 
 		$this->assertSame( array( 'razer_shopeepay' ), $result );
 		$this->assertSame(
 			array( 'razer_shopeepay' ),
+			$this->getGatewayProperty( $gateway, 'resolved_shopee_group' )
+		);
+	}
+
+	public function test_legacy_razer_shopeepay_input_resolves_to_shopee_pay() {
+		// Backward compat: even if a caller passes the legacy
+		// 'razer_shopeepay' key directly to the resolver (bypassing the
+		// constructor's in-memory migration), the group-intersect + priority
+		// logic still emits the modern 'shopee_pay' when both are available.
+		$gateway = $this->gatewayWithApi( array( 'available_payment_methods' => array( 'razer_shopeepay', 'shopee_pay' ) ) );
+
+		$result = $this->callGatewayMethod(
+			$gateway,
+			'resolve_payment_method_groups',
+			array( array( 'razer_shopeepay' ), 'MYR', 12345 )
+		);
+
+		$this->assertSame( array( 'shopee_pay' ), $result );
+		$this->assertSame(
+			array( 'shopee_pay' ),
 			$this->getGatewayProperty( $gateway, 'resolved_shopee_group' )
 		);
 	}
@@ -88,10 +109,11 @@ class ResolveShopeeMethodsTest extends GatewayTestCase {
 		$result = $this->callGatewayMethod(
 			$gateway,
 			'resolve_payment_method_groups',
-			array( array( 'razer_shopeepay' ), 'MYR', 12345 )
+			array( array( 'shopee_pay' ), 'MYR', 12345 )
 		);
 
-		$this->assertSame( array( 'razer_shopeepay', 'shopee_pay' ), $result );
+		$this->assertSame( array( 'shopee_pay', 'razer_shopeepay' ), $result );
+		// resolved_shopee_group mirrors SHOPEE_GROUP order on API failure.
 		$this->assertSame(
 			array( 'razer_shopeepay', 'shopee_pay' ),
 			$this->getGatewayProperty( $gateway, 'resolved_shopee_group' )
@@ -112,7 +134,7 @@ class ResolveShopeeMethodsTest extends GatewayTestCase {
 		$result = $this->callGatewayMethod(
 			$gateway,
 			'resolve_payment_method_groups',
-			array( array( 'duitnow_qr', 'razer_shopeepay' ), 'MYR', 12345 )
+			array( array( 'duitnow_qr', 'shopee_pay' ), 'MYR', 12345 )
 		);
 
 		$this->assertSame( array( 'dnqr', 'shopee_pay' ), $result );
@@ -127,14 +149,14 @@ class ResolveShopeeMethodsTest extends GatewayTestCase {
 	}
 
 	public function test_non_group_methods_preserved() {
-		// Input [fpx, razer_shopeepay], API returns [fpx, shopee_pay].
+		// Input [fpx, shopee_pay], API returns [fpx, shopee_pay].
 		// fpx is a non-group method and is preserved; shopee_pay is resolved.
 		$gateway = $this->gatewayWithApi( array( 'available_payment_methods' => array( 'fpx', 'shopee_pay' ) ) );
 
 		$result = $this->callGatewayMethod(
 			$gateway,
 			'resolve_payment_method_groups',
-			array( array( 'fpx', 'razer_shopeepay' ), 'MYR', 12345 )
+			array( array( 'fpx', 'shopee_pay' ), 'MYR', 12345 )
 		);
 
 		$this->assertSame( array( 'fpx', 'shopee_pay' ), $result );

@@ -340,8 +340,24 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			);
 		}
 
+		// Backward-compat: a merchant who saved the legacy 'razer_shopeepay'
+		// key (the old multiselect value) is migrated in-memory to the
+		// modern 'shopee_pay' key so the dashboard stores 'shopee_pay'.
+		// Only applied when 'shopee_pay' is not already present (idempotent).
+		// In-memory only -- the saved option is not mutated. The migration
+		// runs before the group expansion below so the single legacy key is
+		// first normalised to 'shopee_pay' and then widened to the full group.
+		if ( in_array( 'razer_shopeepay', $whitelist, true ) && ! in_array( 'shopee_pay', $whitelist, true ) ) {
+			$whitelist = array_map(
+				static function ( $method ) {
+					return 'razer_shopeepay' === $method ? 'shopee_pay' : $method;
+				},
+				$whitelist
+			);
+		}
+
 		// Shopee Pay group expansion: when the merchant selects
-		// 'razer_shopeepay' in the multiselect, that selection means
+		// 'shopee_pay' in the multiselect, that selection means
 		// "the Shopee Pay group" -- i.e. the plugin should pick whichever
 		// of {razer_shopeepay, shopee_pay} the merchant actually has at
 		// runtime, prioritizing shopee_pay. Expand the single multiselect
@@ -3521,7 +3537,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'razer_atome'     => 'Atome',
 			'razer_grabpay'   => 'GrabPay',
 			'razer_maybankqr' => 'Maybank QRPay',
-			'razer_shopeepay' => 'ShopeePay',
+			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'DuitNow QR',
 		);

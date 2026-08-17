@@ -27,7 +27,7 @@ class ShopeeGroupTest extends GatewayTestCase {
 	 */
 	public function test_razer_url_prefers_shopee_pay_when_resolved() {
 		$gateway = $this->newGateway( array(
-			'payment_method_whitelist' => array( 'razer_shopeepay', 'shopee_pay' ),
+			'payment_method_whitelist' => array( 'shopee_pay' ),
 			'resolved_shopee_group'    => array( 'shopee_pay' ),
 		) );
 
@@ -38,11 +38,11 @@ class ShopeeGroupTest extends GatewayTestCase {
 
 	/**
 	 * When the resolver has not populated resolved_shopee_group, build_razer_url()
-	 * falls back to razer_shopeepay (the legacy single-multiselect key).
+	 * falls back to razer_shopeepay (the legacy fallback member of the group).
 	 */
 	public function test_razer_url_falls_back_to_razer_shopeepay_when_not_resolved() {
 		$gateway = $this->newGateway( array(
-			'payment_method_whitelist' => array( 'razer_shopeepay' ),
+			'payment_method_whitelist' => array( 'shopee_pay' ),
 			'resolved_shopee_group'    => array(),
 		) );
 
@@ -52,8 +52,8 @@ class ShopeeGroupTest extends GatewayTestCase {
 	}
 
 	/**
-	 * list_razer_ewallets() shows ShopeePay when either the legacy
-	 * razer_shopeepay or modern shopee_pay is in the whitelist.
+	 * list_razer_ewallets() shows ShopeePay when the modern shopee_pay
+	 * dashboard key is in the whitelist.
 	 */
 	public function test_list_razer_ewallets_shows_shopeepay_for_modern_key() {
 		$gateway  = $this->newGateway( array( 'payment_method_whitelist' => array( 'shopee_pay' ) ) );
@@ -61,6 +61,10 @@ class ShopeeGroupTest extends GatewayTestCase {
 		$this->assertArrayHasKey( 'ShopeePay', $ewallets );
 	}
 
+	/**
+	 * list_razer_ewallets() still shows ShopeePay for the legacy
+	 * razer_shopeepay key (backward compat).
+	 */
 	public function test_list_razer_ewallets_shows_shopeepay_for_legacy_key() {
 		$gateway  = $this->newGateway( array( 'payment_method_whitelist' => array( 'razer_shopeepay' ) ) );
 		$ewallets = $this->callGatewayMethod( $gateway, 'list_razer_ewallets' );
