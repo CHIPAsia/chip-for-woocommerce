@@ -2887,8 +2887,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			if ( '' === $code || 'duitnow-qr' === $code || __( 'Choose your e-wallet', 'chip-for-woocommerce' ) === $label ) {
 				continue;
 			}
-			// Map display code to whitelist key.
-			$whitelist_key = 'razer_' . strtolower( str_replace( '-', '_', $code ) );
+			// Map display code to whitelist key. Use an explicit map (mirroring
+			// build_razer_url) because a naive slugify of the display code does
+			// not match the whitelist keys for Maybank QRPay and Touch 'n Go.
+			$display_to_key = array(
+				'Atome'           => 'razer_atome',
+				'GrabPay'         => 'razer_grabpay',
+				'MB2U_QRPay-Push' => 'razer_maybankqr',
+				'ShopeePay'       => 'razer_shopeepay',
+				'TNG-EWALLET'     => 'razer_tng',
+			);
+			if ( ! isset( $display_to_key[ $code ] ) ) {
+				continue;
+			}
+			$whitelist_key = $display_to_key[ $code ];
 			if ( ! in_array( $whitelist_key, $this->payment_method_whitelist, true ) ) {
 				continue;
 			}

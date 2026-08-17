@@ -79,6 +79,24 @@ class UnifiedPaymentMethodListTest extends GatewayTestCase {
 		}
 	}
 
+	public function test_returns_maybank_qrpay_when_razer_maybankqr_whitelisted() {
+		// Regression: the display code 'MB2U_QRPay-Push' must map to the
+		// whitelist key 'razer_maybankqr', not a naive slugified key.
+		$gateway = $this->newGateway( array( 'payment_method_whitelist' => array( 'razer_maybankqr' ) ) );
+		$result  = $this->callGatewayMethod( $gateway, 'list_unified_payment_methods' );
+		$this->assertArrayHasKey( 'razer:MB2U_QRPay-Push', $result );
+		$this->assertSame( 'Maybank QRPay', $result['razer:MB2U_QRPay-Push'] );
+	}
+
+	public function test_returns_tng_when_razer_tng_whitelisted() {
+		// Regression: the display code 'TNG-EWALLET' must map to the
+		// whitelist key 'razer_tng', not a naive slugified key.
+		$gateway = $this->newGateway( array( 'payment_method_whitelist' => array( 'razer_tng' ) ) );
+		$result  = $this->callGatewayMethod( $gateway, 'list_unified_payment_methods' );
+		$this->assertArrayHasKey( 'razer:TNG-EWALLET', $result );
+		$this->assertSame( "Touch 'n Go eWallet", $result['razer:TNG-EWALLET'] );
+	}
+
 	public function test_returns_all_categories_for_combined_whitelist() {
 		// Whitelist with fpx, a razer, dnqr, and card -> all four categories present.
 		$gateway = $this->newGateway( array(
