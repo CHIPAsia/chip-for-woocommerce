@@ -122,13 +122,13 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 		$bypass_chip                = $this->gateway->get_bypass_chip();
 
 		// Exclude razer_atome.
-		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
+		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng' );
 
 		// Determine which bank type is needed for lazy loading.
 		$bank_type = '';
 		if ( is_array( $whitelisted_payment_method ) && 'yes' === $bypass_chip ) {
 			$has_fpx   = in_array( 'fpx', $whitelisted_payment_method, true ) || in_array( 'fpx_b2b1', $whitelisted_payment_method, true );
-			$has_razer = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) ) > 0;
+			$has_razer = count( preg_grep( '/^(razer_|shopee_pay)/', $whitelisted_payment_method ) ) > 0;
 			$has_card  = count( array_intersect( $whitelisted_payment_method, array( 'visa', 'mastercard', 'maestro' ) ) ) > 0;
 
 			// Single-method cases: fpx, fpx_b2b1, razer, card (legacy 'fpx' / 'fpx_b2b1' / 'razer' / 'card' stand-alone flows).
@@ -147,7 +147,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				$has_dnqr       = in_array( 'duitnow_qr', $whitelisted_payment_method, true )
 					|| in_array( 'dnqr', $whitelisted_payment_method, true );
 				$has_dropdown   = $has_fpx || $has_razer || $has_dnqr;
-				$dropdown_count = count( preg_grep( '/^razer_/', $whitelisted_payment_method ) );
+				$dropdown_count = count( preg_grep( '/^(razer_|shopee_pay)/', $whitelisted_payment_method ) );
 				if ( $has_fpx ) {
 					++$dropdown_count;
 				}
@@ -201,11 +201,11 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 
 		// Card payment methods that support direct post.
 		$card_methods       = array( 'visa', 'mastercard', 'maestro' );
-		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'razer_tng' );
+		$razer_ewallet_list = array( 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng' );
 
 		if ( is_array( $pm_whitelist ) && 'yes' === $bypass_chip ) {
 			$has_fpx   = in_array( 'fpx', $pm_whitelist, true ) || in_array( 'fpx_b2b1', $pm_whitelist, true );
-			$has_razer = count( preg_grep( '/^razer_/', $pm_whitelist ) ) > 0;
+			$has_razer = count( preg_grep( '/^(razer_|shopee_pay)/', $pm_whitelist ) ) > 0;
 			$has_card  = count( array_intersect( $pm_whitelist, $card_methods ) ) > 0;
 
 			// Single-method cases.
@@ -223,7 +223,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 
 			// Mixed cases.
 			if ( '' === $js_display ) {
-				$dropdown_count = count( preg_grep( '/^razer_/', $pm_whitelist ) );
+				$dropdown_count = count( preg_grep( '/^(razer_|shopee_pay)/', $pm_whitelist ) );
 				if ( $has_fpx ) {
 					++$dropdown_count;
 				}

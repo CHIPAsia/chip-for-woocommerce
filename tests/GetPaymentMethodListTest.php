@@ -20,6 +20,7 @@ class GetPaymentMethodListTest extends GatewayTestCase {
 			'razer_grabpay'   => 'GrabPay',
 			'razer_maybankqr' => 'Maybank QRPay',
 			'razer_shopeepay' => 'ShopeePay',
+			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'DuitNow QR',
 		);
