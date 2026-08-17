@@ -1,10 +1,8 @@
-name: WordPress Plugin Check (Release)
+name: WordPress Plugin Check (Main)
 
 on:
   push:
-    tags: [ '**' ]
-  release:
-    types: [ published ]
+    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
