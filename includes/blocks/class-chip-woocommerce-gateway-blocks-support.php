@@ -147,7 +147,8 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				$has_dnqr       = in_array( 'duitnow_qr', $whitelisted_payment_method, true )
 					|| in_array( 'dnqr', $whitelisted_payment_method, true );
 				$has_crypto     = in_array( 'crypto_coin', $whitelisted_payment_method, true );
-				$has_dropdown   = $has_fpx || $has_razer || $has_dnqr || $has_crypto;
+				$has_mpgs       = count( array_intersect( $whitelisted_payment_method, array( 'mpgs_google_pay', 'mpgs_apple_pay' ) ) ) > 0;
+				$has_dropdown   = $has_fpx || $has_razer || $has_dnqr || $has_crypto || $has_mpgs;
 				$dropdown_count = count( preg_grep( '/^(razer_|shopee_pay)/', $whitelisted_payment_method ) );
 				if ( $has_fpx ) {
 					++$dropdown_count;
@@ -156,6 +157,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 					++$dropdown_count;
 				}
 				if ( $has_crypto ) {
+					++$dropdown_count;
+				}
+				if ( $has_mpgs ) {
 					++$dropdown_count;
 				}
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
@@ -169,6 +173,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				} elseif ( $has_crypto && 1 === count( $whitelisted_payment_method ) ) {
 					// Crypto-only whitelist: the method is auto-selected.
 					$bank_type = 'crypto';
+				} elseif ( $has_mpgs && 1 === count( $whitelisted_payment_method ) ) {
+					// Google Pay / Apple Pay-only whitelist: auto-selected.
+					$bank_type = 'mpgs';
 				}
 			}
 		}
@@ -246,6 +253,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				if ( $has_crypto ) {
 					++$dropdown_count;
 				}
+				$has_mpgs = count( array_intersect( $pm_whitelist, array( 'mpgs_google_pay', 'mpgs_apple_pay' ) ) ) > 0;
+				if ( $has_mpgs ) {
+					++$dropdown_count;
+				}
 				$has_dropdown = $dropdown_count > 0;
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
 					$js_display = 'unified';
@@ -260,6 +271,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				} elseif ( $has_crypto && 1 === count( $pm_whitelist ) ) {
 					// Crypto-only whitelist: auto-submit the method.
 					$js_display = 'crypto';
+				} elseif ( $has_mpgs && 1 === count( $pm_whitelist ) ) {
+					// Google Pay / Apple Pay-only whitelist: auto-submit.
+					$js_display = 'mpgs';
 				}
 			}
 		}

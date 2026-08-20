@@ -335,6 +335,38 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$this->assertSame( 'https://example.com/checkout?preferred=crypto_coin', $result );
 	}
 
+	public function test_mpgs_in_unified_dropdown_list() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'mpgs_google_pay', 'mpgs_apple_pay' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		$this->renderPaymentFields( $gateway );
+
+		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertArrayHasKey( 'mpgs_google_pay', $field['options'] );
+		$this->assertArrayHasKey( 'mpgs_apple_pay', $field['options'] );
+	}
+
+	public function test_bypass_chip_mpgs_uses_checkout_url_with_preferred() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'mpgs_google_pay' ) );
+		$_POST['chip_payment_method'] = 'mpgs_google_pay';
+
+		$result = $this->callGatewayMethod(
+			$gateway,
+			'bypass_chip',
+			array(
+				'https://example.com/direct-post-url',
+				array(
+					'is_test'       => false,
+					'checkout_url'  => 'https://example.com/checkout',
+					'direct_post_url' => 'https://example.com/direct-post-url',
+				),
+			)
+		);
+
+		$this->assertSame( 'https://example.com/checkout?preferred=mpgs_google_pay', $result );
+	}
+
 	public function test_validate_fields_passes_with_hidden_single_method_input() {
 		$gateway = $this->newMixedGateway( array( 'duitnow_qr', 'dnqr' ) );
 		$gateway->supports = array( 'products', 'tokenization' );

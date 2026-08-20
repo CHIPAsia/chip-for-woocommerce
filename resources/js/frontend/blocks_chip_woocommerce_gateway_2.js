@@ -370,9 +370,10 @@ const ContentContainer = (props) => {
   };
 
   // Auto-submit for single-method gateways (DuitNow QR-only e.g. Gateway 6,
-  // or Crypto-only): zero-click UX, no picker is rendered.
+  // Crypto-only, or Google Pay/Apple Pay-only): zero-click UX, no picker.
   const autoMethod = settings.js_display === "dnqr" ? 'dnqr'
-    : settings.js_display === "crypto" ? 'crypto_coin' : '';
+    : settings.js_display === "crypto" ? 'crypto_coin'
+    : settings.js_display === "mpgs" ? 'mpgs_google_pay' : '';
   useEffect(() => {
     if (!autoMethod || typeof onPaymentSetup !== 'function') {
       return undefined;

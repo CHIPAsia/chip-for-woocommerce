@@ -1425,7 +1425,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->bypass_chip ) {
 			return false;
 		}
-		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr', 'dnqr', 'crypto_coin' );
+		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr', 'dnqr', 'crypto_coin', 'mpgs_google_pay', 'mpgs_apple_pay' );
 		return count( array_intersect( $this->payment_method_whitelist, $dropdown_methods ) ) > 0;
 	}
 
@@ -3079,6 +3079,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$list['crypto_coin'] = __( 'Crypto Coin', 'chip-for-woocommerce' );
 		}
 
+		// Google Pay / Apple Pay (only if enabled in the whitelist).
+		if ( in_array( 'mpgs_google_pay', $this->payment_method_whitelist, true ) ) {
+			$list['mpgs_google_pay'] = __( 'Google Pay', 'chip-for-woocommerce' );
+		}
+		if ( in_array( 'mpgs_apple_pay', $this->payment_method_whitelist, true ) ) {
+			$list['mpgs_apple_pay'] = __( 'Apple Pay', 'chip-for-woocommerce' );
+		}
+
 		return $list;
 	}
 
@@ -3112,6 +3120,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 			if ( 'crypto_coin' === $value ) {
 				return $url . '?preferred=crypto_coin';
+			}
+			if ( 'mpgs_google_pay' === $value || 'mpgs_apple_pay' === $value ) {
+				// Google Pay / Apple Pay are wallet methods handled on the
+				// CHIP payment page. Use the checkout URL (the redirect URL
+				// may be a direct_post_url for card-only whitelists, which
+				// cannot carry a ?preferred= parameter).
+				$base = isset( $payment['checkout_url'] ) && ! empty( $payment['checkout_url'] ) ? $payment['checkout_url'] : $url;
+				return $base . '?preferred=' . $value;
 			}
 			// 'card' or any other unrecognised single-method tag: no redirect;
 			// the direct-post flow or default gateway behavior applies. When
