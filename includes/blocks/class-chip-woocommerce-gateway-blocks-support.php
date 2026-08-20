@@ -158,6 +158,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 					$bank_type = 'unified';
 				} elseif ( 0 === count( array_diff( $whitelisted_payment_method, $razer_ewallet_list ) ) ) {
 					$bank_type = 'razer';
+				} elseif ( $has_dnqr && 0 === count( array_diff( $whitelisted_payment_method, array( 'duitnow_qr', 'dnqr' ) ) ) ) {
+					// DuitNow QR-only whitelist (e.g. Gateway 6): the method
+					// is auto-selected; no bank list is needed.
+					$bank_type = 'dnqr';
 				}
 			}
 		}
@@ -238,6 +242,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 					$js_display = 'razer';
 				} elseif ( $has_card && ! $has_dropdown ) {
 					$js_display = 'card';
+				} elseif ( $has_dnqr && 0 === count( array_diff( $pm_whitelist, array( 'duitnow_qr', 'dnqr' ) ) ) ) {
+					// DuitNow QR-only whitelist (e.g. Gateway 6): no picker
+					// needed — the method is auto-selected and submitted.
+					$js_display = 'dnqr';
 				}
 			}
 		}

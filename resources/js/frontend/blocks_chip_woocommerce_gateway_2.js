@@ -368,6 +368,23 @@ const ContentContainer = (props) => {
     emitResponse,
     onChange: setSelectedMethod,
   };
+
+  // DuitNow QR-only gateways (e.g. Gateway 6) keep the zero-click UX: the
+  // method is auto-submitted, no picker is rendered.
+  const isDnqrOnly = settings.js_display === "dnqr";
+  useEffect(() => {
+    if (!isDnqrOnly || typeof onPaymentSetup !== 'function') {
+      return undefined;
+    }
+    const unsubscribe = onPaymentSetup(() => ({
+      type: emitResponse?.responseTypes?.SUCCESS || 'success',
+      meta: { paymentMethodData: { chip_payment_method: 'dnqr' } },
+    }));
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [isDnqrOnly, onPaymentSetup, emitResponse]);
+
   return (
     <>
       <Content />

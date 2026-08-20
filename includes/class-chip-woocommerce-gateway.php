@@ -1456,11 +1456,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Render the unified payment-method dropdown.
+	 * Render the unified payment-method picker.
 	 *
 	 * Emits a single <select name="chip_payment_method"> whose values are
 	 * tag-encoded (e.g. 'fpx:MB2U0227', 'dnqr', 'card'). The 'card' option
 	 * is omitted on order-pay, where the card form is not rendered.
+	 *
+	 * When the merchant has a DuitNow QR-only whitelist (e.g. Gateway 6),
+	 * a dropdown with a single option adds friction and invites support
+	 * tickets; a hidden pre-selected input keeps the previous zero-click
+	 * behavior while still feeding validate_fields()/bypass_chip().
 	 *
 	 * @return void
 	 */
@@ -1468,6 +1473,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$unified = $this->list_unified_payment_methods();
 		if ( is_wc_endpoint_url( 'order-pay' ) ) {
 			unset( $unified['card'] );
+		}
+		if ( 1 === count( $unified ) && isset( $unified['dnqr'] ) ) {
+			echo '<input type="hidden" name="chip_payment_method" value="dnqr" />';
+			return;
 		}
 		$options = array( '' => __( 'Choose a payment method', 'chip-for-woocommerce' ) );
 		foreach ( $unified as $value => $label ) {

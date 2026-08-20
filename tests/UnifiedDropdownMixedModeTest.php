@@ -257,6 +257,50 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$gateway->process_payment( 1 );
 	}
 
+	public function test_single_method_renders_hidden_input_instead_of_dropdown() {
+		// Gateway 6 (DuitNow QR-only) expands ['duitnow_qr'] to the full
+		// group in-memory; a dropdown with a single option adds friction, so
+		// a hidden pre-selected input keeps the zero-click UX.
+		$gateway = $this->newMixedGateway( array( 'duitnow_qr', 'dnqr' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		ob_start();
+		try {
+			$gateway->payment_fields();
+		} finally {
+			$output = ob_get_clean();
+		}
+
+		// No visible dropdown rendered...
+		$this->assertArrayNotHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		// ...but a hidden pre-selected dnqr input is emitted.
+		$this->assertStringContainsString(
+			'<input type="hidden" name="chip_payment_method" value="dnqr" />',
+			$output
+		);
+	}
+
+	public function test_multi_method_still_renders_dropdown() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'duitnow_qr', 'dnqr' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		$this->renderPaymentFields( $gateway );
+
+		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertSame( 'select', $field['type'] );
+	}
+
+	public function test_validate_fields_passes_with_hidden_single_method_input() {
+		$gateway = $this->newMixedGateway( array( 'duitnow_qr', 'dnqr' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		// The hidden pre-selected input posts the value, as a real form
+		// submission would.
+		$_POST['chip_payment_method'] = 'dnqr';
+		$this->assertTrue( $gateway->validate_fields() );
+	}
+
 	/**
 	 * Mixed whitelist + Card selected via Blocks payment_data must proceed
 	 * through the with-context handler (process_payment is invoked so the

@@ -166,6 +166,14 @@ class BlocksSupportClassTest extends PHPUnit\Framework\TestCase {
 		$this->assertSame( '', $data['js_display'] );
 	}
 
+	public function test_js_display_dnqr_for_duitnow_qr_only() {
+		// Gateway 6 preset: saved ['duitnow_qr'] expands to the full group.
+		// No picker should render; the method is auto-submitted.
+		list( $support ) = $this->newSupport( array( 'payment_method_whitelist' => array( 'duitnow_qr' ) ) );
+		$data = $support->get_payment_method_data();
+		$this->assertSame( 'dnqr', $data['js_display'] );
+	}
+
 	public function test_get_payment_method_script_handles_returns_block_handle() {
 		// The handle includes the gateway name.
 		list( $support ) = $this->newSupport( array( 'payment_method_whitelist' => array( 'fpx' ) ) );
