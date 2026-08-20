@@ -301,6 +301,26 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$this->assertTrue( $gateway->validate_fields() );
 	}
 
+	public function test_unified_dropdown_script_registered_with_logo_data() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'card', 'visa', 'mastercard', 'maestro' ) );
+		$gateway->supports = array( 'products' );
+
+		$GLOBALS['__chip_test_scripts']    = array();
+		$GLOBALS['__chip_test_localized']  = array();
+
+		$gateway->register_script();
+
+		// The unified-dropdown enhancer script is registered.
+		$this->assertArrayHasKey( 'wc-wc_gateway_chip-unified-dropdown', $GLOBALS['__chip_test_scripts'] );
+
+		// Logo base URLs and empty unavailable-bank lists are localized.
+		$localized = $GLOBALS['__chip_test_localized']['wc-wc_gateway_chip-unified-dropdown']['gateway_unified_option'] ?? array();
+		$this->assertNotEmpty( $localized['unified']['fpx_logo_base'] );
+		$this->assertNotEmpty( $localized['unified']['razer_logo_base'] );
+		$this->assertArrayHasKey( 'unavailable_fpx', $localized['unified'] );
+		$this->assertArrayHasKey( 'unavailable_b2b1', $localized['unified'] );
+	}
+
 	/**
 	 * Mixed whitelist + Card selected via Blocks payment_data must proceed
 	 * through the with-context handler (process_payment is invoked so the

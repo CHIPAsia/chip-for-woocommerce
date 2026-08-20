@@ -1478,6 +1478,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			echo '<input type="hidden" name="chip_payment_method" value="dnqr" />';
 			return;
 		}
+		wp_enqueue_script( "wc-{$this->id}-unified-dropdown" );
 		$options = array( '' => __( 'Choose a payment method', 'chip-for-woocommerce' ) );
 		foreach ( $unified as $value => $label ) {
 			$options[ $value ] = $label;
@@ -1523,8 +1524,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$this->render_unified_dropdown();
 			}
 
-			// Note: selectWoo initialization for the unified dropdown is added
-			// in resources/js/frontend/chip-unified-dropdown.js (Task 9).
+			// Note: selectWoo initialization, bank/e-wallet logos, and
+			// offline-bank disabling for the unified dropdown are handled
+			// in includes/js/chip-unified-dropdown.js.
 
 		} else {
 			parent::payment_fields();
@@ -1533,8 +1535,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$this->render_unified_dropdown();
 			}
 
-			// Note: selectWoo initialization for the unified dropdown is added
-			// in resources/js/frontend/chip-unified-dropdown.js (Task 9).
+			// Note: selectWoo initialization, bank/e-wallet logos, and
+			// offline-bank disabling for the unified dropdown are handled
+			// in includes/js/chip-unified-dropdown.js.
 			// Note: wc_gateway_chip_5 requires no additional fields.
 		}
 
@@ -3546,6 +3549,31 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			array(
 				'id'             => $this->id,
 				'card_logos_url' => CHIP_WOOCOMMERCE_URL . 'assets/',
+			)
+		);
+
+		wp_register_script(
+			"wc-{$this->id}-unified-dropdown",
+			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/chip-unified-dropdown.js',
+			array( 'jquery' ),
+			CHIP_WOOCOMMERCE_MODULE_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			"wc-{$this->id}-unified-dropdown",
+			'gateway_unified_option',
+			array(
+				'id'                => $this->id,
+				'card_logos_url'    => CHIP_WOOCOMMERCE_URL . 'assets/',
+				'unified'           => array(
+					'fpx_logo_base'   => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
+					'razer_logo_base' => CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/',
+					'dnqr_logo_url'   => CHIP_WOOCOMMERCE_URL . 'assets/duitnow_qr.png',
+					'card_logo_url'   => CHIP_WOOCOMMERCE_URL . 'assets/card.png',
+					'unavailable_fpx' => $this->get_unavailable_fpx_banks(),
+					'unavailable_b2b1' => $this->get_unavailable_fpx_b2b1_banks(),
+				),
 			)
 		);
 	}

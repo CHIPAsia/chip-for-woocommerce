@@ -47,6 +47,18 @@ if ( ! function_exists( 'plugin_dir_path' ) ) {
 	}
 }
 
+if ( ! function_exists( 'trailingslashit' ) ) {
+	/**
+	 * Stub for trailingslashit().
+	 *
+	 * @param string $string String to ensure trailing slash.
+	 * @return string
+	 */
+	function trailingslashit( $string ) {
+		return rtrim( $string, '/' ) . '/';
+	}
+}
+
 if ( ! function_exists( 'add_action' ) ) {
 	/**
 	 * Stub for add_action().
