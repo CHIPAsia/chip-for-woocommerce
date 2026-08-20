@@ -188,14 +188,14 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 
 		// Provide API URL for lazy loading banks instead of embedding data.
 		$localize_variable = array(
-			'id'                => $this->name,
-			'bank_type'         => $bank_type,
-			'banks_api'         => ! empty( $bank_type ) ? rest_url( "chip/v1/banks/{$bank_type}/{$this->name}" ) : '',
-			'nonce'             => wp_create_nonce( 'wp_rest' ),
-			'logo_base_url'     => $logo_base_url,
-			'fpx_logo_base_url' => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
+			'id'                  => $this->name,
+			'bank_type'           => $bank_type,
+			'banks_api'           => ! empty( $bank_type ) ? rest_url( "chip/v1/banks/{$bank_type}/{$this->name}" ) : '',
+			'nonce'               => wp_create_nonce( 'wp_rest' ),
+			'logo_base_url'       => $logo_base_url,
+			'fpx_logo_base_url'   => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
 			'razer_logo_base_url' => CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/',
-			'card_logos_url'    => CHIP_WOOCOMMERCE_URL . 'assets/',
+			'card_logos_url'      => CHIP_WOOCOMMERCE_URL . 'assets/',
 		);
 
 		wp_localize_script( "wc-{$this->name}-blocks", 'gateway_' . $this->name, $localize_variable );
