@@ -12,32 +12,18 @@ class ConstructorGroupExpansionTest extends GatewayTestCase {
 	 *
 	 * The real constructor:
 	 *   1. Applies a backward-compat migration (collapses legacy
-	 *      [visa, mastercard, maestro] to [card]).
-	 *   2. Migrates legacy 'razer_shopeepay' to 'shopee_pay' in-memory.
-	 *   3. Expands 'duitnow_qr' to DUITNOW_GROUP.
-	 *   4. Expands 'shopee_pay' to SHOPEE_GROUP.
-	 *   5. Expands 'card' to CARD_GROUP.
+	 *      [visa, mastercard, maestro] to [card] and migrates legacy
+	 *      'razer_shopeepay' to 'shopee_pay').
+	 *   2. Expands 'duitnow_qr' to DUITNOW_GROUP.
+	 *   3. Expands 'shopee_pay' to SHOPEE_GROUP.
+	 *   4. Expands 'card' to CARD_GROUP.
 	 *
 	 * We can't run the real constructor (depends on WC_Payment_Gateway),
 	 * so we replicate the logic here.
 	 */
 	private function processWhitelist( Chip_Woocommerce_Gateway $gateway, array $whitelist ): array {
 		// Backward-compat migration.
-		if ( count( array_intersect( $whitelist, Chip_Woocommerce_Gateway::CARD_GROUP ) ) > 0 ) {
-			$whitelist = array_values( array_diff( $whitelist, Chip_Woocommerce_Gateway::CARD_GROUP ) );
-			if ( ! in_array( 'card', $whitelist, true ) ) {
-				$whitelist[] = 'card';
-			}
-		}
-		// Backward-compat: legacy 'razer_shopeepay' -> 'shopee_pay'.
-		if ( in_array( 'razer_shopeepay', $whitelist, true ) && ! in_array( 'shopee_pay', $whitelist, true ) ) {
-			$whitelist = array_map(
-				static function ( $method ) {
-					return 'razer_shopeepay' === $method ? 'shopee_pay' : $method;
-				},
-				$whitelist
-			);
-		}
+		$whitelist = $gateway->migrate_legacy_payment_method_whitelist( $whitelist );
 		// duitnow_qr group expansion.
 		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
 			$whitelist = array_values(

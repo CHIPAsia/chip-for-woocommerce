@@ -317,14 +317,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		// Backward-compat migration: legacy saved values contained
-		// 'visa', 'mastercard', 'maestro' as separate multiselect keys.
-		// Collapse them to the single 'card' key in-memory. The next save
-		// of the gateway settings persists the new shape.
-		if ( count( array_intersect( $whitelist, self::CARD_GROUP ) ) > 0 ) {
-			$whitelist = array_values( array_diff( $whitelist, self::CARD_GROUP ) );
-			if ( ! in_array( 'card', $whitelist, true ) ) {
-				$whitelist[] = 'card';
-			}
+		// 'visa', 'mastercard', 'maestro' (and 'razer_shopeepay') as
+		// separate multiselect keys. Those keys no longer exist in the
+		// admin options list (replaced by 'card' and 'shopee_pay'), so a
+		// merchant with a legacy saved value would see nothing selected
+		// in the admin multiselect. Collapse them to the modern keys
+		// in-memory AND persist the migrated shape, so the admin renders
+		// the correct selection immediately. The write only happens when
+		// a legacy key is present, so it is a one-time migration
+		// (idempotent). Runs before the group expansions below so the
+		// single modern keys are then widened to their full groups.
+		$migrated_whitelist = $this->migrate_legacy_payment_method_whitelist( $whitelist );
+		if ( $migrated_whitelist !== $whitelist ) {
+			$this->update_option( 'payment_method_whitelist', $migrated_whitelist );
+			$whitelist = $migrated_whitelist;
 		}
 
 		// DuitNow QR group expansion: when the merchant selects 'duitnow_qr'
@@ -337,22 +343,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
 			$whitelist = array_values(
 				array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) )
-			);
-		}
-
-		// Backward-compat: a merchant who saved the legacy 'razer_shopeepay'
-		// key (the old multiselect value) is migrated in-memory to the
-		// modern 'shopee_pay' key so the dashboard stores 'shopee_pay'.
-		// Only applied when 'shopee_pay' is not already present (idempotent).
-		// In-memory only -- the saved option is not mutated. The migration
-		// runs before the group expansion below so the single legacy key is
-		// first normalised to 'shopee_pay' and then widened to the full group.
-		if ( in_array( 'razer_shopeepay', $whitelist, true ) && ! in_array( 'shopee_pay', $whitelist, true ) ) {
-			$whitelist = array_map(
-				static function ( $method ) {
-					return 'razer_shopeepay' === $method ? 'shopee_pay' : $method;
-				},
-				$whitelist
 			);
 		}
 
@@ -1406,7 +1396,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->bypass_chip ) {
 			return false;
 		}
-		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr' );
+		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr', 'dnqr' );
 		return count( array_intersect( $this->payment_method_whitelist, $dropdown_methods ) ) > 0;
 	}
 
@@ -3781,6 +3771,49 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	public function get_payment_method_whitelist() {
 		return $this->payment_method_whitelist;
+	}
+
+	/**
+	 * Migrate a legacy saved payment_method_whitelist to the modern shape.
+	 *
+	 * The unified dropdown redesign removed 'visa', 'mastercard', 'maestro'
+	 * and 'razer_shopeepay' from the admin multiselect options, replacing
+	 * them with the 'card' and 'shopee_pay' group keys. Merchants who saved
+	 * a legacy value would otherwise see nothing selected in the admin
+	 * multiselect (the saved keys are no longer options). This method:
+	 *
+	 *   1. Collapses any 'visa' / 'mastercard' / 'maestro' entries to the
+	 *      single 'card' key (added if missing).
+	 *   2. Renames a lone legacy 'razer_shopeepay' to 'shopee_pay' (only
+	 *      when 'shopee_pay' is not already present, so it is idempotent).
+	 *
+	 * Returns the input array unchanged when no legacy key is present, so
+	 * callers can detect "changed" by strict comparison and persist the
+	 * migrated shape exactly once.
+	 *
+	 * @param array $whitelist Saved payment_method_whitelist.
+	 * @return array Migrated whitelist (identical to input when no change).
+	 */
+	public function migrate_legacy_payment_method_whitelist( array $whitelist ) {
+		// 1. Collapse legacy card-network keys to the 'card' group key.
+		if ( count( array_intersect( $whitelist, self::CARD_GROUP ) ) > 0 ) {
+			$whitelist = array_values( array_diff( $whitelist, self::CARD_GROUP ) );
+			if ( ! in_array( 'card', $whitelist, true ) ) {
+				$whitelist[] = 'card';
+			}
+		}
+
+		// 2. Rename a lone legacy 'razer_shopeepay' to 'shopee_pay'.
+		if ( in_array( 'razer_shopeepay', $whitelist, true ) && ! in_array( 'shopee_pay', $whitelist, true ) ) {
+			$whitelist = array_map(
+				static function ( $method ) {
+					return 'razer_shopeepay' === $method ? 'shopee_pay' : $method;
+				},
+				$whitelist
+			);
+		}
+
+		return $whitelist;
 	}
 
 	/**

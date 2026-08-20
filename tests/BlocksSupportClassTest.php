@@ -84,13 +84,11 @@ class BlocksSupportClassTest extends PHPUnit\Framework\TestCase {
 	 * Mirror the constructor's whitelist expansion.
 	 */
 	private function expandWhitelist( array $whitelist ): array {
-		// Backward-compat: collapse [visa, mastercard, maestro] to [card].
-		if ( count( array_intersect( $whitelist, Chip_Woocommerce_Gateway::CARD_GROUP ) ) > 0 ) {
-			$whitelist = array_values( array_diff( $whitelist, Chip_Woocommerce_Gateway::CARD_GROUP ) );
-			if ( ! in_array( 'card', $whitelist, true ) ) {
-				$whitelist[] = 'card';
-			}
-		}
+		// Backward-compat migration (legacy card keys -> 'card',
+		// legacy 'razer_shopeepay' -> 'shopee_pay').
+		$gateway_reflection = new ReflectionClass( 'Chip_Woocommerce_Gateway' );
+		$gateway            = $gateway_reflection->newInstanceWithoutConstructor();
+		$whitelist          = $gateway->migrate_legacy_payment_method_whitelist( $whitelist );
 		// duitnow_qr -> DUITNOW_GROUP.
 		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
 			$whitelist = array_values(
