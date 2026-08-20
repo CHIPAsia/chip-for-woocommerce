@@ -32,6 +32,7 @@
 import { useState, useEffect, useCallback, useId } from '@wordpress/element';
 import { Icon, chevronDown } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
+import { CustomSelectControl } from '@wordpress/components';
 
 const UnifiedPaymentMethodList = ( props ) => {
     const [ options, setOptions ] = useState( [] );
@@ -115,6 +116,49 @@ const UnifiedPaymentMethodList = ( props ) => {
         return null;
     }
 
+    // Resolve a logo URL for a tag-encoded value (e.g. 'fpx:MB2U0227',
+    // 'razer:GrabPay', 'dnqr', 'card', 'crypto_coin').
+    const logoForTag = ( tag ) => {
+        const parts = tag.split( ':' );
+        const type  = parts[0];
+        const code  = parts.length > 1 ? parts[1] : '';
+        if ( type === 'fpx' || type === 'fpx_b2b1' ) {
+            return props.logoBaseUrl ? props.logoBaseUrl + code + '.png' : '';
+        }
+        if ( type === 'razer' ) {
+            return props.razerLogoBaseUrl ? props.razerLogoBaseUrl + code + '.png' : '';
+        }
+        if ( tag === 'dnqr' ) {
+            return props.cardLogosUrl ? props.cardLogosUrl + 'duitnow_qr.png' : '';
+        }
+        if ( tag === 'card' ) {
+            return props.cardLogosUrl ? props.cardLogosUrl + 'card.png' : '';
+        }
+        return '';
+    };
+
+    const renderOption = ( option ) => {
+        const logoUrl = logoForTag( option.key );
+        return (
+            <span className="chip-unified-option">
+                { logoUrl ? (
+                    <img
+                        className="chip-unified-option-logo"
+                        src={ logoUrl }
+                        onError={ ( e ) => { e.currentTarget.style.display = 'none'; } }
+                        alt=""
+                    />
+                ) : null }
+                <span className="chip-unified-option-text">{ option.name }</span>
+            </span>
+        );
+    };
+
+    const selectOptions = options.map( ( opt ) => ( {
+        key: opt.value,
+        name: opt.label,
+    } ) );
+
     return (
         <div className="wc-blocks-components-select">
             <div className="wc-blocks-components-select__container">
@@ -124,33 +168,21 @@ const UnifiedPaymentMethodList = ( props ) => {
                 >
                     { __( 'Payment method', 'chip-for-woocommerce' ) }
                 </label>
-                <select
-                    id={ inputId }
-                    name="chip_payment_method"
-                    className="wc-blocks-components-select__select chip-unified-payment-method"
-                    data-testid="chip-unified-payment-method"
-                    required
-                    value={ value }
-                    onChange={ ( e ) => {
-                        setValue( e.target.value );
+                <CustomSelectControl
+                    className="chip-unified-payment-method"
+                    label={ __( 'Payment method', 'chip-for-woocommerce' ) }
+                    hideLabelFromVision={ true }
+                    value={ selectOptions.find( ( o ) => o.key === value ) || null }
+                    options={ selectOptions }
+                    onChange={ ( { selectedItem } ) => {
+                        const next = selectedItem ? selectedItem.key : '';
+                        setValue( next );
                         if ( typeof props.onChange === 'function' ) {
-                            props.onChange( e.target.value );
+                            props.onChange( next );
                         }
                     } }
-                >
-                    <option value="" disabled>
-                        { props.placeholder ||
-                            __( 'Choose a payment method', 'chip-for-woocommerce' ) }
-                    </option>
-                    { options.map( ( opt ) => (
-                        <option key={ opt.value } value={ opt.value }>
-                            { opt.label }
-                        </option>
-                    ) ) }
-                </select>
-                <Icon
-                    className="wc-blocks-components-select__expand"
-                    icon={ chevronDown }
+                    getOptionLabel={ renderOption }
+                    renderSelectedValue={ renderOption }
                 />
             </div>
         </div>

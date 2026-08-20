@@ -367,6 +367,9 @@ const ContentContainer = (props) => {
     onPaymentSetup,
     emitResponse,
     onChange: setSelectedMethod,
+    logoBaseUrl: window['gateway_' + PAYMENT_METHOD_NAME]?.fpx_logo_base_url,
+    razerLogoBaseUrl: window['gateway_' + PAYMENT_METHOD_NAME]?.razer_logo_base_url,
+    cardLogosUrl: window['gateway_' + PAYMENT_METHOD_NAME]?.card_logos_url,
   };
 
   // Auto-submit for single-method gateways (DuitNow QR-only e.g. Gateway 6,
