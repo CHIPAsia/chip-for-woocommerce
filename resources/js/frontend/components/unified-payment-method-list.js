@@ -119,6 +119,9 @@ const UnifiedPaymentMethodList = ( props ) => {
     // Resolve a logo URL for a tag-encoded value (e.g. 'fpx:MB2U0227',
     // 'razer:GrabPay', 'dnqr', 'card', 'crypto_coin').
     const logoForTag = ( tag ) => {
+        if ( ! tag ) {
+            return '';
+        }
         const parts = tag.split( ':' );
         const type  = parts[0];
         const code  = parts.length > 1 ? parts[1] : '';
@@ -138,6 +141,9 @@ const UnifiedPaymentMethodList = ( props ) => {
     };
 
     const renderOption = ( option ) => {
+        if ( ! option || ! option.key ) {
+            return null;
+        }
         const logoUrl = logoForTag( option.key );
         return (
             <span className="chip-unified-option">
