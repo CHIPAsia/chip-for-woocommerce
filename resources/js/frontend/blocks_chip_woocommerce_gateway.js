@@ -429,7 +429,9 @@ const ContentContainer = (props) => {
       {isUnified ? (
         <>
           <UnifiedPaymentMethodList {...unifiedProps} />
-          <CardForm {...props} selectedMethod={selectedMethod} isUnified={true} />
+          {selectedMethod === 'card' ? (
+            <CardForm {...props} selectedMethod={selectedMethod} isUnified={true} />
+          ) : null}
         </>
       ) : null}
       {(settings.js_display === "fpx" ||
