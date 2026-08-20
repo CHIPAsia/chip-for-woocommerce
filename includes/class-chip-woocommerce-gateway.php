@@ -1650,13 +1650,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		do_action( 'chip_' . $this->id . '_before_process_payment', $order_id, $this );
 
 		// Start of logic for subscription_payment_method_change_customer supports.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only flow selector, sanitized with absint below.
 		if ( isset( $_GET['change_payment_method'] ) ) {
 			$subscription_id = absint( $_GET['change_payment_method'] );
 			if ( $subscription_id > 0 && function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $subscription_id ) ) {
 				return $this->process_payment_method_change( $subscription_id );
 			}
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		// End of logic for subscription_payment_method_change_customer supports.
 
 		$order   = new WC_Order( $order_id );
