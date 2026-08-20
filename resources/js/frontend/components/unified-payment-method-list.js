@@ -39,6 +39,10 @@ const UnifiedPaymentMethodList = ( props ) => {
     const [ error, setError ]     = useState( null );
     const [ value, setValue ]     = useState( '' );
 
+    // Must be called before any early returns (Rules of Hooks).
+    const generatedId = useId();
+    const inputId = `chip-unified-payment-method-${ generatedId }`;
+
     useEffect( () => {
         if ( ! props.banksApi ) {
             setLoading( false );
@@ -110,9 +114,6 @@ const UnifiedPaymentMethodList = ( props ) => {
     if ( options.length === 0 ) {
         return null;
     }
-
-    const generatedId = useId();
-    const inputId = `chip-unified-payment-method-${ generatedId }`;
 
     return (
         <div className="wc-blocks-components-select">
