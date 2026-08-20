@@ -291,6 +291,50 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$this->assertSame( 'select', $field['type'] );
 	}
 
+	public function test_crypto_in_unified_dropdown_list() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'crypto_coin' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		$this->renderPaymentFields( $gateway );
+
+		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertSame( 'select', $field['type'] );
+		$this->assertArrayHasKey( 'fpx:MBB0228', $field['options'] );
+		$this->assertArrayHasKey( 'crypto_coin', $field['options'] );
+	}
+
+	public function test_crypto_only_renders_hidden_input() {
+		$gateway = $this->newMixedGateway( array( 'crypto_coin' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		ob_start();
+		try {
+			$gateway->payment_fields();
+		} finally {
+			$output = ob_get_clean();
+		}
+
+		$this->assertArrayNotHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$this->assertStringContainsString(
+			'<input type="hidden" name="chip_payment_method" value="crypto_coin" />',
+			$output
+		);
+	}
+
+	public function test_bypass_chip_crypto_coin_builds_preferred_url() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'crypto_coin' ) );
+		$_POST['chip_payment_method'] = 'crypto_coin';
+
+		$result = $this->callGatewayMethod(
+			$gateway,
+			'bypass_chip',
+			array( 'https://example.com/checkout', array( 'is_test' => false ) )
+		);
+
+		$this->assertSame( 'https://example.com/checkout?preferred=crypto_coin', $result );
+	}
+
 	public function test_validate_fields_passes_with_hidden_single_method_input() {
 		$gateway = $this->newMixedGateway( array( 'duitnow_qr', 'dnqr' ) );
 		$gateway->supports = array( 'products', 'tokenization' );

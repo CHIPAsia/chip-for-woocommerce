@@ -84,6 +84,12 @@ class BypassChipTagParserTest extends GatewayTestCase {
 		$this->assertSame( 'https://example.com/checkout', $result );
 	}
 
+	public function test_crypto_coin_tag_builds_preferred_url() {
+		$gateway = $this->newGatewayWithBypass();
+		$result  = $this->callBypass( $gateway, 'crypto_coin' );
+		$this->assertSame( 'https://example.com/checkout?preferred=crypto_coin', $result );
+	}
+
 	public function test_dnqr_tag_uses_resolver_to_choose_dnqr() {
 		// When the resolver has picked 'dnqr', bypass_chip uses it.
 		$gateway = $this->newGateway( array(

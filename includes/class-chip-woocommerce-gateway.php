@@ -1425,7 +1425,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->bypass_chip ) {
 			return false;
 		}
-		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr', 'dnqr' );
+		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr', 'dnqr', 'crypto_coin' );
 		return count( array_intersect( $this->payment_method_whitelist, $dropdown_methods ) ) > 0;
 	}
 
@@ -1474,8 +1474,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( is_wc_endpoint_url( 'order-pay' ) ) {
 			unset( $unified['card'] );
 		}
-		if ( 1 === count( $unified ) && isset( $unified['dnqr'] ) ) {
-			echo '<input type="hidden" name="chip_payment_method" value="dnqr" />';
+		if ( 1 === count( $unified ) ) {
+			$value = (string) array_key_first( $unified );
+			// Single-method whitelists (DuitNow QR-only, Crypto-only) keep
+			// the zero-click UX: a hidden pre-selected input instead of a
+			// dropdown with a single option.
+			echo '<input type="hidden" name="chip_payment_method" value="' . esc_attr( $value ) . '" />';
 			return;
 		}
 		wp_enqueue_script( "wc-{$this->id}-unified-dropdown" );
@@ -3070,6 +3074,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$list['card'] = __( 'Card (Visa/Mastercard/Maestro)', 'chip-for-woocommerce' );
 		}
 
+		// Crypto Coin (only if enabled in the whitelist).
+		if ( in_array( 'crypto_coin', $this->payment_method_whitelist, true ) ) {
+			$list['crypto_coin'] = __( 'Crypto Coin', 'chip-for-woocommerce' );
+		}
+
 		return $list;
 	}
 
@@ -3100,6 +3109,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( false === strpos( $value, ':' ) ) {
 			if ( 'dnqr' === $value ) {
 				return $this->build_dnqr_url( $url );
+			}
+			if ( 'crypto_coin' === $value ) {
+				return $url . '?preferred=crypto_coin';
 			}
 			// 'card' or any other unrecognised single-method tag: no redirect;
 			// the direct-post flow or default gateway behavior applies. When

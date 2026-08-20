@@ -146,12 +146,16 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			if ( '' === $bank_type ) {
 				$has_dnqr       = in_array( 'duitnow_qr', $whitelisted_payment_method, true )
 					|| in_array( 'dnqr', $whitelisted_payment_method, true );
-				$has_dropdown   = $has_fpx || $has_razer || $has_dnqr;
+				$has_crypto     = in_array( 'crypto_coin', $whitelisted_payment_method, true );
+				$has_dropdown   = $has_fpx || $has_razer || $has_dnqr || $has_crypto;
 				$dropdown_count = count( preg_grep( '/^(razer_|shopee_pay)/', $whitelisted_payment_method ) );
 				if ( $has_fpx ) {
 					++$dropdown_count;
 				}
 				if ( $has_dnqr ) {
+					++$dropdown_count;
+				}
+				if ( $has_crypto ) {
 					++$dropdown_count;
 				}
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
@@ -162,6 +166,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 					// DuitNow QR-only whitelist (e.g. Gateway 6): the method
 					// is auto-selected; no bank list is needed.
 					$bank_type = 'dnqr';
+				} elseif ( $has_crypto && 1 === count( $whitelisted_payment_method ) ) {
+					// Crypto-only whitelist: the method is auto-selected.
+					$bank_type = 'crypto';
 				}
 			}
 		}
@@ -235,6 +242,10 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 				if ( $has_dnqr ) {
 					++$dropdown_count;
 				}
+				$has_crypto = in_array( 'crypto_coin', $pm_whitelist, true );
+				if ( $has_crypto ) {
+					++$dropdown_count;
+				}
 				$has_dropdown = $dropdown_count > 0;
 				if ( ( $has_dropdown && $has_card ) || $dropdown_count > 1 ) {
 					$js_display = 'unified';
@@ -246,6 +257,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 					// DuitNow QR-only whitelist (e.g. Gateway 6): no picker
 					// needed — the method is auto-selected and submitted.
 					$js_display = 'dnqr';
+				} elseif ( $has_crypto && 1 === count( $pm_whitelist ) ) {
+					// Crypto-only whitelist: auto-submit the method.
+					$js_display = 'crypto';
 				}
 			}
 		}

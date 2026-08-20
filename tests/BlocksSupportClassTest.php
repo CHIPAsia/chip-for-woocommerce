@@ -174,6 +174,20 @@ class BlocksSupportClassTest extends PHPUnit\Framework\TestCase {
 		$this->assertSame( 'dnqr', $data['js_display'] );
 	}
 
+	public function test_js_display_unified_for_fpx_crypto() {
+		// FPX + Crypto Coin -> two dropdown methods -> 'unified'.
+		list( $support ) = $this->newSupport( array( 'payment_method_whitelist' => array( 'fpx', 'crypto_coin' ) ) );
+		$data = $support->get_payment_method_data();
+		$this->assertSame( 'unified', $data['js_display'] );
+	}
+
+	public function test_js_display_crypto_for_crypto_only() {
+		// Crypto-only whitelist -> auto-submit mode.
+		list( $support ) = $this->newSupport( array( 'payment_method_whitelist' => array( 'crypto_coin' ) ) );
+		$data = $support->get_payment_method_data();
+		$this->assertSame( 'crypto', $data['js_display'] );
+	}
+
 	public function test_get_payment_method_script_handles_returns_block_handle() {
 		// The handle includes the gateway name.
 		list( $support ) = $this->newSupport( array( 'payment_method_whitelist' => array( 'fpx' ) ) );
