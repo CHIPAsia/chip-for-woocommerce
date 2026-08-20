@@ -170,7 +170,7 @@ class Chip_Woocommerce {
 					'type'       => array(
 						'required'          => true,
 						'validate_callback' => function ( $param ) {
-							return in_array( $param, array( 'fpx_b2c', 'fpx_b2b1', 'razer' ), true );
+							return in_array( $param, array( 'fpx_b2c', 'fpx_b2b1', 'razer', 'unified' ), true );
 						},
 					),
 					'gateway_id' => array(
