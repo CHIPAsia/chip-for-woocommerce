@@ -20,5 +20,8 @@
     "start": "wp-scripts start",
     "build": "wp-scripts build",
     "check-engines": "wp-scripts check-engines"
+  },
+  "dependencies": {
+    "@wordpress/icons": "^15.4.0"
   }
 }

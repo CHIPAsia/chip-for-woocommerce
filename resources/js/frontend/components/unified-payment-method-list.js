@@ -29,7 +29,8 @@
  * `chip-unified-payment-method-list` to each clone's `dependencies` array to
  * guarantee that load order.
  */
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useCallback, useId } from '@wordpress/element';
+import { Icon, chevronDown } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
 
 const UnifiedPaymentMethodList = ( props ) => {
@@ -110,30 +111,48 @@ const UnifiedPaymentMethodList = ( props ) => {
         return null;
     }
 
+    const generatedId = useId();
+    const inputId = `chip-unified-payment-method-${ generatedId }`;
+
     return (
-        <select
-            name="chip_payment_method"
-            className="chip-unified-payment-method"
-            data-testid="chip-unified-payment-method"
-            required
-            value={ value }
-            onChange={ ( e ) => {
-                setValue( e.target.value );
-                if ( typeof props.onChange === 'function' ) {
-                    props.onChange( e.target.value );
-                }
-            } }
-        >
-            <option value="">
-                { props.placeholder ||
-                    __( 'Choose a payment method', 'chip-for-woocommerce' ) }
-            </option>
-            { options.map( ( opt ) => (
-                <option key={ opt.value } value={ opt.value }>
-                    { opt.label }
-                </option>
-            ) ) }
-        </select>
+        <div className="wc-blocks-components-select">
+            <div className="wc-blocks-components-select__container">
+                <label
+                    htmlFor={ inputId }
+                    className="wc-blocks-components-select__label"
+                >
+                    { __( 'Payment method', 'chip-for-woocommerce' ) }
+                </label>
+                <select
+                    id={ inputId }
+                    name="chip_payment_method"
+                    className="wc-blocks-components-select__select chip-unified-payment-method"
+                    data-testid="chip-unified-payment-method"
+                    required
+                    value={ value }
+                    onChange={ ( e ) => {
+                        setValue( e.target.value );
+                        if ( typeof props.onChange === 'function' ) {
+                            props.onChange( e.target.value );
+                        }
+                    } }
+                >
+                    <option value="" disabled>
+                        { props.placeholder ||
+                            __( 'Choose a payment method', 'chip-for-woocommerce' ) }
+                    </option>
+                    { options.map( ( opt ) => (
+                        <option key={ opt.value } value={ opt.value }>
+                            { opt.label }
+                        </option>
+                    ) ) }
+                </select>
+                <Icon
+                    className="wc-blocks-components-select__expand"
+                    icon={ chevronDown }
+                />
+            </div>
+        </div>
     );
 };
 
