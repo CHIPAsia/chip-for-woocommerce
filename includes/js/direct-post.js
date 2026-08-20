@@ -186,6 +186,14 @@ jQuery(($) => {
       return true;
     }
 
+    // When the unified dropdown is present, card validation only applies
+    // when the customer actually selected Card; FPX/Razer selections are
+    // redirect payments and never carry card data.
+    var $unifiedSelect = $('select.chip-unified-payment-method');
+    if ($unifiedSelect.length > 0 && $unifiedSelect.val() !== 'card') {
+      return true;
+    }
+
     if ($('#' + gateway_option.id + '-card-name').val() === '') {
       wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name cannot be empty</div>' ); // eslint-disable-line max-len
       return false;
@@ -228,6 +236,13 @@ jQuery(($) => {
     var card_no_space_expiry = card_expiry.replace(/\s/g, '');
 
     if (wc_checkout_form.get_payment_method() == gateway_option.id && $('.wc-payment-form').is(":visible")) {
+      // Only post card data when Card is the selected method. With the
+      // unified dropdown, FPX/Razer selections redirect to the CHIP page
+      // and must not be hijacked by the card POST flow.
+      var $unifiedSelect = $('select.chip-unified-payment-method');
+      if ($unifiedSelect.length > 0 && $unifiedSelect.val() !== 'card') {
+        return true;
+      }
       if(result.result == 'success') {
         var redirect_location = result.redirect;
         var form = '<input type="hidden" name="cardholder_name" value="'+$('#' + gateway_option.id + '-card-name').val()+'">';

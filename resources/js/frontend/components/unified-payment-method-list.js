@@ -13,6 +13,10 @@
  *   - onPaymentSetup  (func)    WooCommerce Blocks onPaymentSetup callback
  *   - emitResponse    (object)  WooCommerce Blocks emitResponse helpers
  *   - requiredMessage (string)  Custom error message when no value chosen
+ *   - onChange        (func)    Optional callback fired with the selected
+ *                               tag-encoded value whenever the selection
+ *                               changes (e.g. so a parent component can
+ *                               show/hide the card form accordingly)
  *
  * Consumed by the 5 clone bundles (gateway 1/2/3/4/6) via:
  *   `import UnifiedPaymentMethodList from 'chip/unified-payment-method-list';`
@@ -113,7 +117,12 @@ const UnifiedPaymentMethodList = ( props ) => {
             data-testid="chip-unified-payment-method"
             required
             value={ value }
-            onChange={ ( e ) => setValue( e.target.value ) }
+            onChange={ ( e ) => {
+                setValue( e.target.value );
+                if ( typeof props.onChange === 'function' ) {
+                    props.onChange( e.target.value );
+                }
+            } }
         >
             <option value="">
                 { props.placeholder ||

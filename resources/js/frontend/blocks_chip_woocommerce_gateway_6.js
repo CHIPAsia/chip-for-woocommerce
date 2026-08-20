@@ -101,7 +101,7 @@ const CardForm = (props) => {
   const [cardCvc, setCardCvc] = useState('');
   const [cardBrand, setCardBrand] = useState(null);
 
-  const { eventRegistration, emitResponse, shouldSavePayment } = props;
+  const { eventRegistration, emitResponse, shouldSavePayment, selectedMethod, isUnified } = props;
   const { onPaymentSetup, onCheckoutSuccess } = eventRegistration;
 
   const gatewayConfig = window['gateway_' + PAYMENT_METHOD_NAME] || {};
@@ -161,6 +161,17 @@ const CardForm = (props) => {
   // Validation on payment setup - card data is NOT sent to server
   // It will be posted directly to CHIP on checkout success
   const onSubmit = useCallback(() => {
+    // In unified mode the dropdown drives the method. When a redirect
+    // method (FPX/Razer/DuitNow QR) is selected, skip card validation and
+    // defer to the dropdown's payment-data (this observer must not clobber
+    // it with an empty SUCCESS meta).
+    if (isUnified && selectedMethod && selectedMethod !== 'card') {
+      return {
+        type: emitResponse.responseTypes.SUCCESS,
+        meta: { paymentMethodData: { chip_payment_method: selectedMethod } },
+      };
+    }
+
     if (cardName.trim() === '') {
       return {
         type: emitResponse.responseTypes.ERROR,
@@ -196,11 +207,17 @@ const CardForm = (props) => {
       };
     }
 
-    // Return SUCCESS without card data - card data will be POSTed directly to CHIP
+    // Return SUCCESS without card data - card data will be POSTed directly to CHIP.
+    // In unified mode the last SUCCESS observer wins in WooCommerce Blocks
+    // (the payment data is REPLACED, not merged), so echo the dropdown
+    // selection here to avoid clobbering it with an empty meta.
     return {
       type: emitResponse.responseTypes.SUCCESS,
+      meta: isUnified
+        ? { paymentMethodData: { chip_payment_method: selectedMethod || 'card' } }
+        : undefined,
     };
-  }, [cardName, cardNumber, cardExpiry, cardCvc, emitResponse.responseTypes]);
+  }, [cardName, cardNumber, cardExpiry, cardCvc, emitResponse.responseTypes, isUnified, selectedMethod]);
 
   useEffect(() => {
     const unsubscribePaymentSetup = onPaymentSetup(onSubmit);
@@ -216,7 +233,11 @@ const CardForm = (props) => {
       // WooCommerce Blocks converts payment_details array to plain object.
       const directPostUrl = processingResponse?.paymentDetails?.chip_direct_post_url;
 
-      if (directPostUrl) {
+      // Only POST card data when Card is the selected method. With the
+      // unified dropdown, redirect-method selections never produce a
+      // direct_post_url, but guard on the selection too so a stale
+      // payment cannot hijack the redirect.
+      if (directPostUrl && !(isUnified && selectedMethod && selectedMethod !== 'card')) {
         const cleanExpiry = cardExpiry.replace(/\s/g, '');
         const cleanCardNumber = cardNumber.replace(/\s/g, '');
 
@@ -255,7 +276,7 @@ const CardForm = (props) => {
     return () => {
       unsubscribeCheckoutSuccess();
     };
-  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, shouldSavePayment, emitResponse.responseTypes]);
+  }, [onCheckoutSuccess, cardName, cardNumber, cardExpiry, cardCvc, shouldSavePayment, emitResponse.responseTypes, isUnified, selectedMethod]);
 
   return (
     <div className="wc-block-components-card-form">
@@ -337,20 +358,23 @@ const CardForm = (props) => {
 const ContentContainer = (props) => {
   const { eventRegistration, emitResponse } = props || {};
   const { onPaymentSetup } = eventRegistration || {};
+  const [selectedMethod, setSelectedMethod] = useState('');
+  const isUnified = settings.js_display === "unified";
   const unifiedProps = {
     nonce: window['gateway_' + PAYMENT_METHOD_NAME]?.nonce,
     banksApi: window['gateway_' + PAYMENT_METHOD_NAME]?.banks_api,
     placeholder: __("Choose a payment method", "chip-for-woocommerce"),
     onPaymentSetup,
     emitResponse,
+    onChange: setSelectedMethod,
   };
   return (
     <>
       <Content />
-      {settings.js_display === "unified" ? (
+      {isUnified ? (
         <>
           <UnifiedPaymentMethodList {...unifiedProps} />
-          <CardForm {...props} />
+          <CardForm {...props} selectedMethod={selectedMethod} isUnified={true} />
         </>
       ) : null}
       {(settings.js_display === "fpx" ||

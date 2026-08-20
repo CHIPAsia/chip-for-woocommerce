@@ -593,7 +593,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$is_card_only          = empty( array_diff( $pm_whitelist, $allowed_for_card_only ) );
 
 		if ( ! $is_card_only ) {
-			return;
+			// Mixed whitelists (e.g. card + FPX) render the unified dropdown.
+			// When the customer selects Card there, process_payment() narrows
+			// the whitelist to card-only and CHIP returns direct_post_url.
+			// Let this handler run so the Blocks JS can POST the card data
+			// directly to CHIP instead of discarding it and redirecting.
+			if ( ! $this->context_is_card_selection( $context ) ) {
+				return;
+			}
 		}
 
 		// Check if a saved token is being used.
@@ -617,10 +624,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
+		// Blocks submits the dropdown selection via payment_data, not $_POST.
+		// process_payment() consults $_POST['chip_payment_method'] to decide
+		// whether to narrow the whitelist to card-only; inject the selection
+		// for the duration of the call so the direct-post path is taken.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		$posted_method = null;
+		if ( isset( $_POST['chip_payment_method'] ) ) {
+			$posted_method = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
+		}
+		if ( isset( $payment_data['chip_payment_method'] ) && 'card' === $payment_data['chip_payment_method'] ) {
+			$_POST['chip_payment_method'] = 'card';
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
 		// Call process_payment to create the CHIP payment.
 		// This hook fires BEFORE legacy process_payment, so we need to call it ourselves.
 		$order_id       = $context->order->get_id();
 		$payment_result = $this->process_payment( $order_id );
+
+		// Restore the original $_POST value (Legacy::process_legacy_payment
+		// swaps $_POST with payment_data on its own).
+		if ( null === $posted_method ) {
+			unset( $_POST['chip_payment_method'] );
+		} else {
+			$_POST['chip_payment_method'] = $posted_method;
+		}
 
 		if ( 'success' !== $payment_result['result'] ) {
 			return;
@@ -1401,6 +1430,62 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Whether the unified dropdown actually renders in the current context.
+	 *
+	 * The dropdown is skipped on the add-payment-method page and on
+	 * subscription payment-method changes, where a method picker does not
+	 * make sense. validate_fields() and payment_fields() both consult this
+	 * so the required-field validation is only enforced when the dropdown
+	 * is present. (On order-pay the dropdown still renders, but the 'card'
+	 * option is excluded there because the card form is not available.)
+	 *
+	 * @return bool
+	 */
+	private function should_render_unified_dropdown(): bool {
+		if ( ! $this->has_unified_dropdown() ) {
+			return false;
+		}
+		if ( is_add_payment_method_page() ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page context check.
+		if ( isset( $_GET['change_payment_method'] ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Render the unified payment-method dropdown.
+	 *
+	 * Emits a single <select name="chip_payment_method"> whose values are
+	 * tag-encoded (e.g. 'fpx:MB2U0227', 'dnqr', 'card'). The 'card' option
+	 * is omitted on order-pay, where the card form is not rendered.
+	 *
+	 * @return void
+	 */
+	private function render_unified_dropdown() {
+		$unified = $this->list_unified_payment_methods();
+		if ( is_wc_endpoint_url( 'order-pay' ) ) {
+			unset( $unified['card'] );
+		}
+		$options = array( '' => __( 'Choose a payment method', 'chip-for-woocommerce' ) );
+		foreach ( $unified as $value => $label ) {
+			$options[ $value ] = $label;
+		}
+		woocommerce_form_field(
+			'chip_payment_method',
+			array(
+				'type'     => 'select',
+				'class'    => array( 'chip-unified-payment-method' ),
+				'label'    => __( 'Payment Method', 'chip-for-woocommerce' ),
+				'options'  => $options,
+				'required' => true,
+			)
+		);
+	}
+
+	/**
 	 * Output payment fields on checkout.
 	 *
 	 * @return void
@@ -1422,27 +1507,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 
+			// The unified dropdown is skipped on add-payment-method and
+			// change-payment-method pages; render it here so mixed
+			// whitelists keep working even when tokenization is enabled.
+			if ( $this->should_render_unified_dropdown() ) {
+				$this->render_unified_dropdown();
+			}
+
+			// Note: selectWoo initialization for the unified dropdown is added
+			// in resources/js/frontend/chip-unified-dropdown.js (Task 9).
+
 		} else {
 			parent::payment_fields();
 
-			if ( 'yes' === $this->bypass_chip ) {
-				if ( $this->has_unified_dropdown() ) {
-					$unified = $this->list_unified_payment_methods();
-					$options = array( '' => __( 'Choose a payment method', 'chip-for-woocommerce' ) );
-					foreach ( $unified as $value => $label ) {
-						$options[ $value ] = $label;
-					}
-					woocommerce_form_field(
-						'chip_payment_method',
-						array(
-							'type'     => 'select',
-							'class'    => array( 'chip-unified-payment-method' ),
-							'label'    => __( 'Payment Method', 'chip-for-woocommerce' ),
-							'options'  => $options,
-							'required' => true,
-						)
-					);
-				}
+			if ( 'yes' === $this->bypass_chip && $this->should_render_unified_dropdown() ) {
+				$this->render_unified_dropdown();
 			}
 
 			// Note: selectWoo initialization for the unified dropdown is added
@@ -1459,6 +1538,43 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					break;
 				}
 			}
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// In mixed mode (card + redirect methods) the card form renders
+		// alongside the unified dropdown. WooCommerce's checkout.js flags any
+		// visible empty required field, so the card fields must be hidden
+		// unless the customer actually selected Card. Also hide them for
+		// saved-token charges, which never use the card form.
+		if ( $this->should_render_unified_dropdown() ) {
+			?>
+			<script type="text/javascript">
+				jQuery( function( $ ) {
+					var syncCardFormVisibility = function() {
+						if ( typeof gateway_option === 'undefined' ) {
+							return;
+						}
+						var $unified = $( 'select.chip-unified-payment-method' );
+						var $cardForm = $( '#wc-' + gateway_option.id + '-cc-form' );
+						if ( $unified.length === 0 || $cardForm.length === 0 ) {
+							return;
+						}
+						if ( $unified.val() === 'card' ) {
+							// Default tokenization behavior: show unless a
+							// saved token is chosen.
+							var $checked = $( 'input.woocommerce-SavedPaymentMethods-tokenInput:checked' );
+							var savedTokenChosen = $checked.length > 0 && $checked.val() !== 'new';
+							$cardForm.toggle( ! savedTokenChosen );
+						} else {
+							$cardForm.hide();
+						}
+					};
+					$( document.body ).on( 'change', 'select.chip-unified-payment-method', syncCardFormVisibility );
+					$( document.body ).on( 'updated_checkout', syncCardFormVisibility );
+					syncCardFormVisibility();
+				} );
+			</script>
+			<?php
 		}
 	}
 
@@ -1502,7 +1618,15 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	public function validate_fields() {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		if ( $this->has_unified_dropdown() && empty( $_POST['chip_payment_method'] ) ) {
+		// Only enforce the required dropdown when it is actually rendered:
+		// it is skipped on add-payment-method and change-payment-method
+		// pages, where POSTing chip_payment_method would fail validation.
+		// A saved-token charge never uses the dropdown either (Blocks
+		// submits only the token key in payment_data), so skip it there too.
+		$token_key            = 'wc-' . $this->id . '-payment-token';
+		$saved_token_selected = ( isset( $_POST[ $token_key ] ) && ! empty( $_POST[ $token_key ] ) && 'new' !== $_POST[ $token_key ] )
+			|| ( isset( $_POST['token'] ) && ! empty( $_POST['token'] ) && 'new' !== $_POST['token'] );
+		if ( $this->should_render_unified_dropdown() && ! $saved_token_selected && empty( $_POST['chip_payment_method'] ) ) {
 			throw new \Exception( esc_html__( 'Please choose a payment method.', 'chip-for-woocommerce' ) );
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
@@ -1677,7 +1801,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$chip = $this->api();
 
 		if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
-			$woocommerce_currency               = get_woocommerce_currency();
+			$woocommerce_currency               = $order->get_currency();
 			$order_total                        = $order->get_total();
 			$amount                             = (int) round( $order_total * 100 ); // sen.
 			$params['payment_method_whitelist'] = $this->resolve_payment_method_groups(
@@ -1722,6 +1846,16 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( 'yes' === $this->disable_redirect ) {
 			unset( $params['success_redirect'] );
+		}
+
+		// Narrow to card-only when the customer selected Card in the unified
+		// dropdown. The gateway only exposes direct_post_url for card-only
+		// payments; without this the card form data would be discarded and
+		// the customer redirected to the CHIP payment page. A saved-token
+		// charge never posts card data, so the narrowing is skipped there
+		// (the payment keeps its redirect URL).
+		if ( $this->bypass_chip_is_card_selection() && empty( $token_id ) && isset( $params['payment_method_whitelist'] ) ) {
+			$params['payment_method_whitelist'] = $this->card_only_whitelist( $params['payment_method_whitelist'] );
 		}
 
 		if ( ! empty( $order->get_customer_note() ) ) {
@@ -2941,13 +3075,24 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( ! isset( $_POST['chip_payment_method'] ) || empty( $_POST['chip_payment_method'] ) ) {
 			return $this->maybe_atome_redirect( $url );
 		}
+		// A saved-token charge never uses the dropdown: the token is charged
+		// server-side and the redirect URL must be left untouched (appending
+		// ?preferred= would corrupt the direct-post URL for card-only tokens).
+		$token_key = 'wc-' . $this->id . '-payment-token';
+		if ( ( isset( $_POST[ $token_key ] ) && ! empty( $_POST[ $token_key ] ) && 'new' !== $_POST[ $token_key ] )
+			|| ( isset( $_POST['token'] ) && ! empty( $_POST['token'] ) && 'new' !== $_POST['token'] ) ) {
+			return $this->maybe_atome_redirect( $url );
+		}
 		$value = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
 		if ( false === strpos( $value, ':' ) ) {
 			if ( 'dnqr' === $value ) {
 				return $this->build_dnqr_url( $url );
 			}
 			// 'card' or any other unrecognised single-method tag: no redirect;
-			// the direct-post flow or default gateway behavior applies.
+			// the direct-post flow or default gateway behavior applies. When
+			// the customer selected Card, process_payment() has already
+			// narrowed the whitelist to card-only, so the payment carries
+			// direct_post_url and the URL returned here is that URL.
 			return $url;
 		}
 		[ $type, $code ] = explode( ':', $value, 2 );
@@ -2961,6 +3106,69 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 		return $url;
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
+	}
+
+	/**
+	 * Whether the customer selected Card in the unified dropdown.
+	 *
+	 * @return bool
+	 */
+	private function bypass_chip_is_card_selection(): bool {
+		if ( 'yes' !== $this->bypass_chip ) {
+			return false;
+		}
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		$value = isset( $_POST['chip_payment_method'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return 'card' === $value;
+	}
+
+	/**
+	 * Whether the customer selected Card in the unified dropdown during
+	 * WooCommerce Blocks checkout.
+	 *
+	 * Blocks submits the dropdown selection via payment_data (Store API),
+	 * not $_POST.
+	 *
+	 * @param \Automattic\WooCommerce\Blocks\Payments\PaymentContext $context Payment context.
+	 * @return bool
+	 */
+	private function context_is_card_selection( $context ): bool {
+		if ( 'yes' !== $this->bypass_chip ) {
+			return false;
+		}
+		$payment_data = isset( $context->payment_data ) ? $context->payment_data : array();
+		return is_array( $payment_data ) && isset( $payment_data['chip_payment_method'] ) && 'card' === $payment_data['chip_payment_method'];
+	}
+
+	/**
+	 * Reduce a payment-method whitelist to card-only identifiers.
+	 *
+	 * Card networks are resolved here (the gateway only knows the
+	 * visa/mastercard/maestro identifiers and the MPGS keys, not the 'card'
+	 * aggregator). When no card method is present the whitelist is returned
+	 * unchanged so redirect methods keep working.
+	 *
+	 * @param array $whitelist Payment-method whitelist.
+	 * @return array Card-only whitelist (or the input unchanged).
+	 */
+	private function card_only_whitelist( $whitelist ): array {
+		if ( ! is_array( $whitelist ) ) {
+			return is_array( $this->payment_method_whitelist ) ? $this->payment_method_whitelist : array();
+		}
+
+		$card_only = array_values(
+			array_intersect(
+				$whitelist,
+				array_merge( self::CARD_GROUP, array( 'mpgs_google_pay', 'mpgs_apple_pay' ) )
+			)
+		);
+
+		if ( empty( $card_only ) ) {
+			return $whitelist;
+		}
+
+		return $card_only;
 	}
 
 	/**
