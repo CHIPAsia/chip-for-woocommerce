@@ -3564,14 +3564,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			"wc-{$this->id}-unified-dropdown",
 			'gateway_unified_option',
 			array(
-				'id'                => $this->id,
-				'card_logos_url'    => CHIP_WOOCOMMERCE_URL . 'assets/',
-				'unified'           => array(
-					'fpx_logo_base'   => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
-					'razer_logo_base' => CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/',
-					'dnqr_logo_url'   => CHIP_WOOCOMMERCE_URL . 'assets/duitnow_qr.png',
-					'card_logo_url'   => CHIP_WOOCOMMERCE_URL . 'assets/card.png',
-					'unavailable_fpx' => $this->get_unavailable_fpx_banks(),
+				'id'             => $this->id,
+				'card_logos_url' => CHIP_WOOCOMMERCE_URL . 'assets/',
+				'unified'        => array(
+					'fpx_logo_base'    => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
+					'razer_logo_base'  => CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/',
+					'dnqr_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/duitnow_qr.png',
+					'card_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/card.png',
+					'unavailable_fpx'  => $this->get_unavailable_fpx_banks(),
 					'unavailable_b2b1' => $this->get_unavailable_fpx_b2b1_banks(),
 				),
 			)
