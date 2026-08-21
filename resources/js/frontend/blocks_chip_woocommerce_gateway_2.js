@@ -47,6 +47,14 @@ const cardFormStyles = `
   .chip-card-number-wrapper input {
     padding-right: 56px !important;
   }
+  /* Hide the WooCommerce Blocks "Save payment information" checkbox unless
+   * a card payment method is the active selection. Mirrors the Stripe
+   * gateway's showSaveOptionByMethod behaviour: the checkbox is only
+   * meaningful for card (reusable) methods. Toggled via a body class so it
+   * survives Blocks unmount/remount of the checkbox (see below). */
+  body.chip-hide-save-checkbox .wc-block-components-payment-methods__save-card-info {
+    display: none !important;
+  }
 `;
 
 // Inject styles once.
@@ -55,6 +63,34 @@ if (!document.getElementById('chip-card-form-styles')) {
   styleSheet.id = 'chip-card-form-styles';
   styleSheet.textContent = cardFormStyles;
   document.head.appendChild(styleSheet);
+}
+
+const HIDE_SAVE_CHECKBOX_CLASS = 'chip-hide-save-checkbox';
+
+/**
+ * Show the WooCommerce Blocks "Save payment information" checkbox only when
+ * a Card payment method is the active selection. Blocks renders the checkbox
+ * statically for any gateway whose supports.showSaveOption is true, so we
+ * toggle a body class (like Stripe's handleDisplayOfSavingCheckbox) that a
+ * stylesheet rule turns into display:none. A CSS selector is used instead of
+ * inline style because Blocks can unmount/remount the checkbox element when a
+ * signed-in user toggles between saved tokens and a new payment method, which
+ * would lose an inline style set directly on the DOM node.
+ *
+ * @param {boolean} isCard Whether the currently selected method is card.
+ */
+function toggleSaveCheckbox( isCard ) {
+  document.body.classList.toggle( HIDE_SAVE_CHECKBOX_CLASS, ! isCard );
+  if ( !isCard && typeof window?.wp?.data?.dispatch === 'function' ) {
+    try {
+      const paymentStore = window.wp.data.dispatch( 'wc/store/payment' );
+      if ( paymentStore && typeof paymentStore.__internalSetShouldSavePaymentMethod === 'function' ) {
+        paymentStore.__internalSetShouldSavePaymentMethod( false );
+      }
+    } catch ( e ) {
+      // Store unavailable (classic-only contexts) — nothing to clear.
+    }
+  }
 }
 
 const defaultLabel = __("CHIP", "chip-for-woocommerce");
@@ -360,6 +396,17 @@ const ContentContainer = (props) => {
   const { onPaymentSetup } = eventRegistration || {};
   const [selectedMethod, setSelectedMethod] = useState('');
   const isUnified = settings.js_display === "unified";
+
+  // Mirror Stripe's showSaveOptionByMethod: keep the Blocks save-card checkbox
+  // visible only when a Card method is the active selection. For a unified
+  // gateway the card form (and thus the save checkbox) is only shown once the
+  // customer selects 'card' in the dropdown; for the single-method card
+  // gateway it is always shown; auto-submit single-method gateways never.
+  const activeIsCard = settings.js_display === 'card'
+    || ( isUnified && selectedMethod === 'card' );
+  useEffect(() => {
+    toggleSaveCheckbox( activeIsCard );
+  }, [ activeIsCard, settings.js_display ]);
   const unifiedProps = {
     nonce: window['gateway_' + PAYMENT_METHOD_NAME]?.nonce,
     banksApi: window['gateway_' + PAYMENT_METHOD_NAME]?.banks_api,
