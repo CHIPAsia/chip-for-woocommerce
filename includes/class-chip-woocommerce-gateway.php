@@ -3121,7 +3121,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$value = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
 		if ( false === strpos( $value, ':' ) ) {
 			if ( 'dnqr' === $value ) {
-				return $this->build_dnqr_url( $url );
+				return $this->build_explicit_dnqr_url( $url );
 			}
 			if ( 'crypto_coin' === $value ) {
 				return $url . '?preferred=crypto_coin';
@@ -3266,6 +3266,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	private function build_dnqr_url( $url ) {
 		$preferred = $this->get_duitnow_qr_preferred();
 		return '' === $preferred ? $url : $url . '?preferred=' . $preferred;
+	}
+
+	/**
+	 * Build the redirect URL when the customer explicitly picks DuitNow QR
+	 * from the unified dropdown.
+	 *
+	 * Unlike get_duitnow_qr_preferred(), this must always append
+	 * ?preferred= even when the merchant's whitelist mixes other payment
+	 * methods. The group-count rule in get_duitnow_qr_preferred() only
+	 * applies to the zero-click DuitNow QR-only flow (Gateway 6); a customer
+	 * who actively chooses DuitNow QR expects to be sent straight to it.
+	 *
+	 * @param string $url Base redirect URL.
+	 * @return string URL with the ?preferred=dnqr|duitnow_qr suffix.
+	 */
+	private function build_explicit_dnqr_url( $url ) {
+		$resolved  = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : array( 'dnqr' );
+		$preferred = in_array( 'dnqr', $resolved, true ) ? 'dnqr' : ( $resolved[0] ?? 'dnqr' );
+		return $url . '?preferred=' . $preferred;
 	}
 
 	/**

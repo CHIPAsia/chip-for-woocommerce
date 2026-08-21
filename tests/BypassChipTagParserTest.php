@@ -130,6 +130,33 @@ class BypassChipTagParserTest extends GatewayTestCase {
 		$this->assertSame( 'https://example.com/checkout?preferred=duitnow_qr', $result );
 	}
 
+	/**
+	 * When the customer explicitly picks DuitNow QR from the unified dropdown
+	 * in a MIXED whitelist (other methods configured), the ?preferred=dnqr
+	 * redirect must still happen. get_duitnow_qr_preferred() returns '' for
+	 * mixed whitelists (its group-count rule is for the zero-click single
+	 * method flow), so bypass_chip must use the explicit resolver instead.
+	 */
+	public function test_dnqr_tag_redirects_in_mixed_whitelist() {
+		$gateway = $this->newGateway( array(
+			'bypass_chip'              => 'yes',
+			'payment_method_whitelist' => array( 'fpx', 'duitnow_qr', 'crypto_coin' ),
+			'resolved_dnqr_group'      => array( 'dnqr' ),
+		) );
+		$result = $this->callBypass( $gateway, 'dnqr' );
+		$this->assertSame( 'https://example.com/checkout?preferred=dnqr', $result );
+	}
+
+	public function test_dnqr_tag_redirects_in_mixed_whitelist_without_resolved_group() {
+		// No resolved_dnqr_group set: fall back to 'dnqr'.
+		$gateway = $this->newGateway( array(
+			'bypass_chip'              => 'yes',
+			'payment_method_whitelist' => array( 'fpx', 'duitnow_qr', 'razer_grabpay' ),
+		) );
+		$result = $this->callBypass( $gateway, 'dnqr' );
+		$this->assertSame( 'https://example.com/checkout?preferred=dnqr', $result );
+	}
+
 	public function test_unknown_tag_returns_unchanged_url() {
 		$gateway = $this->newGatewayWithBypass();
 		$result  = $this->callBypass( $gateway, 'bogus:xyz' );
