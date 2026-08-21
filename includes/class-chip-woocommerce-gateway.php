@@ -577,6 +577,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
+		// Capture the Blocks dropdown selection while $context->payment_data is
+		// still populated. Blocks can swap payment_data into $_POST and empty the
+		// context object by the time later checks read it, so snap the card
+		// selection here (and from $_POST as a fallback) to decide the direct-post
+		// path consistently.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WooCommerce checkout.
+		$context_payment_data = is_array( $context->payment_data ) ? $context->payment_data : array();
+		$card_selected        = isset( $context_payment_data['chip_payment_method'] ) && 'card' === $context_payment_data['chip_payment_method'];
+		if ( ! $card_selected ) {
+			$card_selected = isset( $_POST['chip_payment_method'] ) && 'card' === sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
 		// Check if payment methods include card methods that support direct post.
 		// The constructor expands a saved ['card'] to ['card', 'visa', 'mastercard',
 		// 'maestro'] in memory, so the whitelist can contain the 'card' aggregator
@@ -598,7 +611,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			// the whitelist to card-only and CHIP returns direct_post_url.
 			// Let this handler run so the Blocks JS can POST the card data
 			// directly to CHIP instead of discarding it and redirecting.
-			if ( ! $this->context_is_card_selection( $context ) ) {
+			if ( ! $card_selected ) {
 				return;
 			}
 		}
@@ -3183,8 +3196,17 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->bypass_chip ) {
 			return false;
 		}
+		// Blocks submits the dropdown selection via payment_data (Store API).
+		// In some flows payment_data is empty by the time this runs (Blocks
+		// can swap payment_data into $_POST), so fall back to $_POST.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WooCommerce checkout.
 		$payment_data = isset( $context->payment_data ) ? $context->payment_data : array();
-		return is_array( $payment_data ) && isset( $payment_data['chip_payment_method'] ) && 'card' === $payment_data['chip_payment_method'];
+		if ( is_array( $payment_data ) && isset( $payment_data['chip_payment_method'] ) && 'card' === $payment_data['chip_payment_method'] ) {
+			return true;
+		}
+		$posted = isset( $_POST['chip_payment_method'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return 'card' === $posted;
 	}
 
 	/**
