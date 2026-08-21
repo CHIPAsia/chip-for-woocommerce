@@ -3099,7 +3099,12 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	public function bypass_chip( $url, $payment ) {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing
-		if ( 'yes' !== $this->bypass_chip || $payment['is_test'] ) {
+		// When the merchant enables "skip payment page" (bypass_chip), the
+		// ?preferred= parameter is always sent — regardless of whether the
+		// purchase is a test-mode payment. A merchant who configures skip
+		// expects the auto-redirect in every environment; gatekeeping on
+		// $payment['is_test'] silently broke that for test-mode purchases.
+		if ( 'yes' !== $this->bypass_chip ) {
 			return $this->maybe_atome_redirect( $url );
 		}
 		if ( ! isset( $_POST['chip_payment_method'] ) || empty( $_POST['chip_payment_method'] ) ) {

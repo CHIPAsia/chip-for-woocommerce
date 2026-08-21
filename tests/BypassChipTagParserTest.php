@@ -90,6 +90,23 @@ class BypassChipTagParserTest extends GatewayTestCase {
 		$this->assertSame( 'https://example.com/checkout?preferred=crypto_coin', $result );
 	}
 
+	/**
+	 * When the merchant enables "skip payment page" (bypass_chip), the
+	 * ?preferred= parameter is sent regardless of $payment['is_test']. A
+	 * test-mode purchase must not silently disable the auto-redirect.
+	 */
+	public function test_preferred_url_sent_even_when_payment_is_test_mode() {
+		$gateway = $this->newGatewayWithBypass();
+		$_POST['chip_payment_method'] = 'crypto_coin';
+		$result = $this->callGatewayMethod(
+			$gateway,
+			'bypass_chip',
+			array( 'https://example.com/checkout', array( 'is_test' => true ) )
+		);
+		unset( $_POST['chip_payment_method'] );
+		$this->assertSame( 'https://example.com/checkout?preferred=crypto_coin', $result );
+	}
+
 	public function test_dnqr_tag_uses_resolver_to_choose_dnqr() {
 		// When the resolver has picked 'dnqr', bypass_chip uses it.
 		$gateway = $this->newGateway( array(
