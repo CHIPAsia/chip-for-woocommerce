@@ -30,9 +30,7 @@
  * guarantee that load order.
  */
 import { useState, useEffect, useCallback, useId } from '@wordpress/element';
-import { Icon, chevronDown } from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
-import { CustomSelectControl } from '@wordpress/components';
 
 const UnifiedPaymentMethodList = ( props ) => {
     const [ options, setOptions ] = useState( [] );
@@ -116,55 +114,10 @@ const UnifiedPaymentMethodList = ( props ) => {
         return null;
     }
 
-    // Resolve a logo URL for a tag-encoded value (e.g. 'fpx:MB2U0227',
-    // 'razer:GrabPay', 'dnqr', 'card', 'crypto_coin').
-    const logoForTag = ( tag ) => {
-        if ( ! tag ) {
-            return '';
-        }
-        const parts = tag.split( ':' );
-        const type  = parts[0];
-        const code  = parts.length > 1 ? parts[1] : '';
-        if ( type === 'fpx' || type === 'fpx_b2b1' ) {
-            return props.logoBaseUrl ? props.logoBaseUrl + code + '.png' : '';
-        }
-        if ( type === 'razer' ) {
-            return props.razerLogoBaseUrl ? props.razerLogoBaseUrl + code + '.png' : '';
-        }
-        if ( tag === 'dnqr' ) {
-            return props.cardLogosUrl ? props.cardLogosUrl + 'duitnow_qr.png' : '';
-        }
-        if ( tag === 'card' ) {
-            return props.cardLogosUrl ? props.cardLogosUrl + 'card.png' : '';
-        }
-        return '';
-    };
-
-    const renderOption = ( option ) => {
-        if ( ! option || ! option.key ) {
-            return null;
-        }
-        const logoUrl = logoForTag( option.key );
-        return (
-            <span className="chip-unified-option">
-                { logoUrl ? (
-                    <img
-                        className="chip-unified-option-logo"
-                        src={ logoUrl }
-                        onError={ ( e ) => { e.currentTarget.style.display = 'none'; } }
-                        alt=""
-                    />
-                ) : null }
-                <span className="chip-unified-option-text">{ option.name }</span>
-            </span>
-        );
-    };
-
-    const selectOptions = options.map( ( opt ) => ( {
-        key: opt.value,
-        name: opt.label,
-    } ) );
-
+    // Render the native <select> using WooCommerce Blocks select markup so
+    // it looks and behaves like the Country/State dropdowns. A native select
+    // reliably shows the chosen value (unlike the v1 CustomSelectControl,
+    // which dropped our v2 render props and left the trigger button empty).
     return (
         <div className="wc-blocks-components-select">
             <div className="wc-blocks-components-select__container">
@@ -174,22 +127,30 @@ const UnifiedPaymentMethodList = ( props ) => {
                 >
                     { __( 'Payment method', 'chip-for-woocommerce' ) }
                 </label>
-                <CustomSelectControl
-                    className="chip-unified-payment-method"
-                    label={ __( 'Payment method', 'chip-for-woocommerce' ) }
-                    hideLabelFromVision={ true }
-                    value={ selectOptions.find( ( o ) => o.key === value ) || null }
-                    options={ selectOptions }
-                    onChange={ ( { selectedItem } ) => {
-                        const next = selectedItem ? selectedItem.key : '';
+                <select
+                    id={ inputId }
+                    name="chip_payment_method"
+                    className="wc-blocks-components-select__select chip-unified-payment-method"
+                    value={ value }
+                    aria-invalid="false"
+                    onChange={ ( e ) => {
+                        const next = e.target.value;
                         setValue( next );
                         if ( typeof props.onChange === 'function' ) {
                             props.onChange( next );
                         }
                     } }
-                    getOptionLabel={ renderOption }
-                    renderSelectedValue={ renderOption }
-                />
+                >
+                    <option value="" disabled>
+                        { props.placeholder ||
+                            __( 'Choose a payment method', 'chip-for-woocommerce' ) }
+                    </option>
+                    { options.map( ( opt ) => (
+                        <option key={ opt.value } value={ opt.value }>
+                            { opt.label }
+                        </option>
+                    ) ) }
+                </select>
             </div>
         </div>
     );
