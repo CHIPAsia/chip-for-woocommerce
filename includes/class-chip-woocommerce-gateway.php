@@ -1575,28 +1575,42 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// visible empty required field, so the card fields must be hidden
 		// unless the customer actually selected Card. Also hide them for
 		// saved-token charges, which never use the card form.
+		//
+		// Scoped to $this->id because several CHIP gateway clones can be
+		// active at once and the last wp_localize_script() call wins for the
+		// global 'gateway_option' — relying on that global made us toggle a
+		// different clone's card form. A card-only whitelist renders no
+		// unified dropdown, so this block (and the toggle) never applies
+		// there: the card form simply stays visible.
 		if ( $this->should_render_unified_dropdown() ) {
+			$card_in_whitelist = count( array_intersect( $this->payment_method_whitelist, array( 'visa', 'mastercard', 'maestro' ) ) ) > 0;
 			?>
 			<script type="text/javascript">
 				jQuery( function( $ ) {
+					var gatewayId = '<?php echo esc_attr( $this->id ); ?>';
+					var cardInWhitelist = <?php echo $card_in_whitelist ? 'true' : 'false'; ?>;
 					var syncCardFormVisibility = function() {
-						if ( typeof gateway_option === 'undefined' ) {
+						var $box = $( 'li.payment_method_' + gatewayId );
+						if ( $box.length === 0 ) {
 							return;
 						}
-						// The unified <select> sits inside a wrapper <p class="chip-unified-payment-method">.
-						var $unified = $( 'select[name="chip_payment_method"]' );
-						var $wrapper = $unified.closest( '.chip-unified-payment-method' );
-						var $cardForm = $( '#wc-' + gateway_option.id + '-cc-form' );
-						// A saved token charge never uses the dropdown or the card
-						// form: hide both. Only when the customer picks "new" (or
-						// there are no saved tokens) does the dropdown show.
-						var $checked = $( 'input.woocommerce-SavedPaymentMethods-tokenInput:checked' );
+						var $unified  = $box.find( 'select[name="chip_payment_method"]' );
+						var $wrapper  = $unified.closest( '.chip-unified-payment-method' );
+						var $cardForm = $box.find( '#wc-' + gatewayId + '-cc-form' );
+						// A saved token charge never uses the dropdown or the
+						// card form: hide both. Only when the customer picks
+						// "new" (or there are no saved tokens) does the
+						// dropdown show.
+						var $checked  = $box.find( 'input.woocommerce-SavedPaymentMethods-tokenInput:checked' );
 						var savedTokenChosen = $checked.length > 0 && $checked.val() !== 'new';
 						if ( $wrapper.length ) {
 							$wrapper.toggle( ! savedTokenChosen );
 						}
 						if ( $cardForm.length ) {
-							$cardForm.toggle( ! savedTokenChosen && $unified.length && $unified.val() === 'card' );
+							// The card form only shows for a new (non-saved)
+							// charge when 'card' is actually selected in the
+							// dropdown AND card is in this gateway's whitelist.
+							$cardForm.toggle( ! savedTokenChosen && cardInWhitelist && $unified.length && $unified.val() === 'card' );
 						}
 					};
 					$( document.body ).on( 'change', 'input.woocommerce-SavedPaymentMethods-tokenInput, select[name="chip_payment_method"]', syncCardFormVisibility );
