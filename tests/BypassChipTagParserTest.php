@@ -157,6 +157,24 @@ class BypassChipTagParserTest extends GatewayTestCase {
 		$this->assertSame( 'https://example.com/checkout?preferred=dnqr', $result );
 	}
 
+	/**
+	 * A merchant who upgraded from a legacy version may still have
+	 * 'duitnow_qr' in the saved whitelist. When they explicitly pick
+	 * DuitNow QR in a mixed whitelist and the resolver only has
+	 * 'duitnow_qr' available, the redirect must use ?preferred=duitnow_qr
+	 * (the group-count rule in get_duitnow_qr_preferred() returns '' for
+	 * mixed whitelists, so the explicit path must still resolve it).
+	 */
+	public function test_dnqr_tag_redirects_to_duitnow_qr_in_mixed_legacy_whitelist() {
+		$gateway = $this->newGateway( array(
+			'bypass_chip'              => 'yes',
+			'payment_method_whitelist' => array( 'fpx', 'duitnow_qr', 'crypto_coin' ),
+			'resolved_dnqr_group'      => array( 'duitnow_qr' ),
+		) );
+		$result = $this->callBypass( $gateway, 'dnqr' );
+		$this->assertSame( 'https://example.com/checkout?preferred=duitnow_qr', $result );
+	}
+
 	public function test_unknown_tag_returns_unchanged_url() {
 		$gateway = $this->newGatewayWithBypass();
 		$result  = $this->callBypass( $gateway, 'bogus:xyz' );
