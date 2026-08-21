@@ -1583,22 +1583,23 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 						if ( typeof gateway_option === 'undefined' ) {
 							return;
 						}
-						var $unified = $( 'select.chip-unified-payment-method' );
+						// The unified <select> sits inside a wrapper <p class="chip-unified-payment-method">.
+						var $unified = $( 'select[name="chip_payment_method"]' );
+						var $wrapper = $unified.closest( '.chip-unified-payment-method' );
 						var $cardForm = $( '#wc-' + gateway_option.id + '-cc-form' );
-						if ( $unified.length === 0 || $cardForm.length === 0 ) {
-							return;
+						// A saved token charge never uses the dropdown or the card
+						// form: hide both. Only when the customer picks "new" (or
+						// there are no saved tokens) does the dropdown show.
+						var $checked = $( 'input.woocommerce-SavedPaymentMethods-tokenInput:checked' );
+						var savedTokenChosen = $checked.length > 0 && $checked.val() !== 'new';
+						if ( $wrapper.length ) {
+							$wrapper.toggle( ! savedTokenChosen );
 						}
-						if ( $unified.val() === 'card' ) {
-							// Default tokenization behavior: show unless a
-							// saved token is chosen.
-							var $checked = $( 'input.woocommerce-SavedPaymentMethods-tokenInput:checked' );
-							var savedTokenChosen = $checked.length > 0 && $checked.val() !== 'new';
-							$cardForm.toggle( ! savedTokenChosen );
-						} else {
-							$cardForm.hide();
+						if ( $cardForm.length ) {
+							$cardForm.toggle( ! savedTokenChosen && $unified.length && $unified.val() === 'card' );
 						}
 					};
-					$( document.body ).on( 'change', 'select.chip-unified-payment-method', syncCardFormVisibility );
+					$( document.body ).on( 'change', 'input.woocommerce-SavedPaymentMethods-tokenInput, select[name="chip_payment_method"]', syncCardFormVisibility );
 					$( document.body ).on( 'updated_checkout', syncCardFormVisibility );
 					syncCardFormVisibility();
 				} );
