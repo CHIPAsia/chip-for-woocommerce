@@ -92,7 +92,12 @@ jQuery( ( $ ) => {
 	// updated_checkout AJAX refresh — previously it only ran on updated_checkout,
 	// so an order-pay page that loaded fresh never got selectWoo or logos.
 	var initUnifiedDropdown = function() {
-		var $select = $( 'select.chip-unified-payment-method' );
+		// The unified <select> is rendered by woocommerce_form_field(), which
+		// applies the 'chip-unified-payment-method' class to the wrapper
+		// <p class="form-row">, not to the <select> itself (the select gets
+		// class="select"). Match the select inside that wrapper so selectWoo
+		// and the bank/e-wallet logos actually attach.
+		var $select = $( '.chip-unified-payment-method select' );
 
 		if ( $select.length === 0 ) {
 			return;
