@@ -1,8 +1,13 @@
 jQuery(($) => {
   // wc_checkout_params is required to continue, ensure the object exists
-	if ( typeof wc_checkout_params === 'undefined' ) {
-		return false;
-	}
+  if ( typeof wc_checkout_params === 'undefined' ) {
+    return false;
+  }
+
+  // Default card-logos URL (all CHIP gateways share the same assets/ dir).
+  var CARD_LOGOS_URL = (typeof gateway_option !== 'undefined' && gateway_option.card_logos_url)
+    ? gateway_option.card_logos_url
+    : (window.chip_card_logos_url || '');
 
   // Inject CSS styles for card brand icon
   if (!document.getElementById('chip-card-brand-styles')) {
@@ -40,6 +45,46 @@ jQuery(($) => {
     document.head.appendChild(styleSheet);
   }
 
+  // Several CHIP clones may be active and each wp_localize_script() writes to
+  // the same global 'gateway_option' (last one wins). We therefore scope every
+  // lookup to the ACTIVE gateway's <li> at submit time instead of relying on
+  // the global, so the card POST fires for whichever gateway is checked.
+
+  // The currently checked CHIP gateway's id + box.
+  var activeCardGateway = function() {
+    var methodId = '';
+    var $box = null;
+    $( 'input[name="payment_method"]' ).each( function() {
+      if ( this.checked ) {
+        methodId = this.value;
+        $box = $( this ).closest( 'li.wc_payment_method' );
+      }
+    } );
+    if ( ! $box || ! $box.length || ! methodId ) {
+      return null;
+    }
+    return { id: methodId, $box: $box };
+  };
+
+  // The set of CHIP gateway ids present in the DOM with a card form.
+  var chipCardGatewayIds = function() {
+    var ids = [];
+    $( 'li.wc_payment_method[class*="payment_method_wc_gateway_chip"]' ).each( function() {
+      var classes = (this.className || '').split( /\s+/ );
+      var methodId = '';
+      for ( var i = 0; i < classes.length; i++ ) {
+        if ( classes[i].indexOf( 'payment_method_wc_gateway_chip' ) === 0 ) {
+          methodId = classes[i].replace( 'payment_method_', '' );
+          break;
+        }
+      }
+      if ( methodId && $( this ).find( '#wc-' + methodId + '-cc-form' ).length > 0 ) {
+        ids.push( methodId );
+      }
+    } );
+    return ids;
+  };
+
   // Card brand detection based on card number (BIN/IIN detection)
   const detectCardBrand = (cardNumber) => {
     const cleanNumber = cardNumber.replace(/\s/g, '');
@@ -55,9 +100,9 @@ jQuery(($) => {
     const cardBrand = detectCardBrand(cardNumber);
     const $wrapper = $input.closest('.chip-card-number-wrapper');
     const $icon = $wrapper.find('.chip-card-brand-icon');
-    
-    if (cardBrand && gateway_option.card_logos_url) {
-      $icon.attr('src', gateway_option.card_logos_url + cardBrand + '.svg');
+
+    if (cardBrand && CARD_LOGOS_URL) {
+      $icon.attr('src', CARD_LOGOS_URL + cardBrand + '.svg');
       $icon.attr('alt', cardBrand);
       $icon.removeClass('chip-hidden');
     } else {
@@ -69,24 +114,13 @@ jQuery(($) => {
   $('body').on('input', 'input[id$="-card-number"]', function(e) {
     var $target = $(this);
     var value = $target.val();
-    
-    // Remove all non-digits
+
     var cleaned = value.replace(/\D/g, '');
-    
-    // Limit to 16 digits
-    if (cleaned.length > 16) {
-      cleaned = cleaned.substring(0, 16);
-    }
-    
-    // Format with spaces every 4 digits
+    if (cleaned.length > 16) cleaned = cleaned.substring(0, 16);
+
     var formatted = cleaned.replace(/(\d{4})(?=\d)/g, '$1 ');
-    
-    // Only update if different to avoid cursor issues
-    if ($target.val() !== formatted) {
-      $target.val(formatted);
-    }
-    
-    // Update card brand icon
+    if ($target.val() !== formatted) $target.val(formatted);
+
     updateCardBrandIcon($target);
   });
 
@@ -94,65 +128,37 @@ jQuery(($) => {
   $('body').on('keypress', 'input[id$="-card-name"]', function(e) {
     var digit = String.fromCharCode(e.which);
     var regex = new RegExp("[a-zA-Z \'\.\-]+$");
-    if (!regex.test(digit)) {
-      e.preventDefault();
-    }
+    if (!regex.test(digit)) e.preventDefault();
   });
 
   // Expiry field formatting - auto-format as MM / YY
   $('body').on('input', 'input[id$="-card-expiry"]', function(e) {
     var $target = $(this);
     var value = $target.val();
-    
-    // Remove all non-digits
+
     var cleaned = value.replace(/\D/g, '');
-    
-    // Limit to 4 digits (MMYY)
-    if (cleaned.length > 4) {
-      cleaned = cleaned.substring(0, 4);
-    }
-    
-    // Format as MM / YY
+    if (cleaned.length > 4) cleaned = cleaned.substring(0, 4);
+
     var formatted = '';
-    if (cleaned.length >= 2) {
-      formatted = cleaned.substring(0, 2) + ' / ' + cleaned.substring(2);
-    } else {
-      formatted = cleaned;
-    }
-    
-    // Only update if different to avoid cursor issues
-    if ($target.val() !== formatted) {
-      $target.val(formatted);
-    }
+    if (cleaned.length >= 2) formatted = cleaned.substring(0, 2) + ' / ' + cleaned.substring(2);
+    else formatted = cleaned;
+
+    if ($target.val() !== formatted) $target.val(formatted);
   });
 
   // Prevent non-numeric input on expiry field
   $('body').on('keypress', 'input[id$="-card-expiry"]', function(e) {
     var charCode = e.which ? e.which : e.keyCode;
-    // Allow: backspace, delete, tab, escape, enter, and numbers
-    if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) {
-      return true;
-    }
-    // Allow numbers only
-    if (charCode < 48 || charCode > 57) {
-      e.preventDefault();
-      return false;
-    }
+    if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) return true;
+    if (charCode < 48 || charCode > 57) { e.preventDefault(); return false; }
     return true;
   });
 
   // CVC field - only allow numeric input
   $('body').on('keypress', 'input[id$="-card-cvc"]', function(e) {
     var charCode = e.which ? e.which : e.keyCode;
-    // Allow: backspace, delete, tab, escape, enter, and numbers
-    if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) {
-      return true;
-    }
-    // Allow numbers only
-    if (charCode < 48 || charCode > 57) {
-      e.preventDefault();
-      return false;
-    }
+    if (charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || charCode === 46) return true;
+    if (charCode < 48 || charCode > 57) { e.preventDefault(); return false; }
     return true;
   });
 
@@ -161,105 +167,94 @@ jQuery(($) => {
     var $target = $(this);
     var value = $target.val();
     var cleaned = value.replace(/\D/g, '');
-    if (cleaned.length > 4) {
-      cleaned = cleaned.substring(0, 4);
-    }
-    if ($target.val() !== cleaned) {
-      $target.val(cleaned);
-    }
+    if (cleaned.length > 4) cleaned = cleaned.substring(0, 4);
+    if ($target.val() !== cleaned) $target.val(cleaned);
   });
 
-  $('form.checkout').on('checkout_place_order_'+gateway_option.id, function(event, wc_checkout_form) {
-    // if ($('input[name="wc-' + gateway_option.id + '-payment-token"]:checked').val() != 'new') {
-    //   return true;
-    // }
-
-    if ( typeof wc_checkout_form === 'undefined' ) {
+  // Bind a per-gateway card validation handler for every CHIP clone that has
+  // a card form, so validation runs for whichever gateway the customer picks.
+  var bindValidation = function( methodId ) {
+    $( 'form.checkout' ).on( 'checkout_place_order_' + methodId, function( event, wc_checkout_form ) {
+      if ( typeof wc_checkout_form === 'undefined' || typeof wc_checkout_form.submit_error !== 'function' ) {
+        return true;
+      }
+      var ctx = activeCardGateway();
+      if ( ! ctx || ctx.id !== methodId ) {
+        return true;
+      }
+      var $cardForm = $( '#wc-' + methodId + '-cc-form' );
+      // Card validation only applies when the card form is visible AND (in
+      // unified mode) the customer selected Card. Redirect methods never
+      // carry card data.
+      if ( ! $cardForm.is( ':visible' ) ) {
+        return true;
+      }
+      var $unified = ctx.$box.find( 'select[name="chip_payment_method"]' );
+      if ( $unified.length && $unified.val() !== 'card' ) {
+        return true;
+      }
+      if ( $( '#' + methodId + '-card-name' ).val() === '' ) {
+        wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name cannot be empty</div>' );
+        return false;
+      }
+      var illegal_character = /[^a-zA-Z \'\.\-]/;
+      if ( illegal_character.test( $( '#' + methodId + '-card-name' ).val() ) ) {
+        wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name contains illegal character</div>' );
+        return false;
+      }
+      if ( $( '#' + methodId + '-card-number' ).val() === '' ) {
+        wc_checkout_form.submit_error( '<div class="woocommerce-error">Card Number cannot be empty</div>' );
+        return false;
+      }
+      if ( $( '#' + methodId + '-card-expiry' ).val() === '' ) {
+        wc_checkout_form.submit_error( '<div class="woocommerce-error">Expiry (MM/YY) cannot be empty</div>' );
+        return false;
+      }
+      if ( $( '#' + methodId + '-card-cvc' ).val() === '' ) {
+        wc_checkout_form.submit_error( '<div class="woocommerce-error">CVC cannot be empty</div>' );
+        return false;
+      }
       return true;
-    }
+    } );
+  };
 
-    if (typeof wc_checkout_form.submit_error !== "function") {
-      return true;
-    }
-
-    if ($('.wc-payment-form').is(":hidden")) {
-      return true;
-    }
-
-    // When the unified dropdown is present, card validation only applies
-    // when the customer actually selected Card; FPX/Razer selections are
-    // redirect payments and never carry card data.
-    var $unifiedSelect = $('select.chip-unified-payment-method');
-    if ($unifiedSelect.length > 0 && $unifiedSelect.val() !== 'card') {
-      return true;
-    }
-
-    if ($('#' + gateway_option.id + '-card-name').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name cannot be empty</div>' ); // eslint-disable-line max-len
-      return false;
-    }
-
-    let illegal_character = /[^a-zA-Z \'\.\-]/;
-    let chip_card_name = $('#' + gateway_option.id + '-card-name').val();
-    if (illegal_character.test(chip_card_name)) {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Cardholder Name contains illegal character</div>' ); // eslint-disable-line max-len
-      return false;
-    }
-
-    if ($('#' + gateway_option.id + '-card-number').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Card Number cannot be empty</div>' ); // eslint-disable-line max-len
-      return false;
-    }
-
-    if ($('#' + gateway_option.id + '-card-expiry').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">Expiry (MM/YY) cannot be empty</div>' ); // eslint-disable-line max-len
-      return false;
-    }
-
-    if ($('#' + gateway_option.id + '-card-cvc').val() === '') {
-      wc_checkout_form.submit_error( '<div class="woocommerce-error">CVC cannot be empty</div>' ); // eslint-disable-line max-len
-      return false;
-    }
-    
-  });
-
-  // https://stackoverflow.com/questions/19036684/jquery-redirect-with-post-data
-
+  // Bind card POST on checkout success for the active gateway.
   $('form.checkout').on( 'checkout_place_order_success', function( event, result, wc_checkout_form ) {
-
     if ( typeof wc_checkout_form === 'undefined' ) {
       return;
     }
-
-    var card_expiry = $('#' + gateway_option.id + '-card-expiry').val();
-    // Remove spaces only, keeping slash for MM/YY format
-    var card_no_space_expiry = card_expiry.replace(/\s/g, '');
-
-    if (wc_checkout_form.get_payment_method() == gateway_option.id && $('.wc-payment-form').is(":visible")) {
-      // Only post card data when Card is the selected method. With the
-      // unified dropdown, FPX/Razer selections redirect to the CHIP page
-      // and must not be hijacked by the card POST flow.
-      var $unifiedSelect = $('select.chip-unified-payment-method');
-      if ($unifiedSelect.length > 0 && $unifiedSelect.val() !== 'card') {
-        return true;
-      }
-      if(result.result == 'success') {
-        var redirect_location = result.redirect;
-        var form = '<input type="hidden" name="cardholder_name" value="'+$('#' + gateway_option.id + '-card-name').val()+'">';
-        form += '<input type="hidden" name="card_number" value="'+$('#' + gateway_option.id + '-card-number').val()+'">';
-        form += '<input type="hidden" name="expires" value="'+card_no_space_expiry+'">';
-        form += '<input type="hidden" name="cvc" value="'+$('#' + gateway_option.id + '-card-cvc').val()+'">';
-        
-        // Check if customer wants to save the card.
-        var save_card_checkbox = $('#wc-' + gateway_option.id + '-new-payment-method');
-        var remember_card = (save_card_checkbox.length && save_card_checkbox.is(':checked')) ? 'on' : 'off';
-        form += '<input type="hidden" name="remember_card" value="'+remember_card+'">';
-        
-        $('<form action="'+redirect_location+'" method="POST">'+form+'</form>').appendTo('body').submit();
-      }
+    var ctx = activeCardGateway();
+    if ( ! ctx ) {
+      return true;
+    }
+    var methodId = ctx.id;
+    var $cardForm = ctx.$box.find( '#wc-' + methodId + '-cc-form' );
+    if ( ! $cardForm.is( ':visible' ) ) {
+      return true;
+    }
+    var $unified = ctx.$box.find( 'select[name="chip_payment_method"]' );
+    if ( $unified.length && $unified.val() !== 'card' ) {
+      return true;
+    }
+    if ( result.result === 'success' ) {
+      var redirect_location = result.redirect;
+      var card_expiry = $( '#' + methodId + '-card-expiry' ).val().replace(/\s/g, '');
+      var form = '<input type="hidden" name="cardholder_name" value="' + $( '#' + methodId + '-card-name' ).val() + '">';
+      form += '<input type="hidden" name="card_number" value="' + $( '#' + methodId + '-card-number' ).val() + '">';
+      form += '<input type="hidden" name="expires" value="' + card_expiry + '">';
+      form += '<input type="hidden" name="cvc" value="' + $( '#' + methodId + '-card-cvc' ).val() + '">';
+      var save_card_checkbox = $( '#' + methodId + '-new-payment-method' );
+      var remember_card = ( save_card_checkbox.length && save_card_checkbox.is(':checked') ) ? 'on' : 'off';
+      form += '<input type="hidden" name="remember_card" value="' + remember_card + '">';
+      $('<form action="' + redirect_location + '" method="POST">' + form + '</form>').appendTo('body').submit();
       return false;
     }
-
     return true;
   });
+
+  // Bind validation for all CHIP card gateways present on load.
+  $( function() {
+    var ids = chipCardGatewayIds();
+    ids.forEach( function( id ) { bindValidation( id ); } );
+  } );
 });
