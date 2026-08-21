@@ -86,7 +86,12 @@ jQuery( ( $ ) => {
 		return option.text || '';
 	};
 
-	$( document.body ).on( 'updated_checkout', function() {
+	// Enhance the unified <select>: disable offline banks, then init selectWoo
+	// with bank/e-wallet logos. Extracted as a named function so it runs on
+	// initial page load (order-pay, payment-method pages) AND on every
+	// updated_checkout AJAX refresh — previously it only ran on updated_checkout,
+	// so an order-pay page that loaded fresh never got selectWoo or logos.
+	var initUnifiedDropdown = function() {
 		var $select = $( 'select.chip-unified-payment-method' );
 
 		if ( $select.length === 0 ) {
@@ -110,5 +115,13 @@ jQuery( ( $ ) => {
 				templateSelection: formatSelection,
 			} );
 		}
+	};
+
+	// Run on initial load (document.ready) so order-pay and direct page loads
+	// get the logos too, not only AJAX-driven checkout updates.
+	$( function() {
+		initUnifiedDropdown();
 	} );
+
+	$( document.body ).on( 'updated_checkout', initUnifiedDropdown );
 } );
