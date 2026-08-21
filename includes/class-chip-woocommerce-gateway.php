@@ -3634,11 +3634,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function register_script() {
+		// Use file modification time as the cache-busting version for the two
+		// frontend JS assets. The module version constant stays constant across
+		// commits, so a CDN (e.g. Cloudflare) would keep serving the OLD file
+		// under the same ?ver= URL after an update. filemtime changes the query
+		// string whenever the file is edited, guaranteeing fresh copies.
+		$direct_post_path = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/js/direct-post.js';
+		$dropdown_path    = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/js/chip-unified-dropdown.js';
+		$direct_post_ver  = file_exists( $direct_post_path ) ? (string) filemtime( $direct_post_path ) : CHIP_WOOCOMMERCE_MODULE_VERSION;
+		$dropdown_ver     = file_exists( $dropdown_path ) ? (string) filemtime( $dropdown_path ) : CHIP_WOOCOMMERCE_MODULE_VERSION;
+
 		wp_register_script(
 			"wc-{$this->id}-direct-post",
 			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/direct-post.js',
 			array( 'jquery' ),
-			CHIP_WOOCOMMERCE_MODULE_VERSION,
+			$direct_post_ver,
 			true
 		);
 
@@ -3655,7 +3665,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			"wc-{$this->id}-unified-dropdown",
 			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/chip-unified-dropdown.js',
 			array( 'jquery' ),
-			CHIP_WOOCOMMERCE_MODULE_VERSION,
+			$dropdown_ver,
 			true
 		);
 
