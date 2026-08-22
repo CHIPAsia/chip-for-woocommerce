@@ -2,7 +2,7 @@ jQuery( ( $ ) => {
 	/**
 	 * Unified payment-method dropdown (classic checkout).
 	 *
-	 * Enhances the single <select name="chip_payment_method_<gateway_id>">
+	 * Enhances every <select name="chip_payment_method_<gateway_id>">
 	 * rendered by payment_fields() with the same UX the legacy single-method
 	 * dropdowns had: selectWoo init, bank/e-wallet logos, and offline-bank
 	 * disabling.
@@ -11,7 +11,16 @@ jQuery( ( $ ) => {
 	 * in one form (order-pay) don't collide. The hidden mirror field carries
 	 * the same scoped name so it survives updated_checkout rebuilds.
 	 *
-	 * Localized data (gateway_unified_option):
+	 * IMPORTANT: this script is enqueued once per active CHIP gateway, but
+	 * wp_localize_script() writes every clone's data to the SAME global
+	 * 'gateway_unified_option' (last one wins). We therefore never read
+	 * gateway_unified_option.id — the gateway id is derived from each select's
+	 * own name attribute, and every scoped select is enhanced in a single
+	 * pass guarded by a window flag so the N enqueued copies don't re-init.
+	 *
+	 * Localized data (gateway_unified_option.unified) is identical across all
+	 * clones (shared assets + shared FPX health-check), so reading it from
+	 * whichever copy won is safe:
 	 *   - fpx_logo_base    (string)  Base URL for FPX bank logos (assets/fpx_bank/).
 	 *   - razer_logo_base  (string)  Base URL for Razer e-wallet logos (assets/razer_ewallet/).
 	 *   - dnqr_logo_url    (string)  URL of the DuitNow QR logo.
@@ -23,6 +32,13 @@ jQuery( ( $ ) => {
 	if ( typeof gateway_unified_option === 'undefined' || typeof gateway_unified_option.unified === 'undefined' ) {
 		return;
 	}
+
+	// Guard against the multiple enqueued copies of this script (one per
+	// active CHIP clone). Only the first copy performs the enhancement pass.
+	if ( window.__chipUnifiedDropdownInit ) {
+		return;
+	}
+	window.__chipUnifiedDropdownInit = true;
 
 	var unified = gateway_unified_option.unified;
 
@@ -91,7 +107,7 @@ jQuery( ( $ ) => {
 		return option.text || '';
 	};
 
-	// Preserve the customer's dropdown selection across updated_checkout
+	// Preserve each gateway's dropdown selection across updated_checkout
 	// AJAX refreshes. WooCommerce rebuilds the payment-box HTML on
 	// updated_checkout, creating a fresh <select> that loses the chosen
 	// value. SelectWoo then auto-picks the first non-empty option (e.g.
@@ -103,10 +119,9 @@ jQuery( ( $ ) => {
 	// to it on every init. The hidden input is added to the <form> once
 	// and survives updated_checkout because it is outside the payment-box
 	// fragment that WooCommerce replaces.
-	var savedChipPaymentMethod = '';
-	var gatewayId = gateway_unified_option.id || '';
+	var savedByGateway = {};
 
-	var syncHiddenInput = function( $select ) {
+	var syncHiddenInput = function( $select, gatewayId ) {
 		var $hidden = $( 'input[name="chip_payment_method_' + gatewayId + '_hidden"]' );
 		if ( $hidden.length === 0 ) {
 			$hidden = $( '<input type="hidden" name="chip_payment_method_' + gatewayId + '_hidden" value="" />' );
@@ -114,60 +129,62 @@ jQuery( ( $ ) => {
 		}
 		// When the select changes, update the hidden field.
 		$select.off( 'change.chipHidden' ).on( 'change.chipHidden', function() {
-			savedChipPaymentMethod = $( this ).val() || '';
-			$hidden.val( savedChipPaymentMethod );
+			savedByGateway[ gatewayId ] = $( this ).val() || '';
+			$hidden.val( savedByGateway[ gatewayId ] );
 		} );
 		// Restore from hidden field if available.
 		if ( $hidden.val() ) {
-			savedChipPaymentMethod = $hidden.val();
+			savedByGateway[ gatewayId ] = $hidden.val();
 		}
-		if ( savedChipPaymentMethod ) {
-			$select.val( savedChipPaymentMethod );
+		if ( savedByGateway[ gatewayId ] ) {
+			$select.val( savedByGateway[ gatewayId ] );
 		}
 	};
 
 	var initUnifiedDropdown = function() {
-		// The unified <select> is rendered by woocommerce_form_field(), which
-		// applies the 'chip-unified-payment-method' class to the wrapper
-		// <p class="form-row">, not to the <select> itself (the select gets
-		// class="select"). Match the select inside that wrapper so selectWoo
-		// and the bank/e-wallet logos actually attach.
-		var $select = $( '.chip-unified-payment-method select[name="chip_payment_method_' + gatewayId + '"]' );
+		// Enhance every scoped select, deriving the gateway id from the
+		// select's own name (never from the shared localized global).
+		$( '.chip-unified-payment-method select[name^="chip_payment_method_"]' ).each( function() {
+			var $select   = $( this );
+			var gatewayId = $select.attr( 'name' ).replace( 'chip_payment_method_', '' );
 
-		if ( $select.length === 0 ) {
-			return;
-		}
-
-		// Restore the previously selected value if the select was rebuilt.
-		if ( savedChipPaymentMethod ) {
-			$select.val( savedChipPaymentMethod );
-		}
-
-		// Disable offline banks before selectWoo is applied so the
-		// placeholder option is not affected.
-		$select.find( 'option' ).each( function() {
-			if ( isUnavailable( $( this ).val() ) ) {
-				$( this ).prop( 'disabled', true );
+			// Skip selects already enhanced by selectWoo (it adds the
+			// select2-hidden-accessible class and hides the original).
+			if ( $select.hasClass( 'select2-hidden-accessible' ) ) {
+				return;
 			}
-		} );
 
-		if ( $.fn.selectWoo ) {
-			$select.selectWoo( {
-				placeholder: $select.find( 'option[value=""]' ).text() || 'Choose a payment method',
-				allowClear: false,
-				width: '100%',
-				templateResult: formatOption,
-				templateSelection: formatSelection,
+			// Restore the previously selected value if the select was rebuilt.
+			if ( savedByGateway[ gatewayId ] ) {
+				$select.val( savedByGateway[ gatewayId ] );
+			}
+
+			// Disable offline banks before selectWoo is applied so the
+			// placeholder option is not affected.
+			$select.find( 'option' ).each( function() {
+				if ( isUnavailable( $( this ).val() ) ) {
+					$( this ).prop( 'disabled', true );
+				}
 			} );
-		}
 
-		// Persist the selection whenever the customer changes it.
-		$select.on( 'change', function() {
-			savedChipPaymentMethod = $( this ).val() || '';
+			if ( $.fn.selectWoo ) {
+				$select.selectWoo( {
+					placeholder: $select.find( 'option[value=""]' ).text() || 'Choose a payment method',
+					allowClear: false,
+					width: '100%',
+					templateResult: formatOption,
+					templateSelection: formatSelection,
+				} );
+			}
+
+			// Persist the selection whenever the customer changes it.
+			$select.on( 'change', function() {
+				savedByGateway[ gatewayId ] = $( this ).val() || '';
+			} );
+
+			// Sync with hidden input (survives updated_checkout rebuilds).
+			syncHiddenInput( $select, gatewayId );
 		} );
-
-		// Sync with hidden input (survives updated_checkout rebuilds).
-		syncHiddenInput( $select );
 	};
 
 	// Run on initial load (document.ready) so order-pay and direct page loads
