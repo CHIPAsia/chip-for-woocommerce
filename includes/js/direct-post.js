@@ -189,7 +189,7 @@ jQuery(($) => {
       if ( ! $cardForm.is( ':visible' ) ) {
         return true;
       }
-      var $unified = ctx.$box.find( 'select[name="chip_payment_method"]' );
+      var $unified = ctx.$box.find( 'select[name^="chip_payment_method_"]' );
       if ( $unified.length && $unified.val() !== 'card' ) {
         return true;
       }
@@ -232,7 +232,7 @@ jQuery(($) => {
     if ( ! $cardForm.is( ':visible' ) ) {
       return true;
     }
-    var $unified = ctx.$box.find( 'select[name="chip_payment_method"]' );
+    var $unified = ctx.$box.find( 'select[name^="chip_payment_method_"]' );
     if ( $unified.length && $unified.val() !== 'card' ) {
       return true;
     }

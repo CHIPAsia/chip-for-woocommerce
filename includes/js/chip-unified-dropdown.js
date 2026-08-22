@@ -2,9 +2,14 @@ jQuery( ( $ ) => {
 	/**
 	 * Unified payment-method dropdown (classic checkout).
 	 *
-	 * Enhances the single <select name="chip_payment_method"> rendered by
-	 * payment_fields() with the same UX the legacy single-method dropdowns
-	 * had: selectWoo init, bank/e-wallet logos, and offline-bank disabling.
+	 * Enhances the single <select name="chip_payment_method_<gateway_id>">
+	 * rendered by payment_fields() with the same UX the legacy single-method
+	 * dropdowns had: selectWoo init, bank/e-wallet logos, and offline-bank
+	 * disabling.
+	 *
+	 * The field name is scoped per gateway ID so multiple CHIP clones rendered
+	 * in one form (order-pay) don't collide. The hidden mirror field carries
+	 * the same scoped name so it survives updated_checkout rebuilds.
 	 *
 	 * Localized data (gateway_unified_option):
 	 *   - fpx_logo_base    (string)  Base URL for FPX bank logos (assets/fpx_bank/).
@@ -99,12 +104,13 @@ jQuery( ( $ ) => {
 	// and survives updated_checkout because it is outside the payment-box
 	// fragment that WooCommerce replaces.
 	var savedChipPaymentMethod = '';
+	var gatewayId = gateway_unified_option.id || '';
 
 	var syncHiddenInput = function( $select ) {
-		var $hidden = $( 'input[name="chip_payment_method_hidden"]' );
+		var $hidden = $( 'input[name="chip_payment_method_' + gatewayId + '_hidden"]' );
 		if ( $hidden.length === 0 ) {
-			$hidden = $( '<input type="hidden" name="chip_payment_method_hidden" value="" />' );
-			$( 'form.checkout' ).append( $hidden );
+			$hidden = $( '<input type="hidden" name="chip_payment_method_' + gatewayId + '_hidden" value="" />' );
+			$( 'form.checkout, form#order_review' ).append( $hidden );
 		}
 		// When the select changes, update the hidden field.
 		$select.off( 'change.chipHidden' ).on( 'change.chipHidden', function() {
@@ -126,7 +132,7 @@ jQuery( ( $ ) => {
 		// <p class="form-row">, not to the <select> itself (the select gets
 		// class="select"). Match the select inside that wrapper so selectWoo
 		// and the bank/e-wallet logos actually attach.
-		var $select = $( '.chip-unified-payment-method select' );
+		var $select = $( '.chip-unified-payment-method select[name="chip_payment_method_' + gatewayId + '"]' );
 
 		if ( $select.length === 0 ) {
 			return;

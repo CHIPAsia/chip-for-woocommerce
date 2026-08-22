@@ -1492,7 +1492,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			// Single-method whitelists (DuitNow QR-only, Crypto-only) keep
 			// the zero-click UX: a hidden pre-selected input instead of a
 			// dropdown with a single option.
-			echo '<input type="hidden" name="chip_payment_method" value="' . esc_attr( $value ) . '" />';
+			echo '<input type="hidden" name="' . esc_attr( $this->chip_payment_method_field() ) . '" value="' . esc_attr( $value ) . '" />';
 			return;
 		}
 		wp_enqueue_script( "wc-{$this->id}-unified-dropdown" );
@@ -1501,7 +1501,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$options[ $value ] = $label;
 		}
 		woocommerce_form_field(
-			'chip_payment_method',
+			$this->chip_payment_method_field(),
 			array(
 				'type'     => 'select',
 				'class'    => array( 'chip-unified-payment-method' ),
@@ -1510,6 +1510,46 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				'required' => true,
 			)
 		);
+	}
+
+	/**
+	 * The POST field name for this gateway's unified dropdown selection.
+	 *
+	 * Scoped per gateway ID so that on order-pay (and any page rendering
+	 * multiple CHIP gateway clones in one form) each gateway's <select> or
+	 * hidden input submits a distinct key. A shared 'chip_payment_method'
+	 * name collides — PHP keeps the last field in DOM order, so a
+	 * DuitNow QR-only clone's hidden 'dnqr' input would clobber another
+	 * gateway's FPX selection.
+	 *
+	 * @return string
+	 */
+	private function chip_payment_method_field() {
+		return 'chip_payment_method_' . $this->id;
+	}
+
+	/**
+	 * Read the posted dropdown selection for this gateway.
+	 *
+	 * Prefers the gateway-scoped field (classic checkout/order-pay submit
+	 * 'chip_payment_method_<id>'), then the scoped hidden mirror field, then
+	 * falls back to the unscoped 'chip_payment_method' key that the Blocks
+	 * checkout submits via payment_data (Legacy.php swaps payment_data into
+	 * $_POST, so the unscoped key is what blocks uses).
+	 *
+	 * @return string
+	 */
+	private function get_posted_payment_method() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		$scoped        = $this->chip_payment_method_field();
+		$scoped_hidden = $scoped . '_hidden';
+		foreach ( array( $scoped, $scoped_hidden, 'chip_payment_method' ) as $key ) {
+			if ( isset( $_POST[ $key ] ) && ! empty( $_POST[ $key ] ) ) {
+				return sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+			}
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return '';
 	}
 
 	/**
@@ -1588,13 +1628,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			<script type="text/javascript">
 				jQuery( function( $ ) {
 					var gatewayId = '<?php echo esc_attr( $this->id ); ?>';
+					var pmField = 'chip_payment_method_' + gatewayId;
 					var cardInWhitelist = <?php echo $card_in_whitelist ? 'true' : 'false'; ?>;
 					var syncCardFormVisibility = function() {
 						var $box = $( 'li.payment_method_' + gatewayId );
 						if ( $box.length === 0 ) {
 							return;
 						}
-						var $unified  = $box.find( 'select[name="chip_payment_method"]' );
+						var $unified  = $box.find( 'select[name="' + pmField + '"]' );
 						var $wrapper  = $unified.closest( '.chip-unified-payment-method' );
 						var $cardForm = $box.find( '#wc-' + gatewayId + '-cc-form' );
 						// The "Save to account" checkbox is rendered by WC's
@@ -1623,7 +1664,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 							$saveNew.toggle( cardVisible );
 						}
 					};
-					$( document.body ).on( 'change', 'input.woocommerce-SavedPaymentMethods-tokenInput, select[name="chip_payment_method"]', syncCardFormVisibility );
+					$( document.body ).on( 'change', 'input.woocommerce-SavedPaymentMethods-tokenInput, select[name="' + pmField + '"]', syncCardFormVisibility );
 					$( document.body ).on( 'updated_checkout', syncCardFormVisibility );
 					syncCardFormVisibility();
 				} );
@@ -1680,7 +1721,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$token_key            = 'wc-' . $this->id . '-payment-token';
 		$saved_token_selected = ( isset( $_POST[ $token_key ] ) && ! empty( $_POST[ $token_key ] ) && 'new' !== $_POST[ $token_key ] )
 			|| ( isset( $_POST['token'] ) && ! empty( $_POST['token'] ) && 'new' !== $_POST['token'] );
-		$has_method = ! empty( $_POST['chip_payment_method'] ) || ! empty( $_POST['chip_payment_method_hidden'] );
+		$has_method = ! empty( $this->get_posted_payment_method() );
 		if ( $this->should_render_unified_dropdown() && ! $saved_token_selected && ! $has_method ) {
 			throw new \Exception( esc_html__( 'Please choose a payment method.', 'chip-for-woocommerce' ) );
 		}
@@ -3146,16 +3187,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->bypass_chip ) {
 			return $this->maybe_atome_redirect( $url );
 		}
-		// Read the payment method. Prefer the hidden mirror field
-		// (chip_payment_method_hidden) because it survives
-		// updated_checkout rebuilds; the <select> can be reset to the
-		// first option by SelectWoo after a rebuild.
-		$chip_pm = '';
-		if ( isset( $_POST['chip_payment_method_hidden'] ) && ! empty( $_POST['chip_payment_method_hidden'] ) ) {
-			$chip_pm = sanitize_text_field( wp_unslash( $_POST['chip_payment_method_hidden'] ) );
-		} elseif ( isset( $_POST['chip_payment_method'] ) && ! empty( $_POST['chip_payment_method'] ) ) {
-			$chip_pm = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
-		}
+		// Read the payment method. Prefer this gateway's scoped field (classic
+		// checkout/order-pay submit 'chip_payment_method_<id>'), then the
+		// unscoped key used by Blocks payment_data.
+		$chip_pm = $this->get_posted_payment_method();
 		if ( empty( $chip_pm ) ) {
 			return $this->maybe_atome_redirect( $url );
 		}
@@ -3212,16 +3247,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( 'yes' !== $this->bypass_chip ) {
 			return false;
 		}
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		// Prefer the hidden mirror field (survives updated_checkout rebuilds).
-		$value = '';
-		if ( isset( $_POST['chip_payment_method_hidden'] ) && ! empty( $_POST['chip_payment_method_hidden'] ) ) {
-			$value = sanitize_text_field( wp_unslash( $_POST['chip_payment_method_hidden'] ) );
-		} elseif ( isset( $_POST['chip_payment_method'] ) ) {
-			$value = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
-		}
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
-		return 'card' === $value;
+		return 'card' === $this->get_posted_payment_method();
 	}
 
 	/**

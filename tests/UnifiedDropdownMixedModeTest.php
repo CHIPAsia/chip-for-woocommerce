@@ -139,8 +139,8 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 
 		$this->renderPaymentFields( $gateway );
 
-		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
-		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertArrayHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
 		$this->assertSame( 'select', $field['type'] );
 		$this->assertTrue( $field['required'] );
 		// Both FPX and Card entries must be present in the merged list.
@@ -154,7 +154,7 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 
 		$this->renderPaymentFields( $gateway );
 
-		$this->assertArrayNotHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$this->assertArrayNotHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
 	}
 
 	public function test_payment_fields_omits_card_option_on_order_pay_page() {
@@ -166,8 +166,8 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 
 		// The dropdown still renders redirect methods on order-pay, but the
 		// 'card' option is omitted (no card form exists there).
-		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
-		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertArrayHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
 		$this->assertArrayHasKey( 'fpx:MBB0228', $field['options'] );
 		$this->assertArrayNotHasKey( 'card', $field['options'] );
 	}
@@ -272,10 +272,10 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		}
 
 		// No visible dropdown rendered...
-		$this->assertArrayNotHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$this->assertArrayNotHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
 		// ...but a hidden pre-selected dnqr input is emitted.
 		$this->assertStringContainsString(
-			'<input type="hidden" name="chip_payment_method" value="dnqr" />',
+			'<input type="hidden" name="chip_payment_method_wc_gateway_chip" value="dnqr" />',
 			$output
 		);
 	}
@@ -286,8 +286,8 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 
 		$this->renderPaymentFields( $gateway );
 
-		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
-		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertArrayHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
 		$this->assertSame( 'select', $field['type'] );
 	}
 
@@ -297,8 +297,8 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 
 		$this->renderPaymentFields( $gateway );
 
-		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
-		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertArrayHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
 		$this->assertSame( 'select', $field['type'] );
 		$this->assertArrayHasKey( 'fpx:MBB0228', $field['options'] );
 		$this->assertArrayHasKey( 'crypto_coin', $field['options'] );
@@ -315,9 +315,9 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 			$output = ob_get_clean();
 		}
 
-		$this->assertArrayNotHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
+		$this->assertArrayNotHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
 		$this->assertStringContainsString(
-			'<input type="hidden" name="chip_payment_method" value="crypto_coin" />',
+			'<input type="hidden" name="chip_payment_method_wc_gateway_chip" value="crypto_coin" />',
 			$output
 		);
 	}
@@ -341,8 +341,8 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 
 		$this->renderPaymentFields( $gateway );
 
-		$this->assertArrayHasKey( 'chip_payment_method', $GLOBALS['__chip_test_form_fields'] );
-		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method'];
+		$this->assertArrayHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
 		$this->assertArrayHasKey( 'mpgs_google_pay', $field['options'] );
 		$this->assertArrayHasKey( 'mpgs_apple_pay', $field['options'] );
 	}
