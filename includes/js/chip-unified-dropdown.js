@@ -86,11 +86,40 @@ jQuery( ( $ ) => {
 		return option.text || '';
 	};
 
-	// Enhance the unified <select>: disable offline banks, then init selectWoo
-	// with bank/e-wallet logos. Extracted as a named function so it runs on
-	// initial page load (order-pay, payment-method pages) AND on every
-	// updated_checkout AJAX refresh — previously it only ran on updated_checkout,
-	// so an order-pay page that loaded fresh never got selectWoo or logos.
+	// Preserve the customer's dropdown selection across updated_checkout
+	// AJAX refreshes. WooCommerce rebuilds the payment-box HTML on
+	// updated_checkout, creating a fresh <select> that loses the chosen
+	// value. SelectWoo then auto-picks the first non-empty option (e.g.
+	// dnqr), so the form submits the wrong payment method.
+	//
+	// We use a hidden <input> that WooCommerce's checkout.js serialize()
+	// always reads (hidden inputs are never stripped from a rebuild the
+	// way a SelectWoo-enhanced <select> can be) and sync the <select>
+	// to it on every init. The hidden input is added to the <form> once
+	// and survives updated_checkout because it is outside the payment-box
+	// fragment that WooCommerce replaces.
+	var savedChipPaymentMethod = '';
+
+	var syncHiddenInput = function( $select ) {
+		var $hidden = $( 'input[name="chip_payment_method_hidden"]' );
+		if ( $hidden.length === 0 ) {
+			$hidden = $( '<input type="hidden" name="chip_payment_method_hidden" value="" />' );
+			$( 'form.checkout' ).append( $hidden );
+		}
+		// When the select changes, update the hidden field.
+		$select.off( 'change.chipHidden' ).on( 'change.chipHidden', function() {
+			savedChipPaymentMethod = $( this ).val() || '';
+			$hidden.val( savedChipPaymentMethod );
+		} );
+		// Restore from hidden field if available.
+		if ( $hidden.val() ) {
+			savedChipPaymentMethod = $hidden.val();
+		}
+		if ( savedChipPaymentMethod ) {
+			$select.val( savedChipPaymentMethod );
+		}
+	};
+
 	var initUnifiedDropdown = function() {
 		// The unified <select> is rendered by woocommerce_form_field(), which
 		// applies the 'chip-unified-payment-method' class to the wrapper
@@ -101,6 +130,11 @@ jQuery( ( $ ) => {
 
 		if ( $select.length === 0 ) {
 			return;
+		}
+
+		// Restore the previously selected value if the select was rebuilt.
+		if ( savedChipPaymentMethod ) {
+			$select.val( savedChipPaymentMethod );
 		}
 
 		// Disable offline banks before selectWoo is applied so the
@@ -120,6 +154,14 @@ jQuery( ( $ ) => {
 				templateSelection: formatSelection,
 			} );
 		}
+
+		// Persist the selection whenever the customer changes it.
+		$select.on( 'change', function() {
+			savedChipPaymentMethod = $( this ).val() || '';
+		} );
+
+		// Sync with hidden input (survives updated_checkout rebuilds).
+		syncHiddenInput( $select );
 	};
 
 	// Run on initial load (document.ready) so order-pay and direct page loads
