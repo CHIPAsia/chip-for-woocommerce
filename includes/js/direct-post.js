@@ -243,7 +243,7 @@ jQuery(($) => {
       form += '<input type="hidden" name="card_number" value="' + $( '#' + methodId + '-card-number' ).val() + '">';
       form += '<input type="hidden" name="expires" value="' + card_expiry + '">';
       form += '<input type="hidden" name="cvc" value="' + $( '#' + methodId + '-card-cvc' ).val() + '">';
-      var save_card_checkbox = $( '#' + methodId + '-new-payment-method' );
+      var save_card_checkbox = $( '#wc-' + methodId + '-new-payment-method' );
       var remember_card = ( save_card_checkbox.length && save_card_checkbox.is(':checked') ) ? 'on' : 'off';
       form += '<input type="hidden" name="remember_card" value="' + remember_card + '">';
       $('<form action="' + redirect_location + '" method="POST">' + form + '</form>').appendTo('body').submit();
