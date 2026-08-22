@@ -193,6 +193,8 @@ class Chip_Woocommerce_Payment_Details {
 			$this->render_fpx_details( $purchase );
 		} elseif ( in_array( $payment_method, array( 'visa', 'mastercard', 'maestro' ), true ) ) {
 			$this->render_card_details( $purchase );
+		} elseif ( in_array( $payment_method, array( 'dnqr', 'duitnow_qr' ), true ) ) {
+			$this->render_dnqr_details( $purchase );
 		}
 
 		echo '</div>';
@@ -358,6 +360,56 @@ class Chip_Woocommerce_Payment_Details {
 
 		if ( ! empty( $extra['authorization_approval_code'] ) ) {
 			$this->render_detail_row( __( 'Auth Code', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['authorization_approval_code'] ) . '</code>' );
+		}
+
+		echo '</tbody>';
+		echo '</table>';
+	}
+
+	/**
+	 * Render DuitNow QR details.
+	 *
+	 * DNQR attempt extra contains: transaction_id, end_to_end_identification,
+	 * partner_transaction_reference, amount, currency, bill_id, state.
+	 * In test mode extra is empty, so nothing is rendered.
+	 *
+	 * @param array $purchase Purchase data.
+	 * @return void
+	 */
+	private function render_dnqr_details( $purchase ) {
+		// Try attempts[0].extra first, then transaction_data.extra.
+		$extra = array();
+		if ( ! empty( $purchase['transaction_data']['attempts'][0]['extra'] ) ) {
+			$extra = $purchase['transaction_data']['attempts'][0]['extra'];
+		} elseif ( ! empty( $purchase['transaction_data']['extra'] ) ) {
+			$extra = $purchase['transaction_data']['extra'];
+		}
+
+		if ( empty( $extra ) ) {
+			return;
+		}
+
+		echo '<table class="chip-details-table">';
+		echo '<tbody>';
+
+		if ( ! empty( $extra['transaction_id'] ) ) {
+			$this->render_detail_row( __( 'Transaction ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['transaction_id'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['end_to_end_identification'] ) ) {
+			$this->render_detail_row( __( 'End-to-End ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['end_to_end_identification'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['partner_transaction_reference'] ) ) {
+			$this->render_detail_row( __( 'Partner Ref', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['partner_transaction_reference'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['bill_id'] ) ) {
+			$this->render_detail_row( __( 'Bill ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['bill_id'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['state'] ) ) {
+			$this->render_detail_row( __( 'State', 'chip-for-woocommerce' ), esc_html( ucwords( str_replace( '_', ' ', $extra['state'] ) ) ) );
 		}
 
 		echo '</tbody>';
