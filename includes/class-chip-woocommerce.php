@@ -206,14 +206,17 @@ class Chip_Woocommerce {
 			case 'fpx_b2c':
 				$banks = $gateway_instance->list_fpx_banks();
 				unset( $banks[''] );
+				$banks = $this->prefix_bank_tags( $banks, 'fpx' );
 				break;
 			case 'fpx_b2b1':
 				$banks = $gateway_instance->list_fpx_b2b1_banks();
 				unset( $banks[''] );
+				$banks = $this->prefix_bank_tags( $banks, 'fpx_b2b1' );
 				break;
 			case 'razer':
 				$banks = $gateway_instance->list_razer_ewallets();
 				unset( $banks[''] );
+				$banks = $this->prefix_bank_tags( $banks, 'razer' );
 				break;
 			case 'unified':
 				$banks = $gateway_instance->list_unified_payment_methods();
@@ -222,6 +225,25 @@ class Chip_Woocommerce {
 		}
 
 		return new WP_REST_Response( $banks, 200 );
+	}
+
+	/**
+	 * Prefix bank/e-wallet codes with their method tag so the Blocks dropdown
+	 * submits the same tag-encoded value (e.g. 'fpx_b2b1:PBB0234') that
+	 * bypass_chip() expects. The single-method REST endpoints previously
+	 * returned bare codes ('PBB0234'), which bypass_chip() could not parse
+	 * and so never appended the ?preferred= redirect parameter.
+	 *
+	 * @param array  $banks Bank list keyed by code.
+	 * @param string $tag   Method tag to prefix (fpx, fpx_b2b1, razer).
+	 * @return array
+	 */
+	private function prefix_bank_tags( $banks, $tag ) {
+		$prefixed = array();
+		foreach ( $banks as $code => $label ) {
+			$prefixed[ $tag . ':' . $code ] = $label;
+		}
+		return $prefixed;
 	}
 
 	/**
