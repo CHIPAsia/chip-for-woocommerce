@@ -12,6 +12,15 @@
 * Fixed - `is_card_only_whitelist()` and `process_payment_with_context()` correctly handle the constructor-expanded `['card']` whitelist so the card-only merchant flow (delayed capture, Blocks checkout direct POST) works after the Card group refactor.
 * Fixed - Blocks support class `js_display` decision now uses the in-memory expanded whitelist so saved `['card']` and `['fpx', 'card']` merchants correctly render `js_display='unified'` instead of an empty value.
 * Fixed - Shared `unified-payment-method-list` bundle is now enqueued via a webpack `SharedBundleDependencyPlugin` that injects the dependency into each clone's `.asset.php`, so the component renders at runtime instead of returning `null`.
+* Changed - Blocks checkout renders the unified dropdown as a native `<select>` element (no logo) for a lighter, more accessible experience.
+* Added - Offline FPX banks are now displayed but disabled (not selectable) in both classic and Blocks checkout, instead of being silently removed.
+* Added - Crypto Coin and Atome e-wallet logos in the unified dropdown.
+* Changed - Card option logo now uses the Visa/Mastercard-only asset (no CHIP badge).
+* Fixed - Cross-contamination between gateway clones on the order-pay page: each gateway's dropdown now submits a scoped field name (`chip_payment_method_<id>`) so a DuitNow QR-only clone can no longer clobber another gateway's FPX selection.
+* Fixed - Global JS collision where only the last gateway clone received the dropdown enhancement (selectWoo, logo, hidden mirror); all scoped selects are now enhanced in one pass.
+* Fixed - Card option on the order-pay "try again" page now redirects to the CHIP payment page (`?preferred=card`) so the customer fills card details at CHIP.
+* Fixed - Offline bank list race condition: the unavailable-bank lists are now computed lazily so they are correct regardless of when the gateway is queried.
+* Fixed - Removed a per-page-load curl to the CHIP health-check API (`api.chip-in.asia/health_check`) that ran on every request via `register_script()`; the bank data is now only fetched on the checkout page.
 
 = 2.0.6 =
 * Added - dnqr payment method support. The DuitNow QR entry in the gateway's payment_method_whitelist multiselect now resolves at runtime to whichever of {duitnow_qr, dnqr} the merchant actually has available, prioritizing dnqr. A new resolver calls /payment_methods/ (with a 30-minute transient cache keyed by brand, currency, and amount-bucket) and short-circuits when no dnqr-group member is configured. The Razer e-wallet switch's case 'duitnow-qr' and the single-method DuitNow QR branch both apply the priority. No DB migration is required.
