@@ -3758,17 +3758,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			true
 		);
 
-		$this->localize_unified_dropdown();
+		// NOTE: do NOT call localize_unified_dropdown() here. register_script()
+		// runs on `init` for EVERY request (frontend and admin), and the
+		// localization reads the unavailable-bank lists via the lazy getters,
+		// which would trigger a curl to api.chip-in.asia/health_check on every
+		// page load (3s timeout, 3-minute cache). The script is only enqueued
+		// from render_unified_dropdown() on the checkout page, which localizes
+		// the data (with the correct offline-bank lists) right before enqueue.
 	}
 
 	/**
 	 * Localize the unified-dropdown script data.
 	 *
-	 * Called from register_script() (on init) and again from
-	 * render_unified_dropdown() after list_fpx_banks()/list_fpx_b2b1_banks()
-	 * have populated the unavailable-bank properties. The second call is
-	 * required because register_script() runs before the bank lists are
-	 * computed, so the first localization carries empty unavailable lists.
+	 * Called from render_unified_dropdown() (on the checkout page) after
+	 * list_fpx_banks()/list_fpx_b2b1_banks() have populated the
+	 * unavailable-bank properties. It is deliberately NOT called from
+	 * register_script(): that hook runs on `init` for every request, and
+	 * localizing there would read the unavailable-bank lists via the lazy
+	 * getters, triggering a curl to api.chip-in.asia/health_check on every
+	 * page load.
 	 *
 	 * @return void
 	 */

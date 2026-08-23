@@ -378,7 +378,7 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$this->assertTrue( $gateway->validate_fields() );
 	}
 
-	public function test_unified_dropdown_script_registered_with_logo_data() {
+	public function test_unified_dropdown_script_registered_without_localization() {
 		$gateway = $this->newMixedGateway( array( 'fpx', 'card', 'visa', 'mastercard', 'maestro' ) );
 		$gateway->supports = array( 'products' );
 
@@ -390,12 +390,12 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		// The unified-dropdown enhancer script is registered.
 		$this->assertArrayHasKey( 'wc-wc_gateway_chip-unified-dropdown', $GLOBALS['__chip_test_scripts'] );
 
-		// Logo base URLs and empty unavailable-bank lists are localized.
-		$localized = $GLOBALS['__chip_test_localized']['wc-wc_gateway_chip-unified-dropdown']['gateway_unified_option'] ?? array();
-		$this->assertNotEmpty( $localized['unified']['fpx_logo_base'] );
-		$this->assertNotEmpty( $localized['unified']['razer_logo_base'] );
-		$this->assertArrayHasKey( 'unavailable_fpx', $localized['unified'] );
-		$this->assertArrayHasKey( 'unavailable_b2b1', $localized['unified'] );
+		// register_script() runs on `init` for every request and must NOT
+		// localize the unified-dropdown data: the localization reads the
+		// unavailable-bank lists via the lazy getters, which would trigger a
+		// curl to api.chip-in.asia/health_check on every page load. The data
+		// is localized from render_unified_dropdown() on the checkout page.
+		$this->assertArrayNotHasKey( 'wc-wc_gateway_chip-unified-dropdown', $GLOBALS['__chip_test_localized'] );
 	}
 
 	/**
