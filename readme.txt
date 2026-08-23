@@ -33,7 +33,6 @@ CHIP - Digital Finance Platform. Securely accept one-time and subscription payme
 * **E-Wallets** - GrabPay, Touch 'n Go, ShopeePay, Maybank QRPay, and more via Razer
 * **Buy Now Pay Later** - Atome
 * **Crypto Coin** - Accept cryptocurrency payments
-* **Google Pay / Apple Pay** - Mobile wallet payments via MPGS
 
 = About CHIP =
 
@@ -65,9 +64,8 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 = 2.1.1 2026-08-23 =
 * Added - Additional charges (fixed and percentage fees) are now shown on the checkout page before payment, so customers see the exact amount they will be charged. The fee is applied via the cart when a CHIP gateway with additional charges enabled is selected, mirroring the order fee added at payment time.
-* Changed - Updated the plugin description to list all supported payment methods (Atome, ShopeePay, Maybank QRPay, Crypto Coin, Google Pay, Apple Pay) and removed the incorrect "Boost" e-wallet reference.
+* Changed - Updated the plugin description to list all supported payment methods (Atome, ShopeePay, Maybank QRPay, Crypto Coin) and removed the incorrect "Boost" e-wallet reference.
 * Changed - Bumped "Tested up to" to WordPress 7.1.
-* Changed - Updated checkout screenshots to reflect the unified payment method dropdown.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
