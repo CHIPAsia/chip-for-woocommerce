@@ -20,7 +20,7 @@ class ListRazerEwalletsTest extends GatewayTestCase {
 		$gateway  = $this->newGateway( array( 'payment_method_whitelist' => array( 'duitnow_qr' ) ) );
 		$ewallets = $this->callGatewayMethod( $gateway, 'list_razer_ewallets' );
 		$this->assertArrayHasKey( 'duitnow-qr', $ewallets );
-		$this->assertSame( 'Duitnow QR', $ewallets['duitnow-qr'] );
+		$this->assertSame( 'DuitNow QR', $ewallets['duitnow-qr'] );
 	}
 
 	public function test_shows_duitnow_qr_when_whitelist_has_dnqr() {

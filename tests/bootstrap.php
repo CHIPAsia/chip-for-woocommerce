@@ -47,6 +47,18 @@ if ( ! function_exists( 'plugin_dir_path' ) ) {
 	}
 }
 
+if ( ! function_exists( 'trailingslashit' ) ) {
+	/**
+	 * Stub for trailingslashit().
+	 *
+	 * @param string $string String to ensure trailing slash.
+	 * @return string
+	 */
+	function trailingslashit( $string ) {
+		return rtrim( $string, '/' ) . '/';
+	}
+}
+
 if ( ! function_exists( 'add_action' ) ) {
 	/**
 	 * Stub for add_action().
@@ -62,6 +74,17 @@ if ( ! function_exists( 'add_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'do_action' ) ) {
+	/**
+	 * Stub for do_action(). No actions are registered in tests.
+	 *
+	 * @param string $tag   Action hook name.
+	 * @param mixed  ...$args Additional arguments.
+	 * @return void
+	 */
+	function do_action( $tag, ...$args ) {}
+}
+
 if ( ! function_exists( 'is_admin' ) ) {
 	/**
 	 * Stub for is_admin().
@@ -70,6 +93,35 @@ if ( ! function_exists( 'is_admin' ) ) {
 	 */
 	function is_admin() {
 		return false;
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_script' ) ) {
+	/**
+	 * Stub for wp_enqueue_script().
+	 *
+	 * @return void
+	 */
+	function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $in_footer = false ) {}
+}
+
+if ( ! function_exists( 'add_query_arg' ) ) {
+	/**
+	 * Stub for add_query_arg().
+	 *
+	 * @param string|array $key   Query key or array of key => value.
+	 * @param mixed        $value Query value.
+	 * @param string       $url   Base URL.
+	 * @return string
+	 */
+	function add_query_arg( $key, $value = false, $url = '' ) {
+		if ( is_array( $key ) ) {
+			$args = $key;
+		} else {
+			$args = array( $key => $value );
+		}
+		$separator = ( false === strpos( $url, '?' ) ) ? '?' : '&';
+		return $url . $separator . http_build_query( $args );
 	}
 }
 
@@ -88,11 +140,133 @@ if ( ! function_exists( 'add_filter' ) ) {
 	}
 }
 
+if ( ! function_exists( 'has_action' ) ) {
+	/**
+	 * Stub for has_action(). No actions are registered in tests.
+	 *
+	 * @param string        $tag               Action hook name.
+	 * @param callable|bool $function_to_check Optional callback to check.
+	 * @return bool|int
+	 */
+	function has_action( $tag, $function_to_check = false ) {
+		return false;
+	}
+}
+
+if ( ! class_exists( 'WC_Order' ) ) {
+	/**
+	 * Minimal WC_Order stub so gateway tests can mock it.
+	 */
+	class WC_Order {
+		public function __construct( $order_id = 0 ) {}
+		public function get_id() { return 0; }
+		public function get_total() { return $GLOBALS['__chip_test_order_total'] ?? 0.0; }
+		public function get_currency() { return $GLOBALS['__chip_test_order_currency'] ?? 'MYR'; }
+		public function get_billing_email() { return ''; }
+		public function get_billing_phone() { return ''; }
+		public function get_billing_first_name() { return ''; }
+		public function get_billing_last_name() { return ''; }
+		public function get_billing_address_1() { return ''; }
+		public function get_billing_address_2() { return ''; }
+		public function get_billing_country() { return ''; }
+		public function get_billing_city() { return ''; }
+		public function get_billing_postcode() { return ''; }
+		public function get_billing_state() { return ''; }
+		public function get_shipping_address_1() { return ''; }
+		public function get_shipping_address_2() { return ''; }
+		public function get_shipping_country() { return ''; }
+		public function get_shipping_city() { return ''; }
+		public function get_shipping_postcode() { return ''; }
+		public function get_shipping_state() { return ''; }
+		public function get_customer_note() { return ''; }
+		public function get_user_id() { return 0; }
+		public function get_items() { return array(); }
+		public function get_payment_method() { return ''; }
+		public function get_payment_method_title() { return ''; }
+		public function get_order_number() { return 0; }
+	}
+}
+
 if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 	/**
 	 * Minimal stub for WC_Payment_Gateway so gateway class can be loaded.
 	 */
-	class WC_Payment_Gateway {}
+	class WC_Payment_Gateway {
+		/**
+		 * Stub for WC_Payment_Gateway::supports().
+		 *
+		 * @param string $feature Feature name.
+		 * @return bool
+		 */
+		public function supports( $feature ) {
+			return in_array( $feature, $this->supports ?? array(), true );
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::get_description().
+		 *
+		 * @return string
+		 */
+		public function get_description() {
+			return isset( $this->description ) ? $this->description : '';
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::tokenization_script().
+		 *
+		 * @return void
+		 */
+		public function tokenization_script() {}
+
+		/**
+		 * Stub for WC_Payment_Gateway::saved_payment_methods().
+		 *
+		 * @return void
+		 */
+		public function saved_payment_methods() {}
+
+		/**
+		 * Stub for WC_Payment_Gateway::get_tokens().
+		 *
+		 * @return array
+		 */
+		public function get_tokens() {
+			return array();
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::save_payment_method_checkbox().
+		 *
+		 * @return void
+		 */
+		public function save_payment_method_checkbox() {}
+	}
+}
+
+// Minimal stub for the WooCommerce Blocks payment method type so the
+// blocks-support class can be loaded by the test suite.
+if ( ! class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+	eval( <<<'PHP'
+	namespace Automattic\WooCommerce\Blocks\Payments\Integrations {
+		abstract class AbstractPaymentMethodType {
+			protected $name     = '';
+			protected $settings = array();
+			protected function get_setting( $name, $default = '' ) {
+				return isset( $this->settings[ $name ] ) ? $this->settings[ $name ] : $default;
+			}
+			public function get_name() { return $this->name; }
+			public function is_active() { return true; }
+			public function get_payment_method_script_handles() { return array(); }
+			public function get_payment_method_script_handles_for_admin() { return $this->get_payment_method_script_handles(); }
+			public function get_supported_features() { return array( 'products' ); }
+			public function get_payment_method_data() { return array(); }
+			public function get_script_handles() { return $this->get_payment_method_script_handles(); }
+			public function get_editor_script_handles() { return $this->get_payment_method_script_handles_for_admin(); }
+			public function get_script_data() { return $this->get_payment_method_data(); }
+		}
+	}
+PHP
+	);
 }
 
 if ( ! class_exists( 'WC_Logger' ) ) {
@@ -115,6 +289,10 @@ if ( ! isset( $GLOBALS['__chip_test_transients'] ) ) {
 // WordPress time constants used by the gateway at test time.
 if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
 	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
 }
 
 if ( ! function_exists( 'get_transient' ) ) {
@@ -162,6 +340,131 @@ if ( ! function_exists( '__' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_html__' ) ) {
+	/**
+	 * Stub for the WordPress esc_html__() translation function.
+	 *
+	 * @param string $text   Text to translate.
+	 * @param string $domain Text domain.
+	 * @return string
+	 */
+	function esc_html__( $text, $domain = '' ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_attr__' ) ) {
+	/**
+	 * Stub for the WordPress esc_attr__() translation function.
+	 *
+	 * @param string $text   Text to translate.
+	 * @param string $domain Text domain.
+	 * @return string
+	 */
+	function esc_attr__( $text, $domain = '' ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+	/**
+	 * Stub for the WordPress esc_attr() function.
+	 *
+	 * @param string $text Text to escape.
+	 * @return string
+	 */
+	function esc_attr( $text ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'WC' ) ) {
+	/**
+	 * Minimal WC() stub object with an api_request_url() method.
+	 */
+	if ( ! class_exists( 'Chip_Test_WC' ) ) {
+		class Chip_Test_WC {
+			public $session;
+
+			public function __construct() {
+				$this->session = new stdClass();
+			}
+
+			public function api_request_url( $id ) {
+				return 'http://example.com/wc-api/' . $id . '/';
+			}
+		}
+	}
+
+	/**
+	 * Stub for the WC() helper.
+	 *
+	 * @return Chip_Test_WC
+	 */
+	function WC() {
+		return new Chip_Test_WC();
+	}
+}
+
+if ( ! function_exists( 'is_checkout' ) ) {
+	/**
+	 * Stub for is_checkout(). Defaults to true (payment_fields tests
+	 * exercise the checkout context); individual tests can flip the
+	 * global to simulate other pages.
+	 *
+	 * @return bool
+	 */
+	function is_checkout() {
+		return $GLOBALS['__chip_test_is_checkout'] ?? true;
+	}
+}
+
+if ( ! function_exists( 'is_add_payment_method_page' ) ) {
+	/**
+	 * Stub for is_add_payment_method_page().
+	 *
+	 * @return bool
+	 */
+	function is_add_payment_method_page() {
+		return $GLOBALS['__chip_test_is_add_payment_method_page'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'is_wc_endpoint_url' ) ) {
+	/**
+	 * Stub for is_wc_endpoint_url().
+	 *
+	 * @param string|false $endpoint Endpoint to check.
+	 * @return bool
+	 */
+	function is_wc_endpoint_url( $endpoint = false ) {
+		$order_pay = $GLOBALS['__chip_test_is_order_pay'] ?? false;
+		if ( false === $endpoint ) {
+			return $order_pay;
+		}
+		return 'order-pay' === $endpoint && $order_pay;
+	}
+}
+
+if ( ! function_exists( 'woocommerce_form_field' ) ) {
+	/**
+	 * Stub for woocommerce_form_field(). Records the emitted field so
+	 * tests can assert the unified dropdown was rendered.
+	 *
+	 * @param string $key    Field key.
+	 * @param array  $args   Field arguments.
+	 * @param mixed  $value  Field value.
+	 * @return string
+	 */
+	function woocommerce_form_field( $key, $args, $value = null ) {
+		if ( ! isset( $GLOBALS['__chip_test_form_fields'] ) ) {
+			$GLOBALS['__chip_test_form_fields'] = array();
+		}
+		$GLOBALS['__chip_test_form_fields'][ $key ] = $args;
+		return '';
+	}
+}
+
 if ( ! function_exists( 'has_filter' ) ) {
 	/**
 	 * Stub for has_filter(). No filters are registered in tests.
@@ -186,6 +489,437 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	 */
 	function apply_filters( $tag, $value, ...$args ) {
 		return $value;
+	}
+}
+
+if ( ! function_exists( 'wc_print_r' ) ) {
+	/**
+	 * Stub for wc_print_r(). Returns a string representation of the value.
+	 *
+	 * @param mixed $value Value to print.
+	 * @param bool  $return Whether to return the string.
+	 * @return string
+	 */
+	function wc_print_r( $value, $return = false ) {
+		return print_r( $value, true );
+	}
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	/**
+	 * Stub for sanitize_text_field(). Returns the input unchanged.
+	 *
+	 * @param string $str String to sanitize.
+	 * @return string
+	 */
+	function sanitize_text_field( $str ) {
+		return is_string( $str ) ? trim( $str ) : '';
+	}
+}
+
+if ( ! function_exists( 'wp_unslash' ) ) {
+	/**
+	 * Stub for wp_unslash(). Returns the input unchanged.
+	 *
+	 * @param mixed $value Value to unslash.
+	 * @return mixed
+	 */
+	function wp_unslash( $value ) {
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'wp_remote_request' ) ) {
+	/**
+	 * Stub for wp_remote_request(). Returns a WP_Error so callers see a
+	 * failed request without actually hitting the network.
+	 *
+	 * @param string $url  URL.
+	 * @param array  $args Args.
+	 * @return WP_Error
+	 */
+	function wp_remote_request( $url, $args = array() ) {
+		return new WP_Error( 'http_request_failed', 'Stub: no network in tests.' );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	/**
+	 * Stub for wp_remote_retrieve_body(). Returns empty string.
+	 *
+	 * @param mixed $response Response.
+	 * @return string
+	 */
+	function wp_remote_retrieve_body( $response ) {
+		return '';
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+	/**
+	 * Stub for wp_remote_retrieve_response_code(). Returns 0.
+	 *
+	 * @param mixed $response Response.
+	 * @return int
+	 */
+	function wp_remote_retrieve_response_code( $response ) {
+		return 0;
+	}
+}
+
+if ( ! class_exists( 'WP_Error' ) ) {
+	/**
+	 * Minimal WP_Error stub for tests.
+	 */
+	class WP_Error {
+		public $errors = array();
+		public $error_data = array();
+		public function __construct( $code = '', $message = '', $data = null ) {
+			$this->errors[ $code ][] = $message;
+			if ( null !== $data ) {
+				$this->error_data[ $code ] = $data;
+			}
+		}
+		public function get_error_message() {
+			foreach ( $this->errors as $code => $messages ) {
+				return $messages[0];
+			}
+			return '';
+		}
+	}
+}
+
+if ( ! function_exists( 'is_wp_error' ) ) {
+	/**
+	 * Stub for is_wp_error(). Returns true for WP_Error instances.
+	 *
+	 * @param mixed $thing Thing to check.
+	 * @return bool
+	 */
+	function is_wp_error( $thing ) {
+		return $thing instanceof WP_Error;
+	}
+}
+
+if ( ! function_exists( 'wp_register_script' ) ) {
+	/**
+	 * Stub for wp_register_script() in tests. Records the registration
+	 * but does not enqueue anything.
+	 *
+	 * @return void
+	 */
+	function wp_register_script( $handle, $src, $deps = array(), $ver = false, $args = false ) {
+		if ( ! isset( $GLOBALS['__chip_test_scripts'] ) ) {
+			$GLOBALS['__chip_test_scripts'] = array();
+		}
+		$GLOBALS['__chip_test_scripts'][ $handle ] = array(
+			'src'  => $src,
+			'deps' => $deps,
+			'ver'  => $ver,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_localize_script' ) ) {
+	/**
+	 * Stub for wp_localize_script() in tests.
+	 *
+	 * @return void
+	 */
+	function wp_localize_script( $handle, $object_name, $data ) {
+		if ( ! isset( $GLOBALS['__chip_test_localized'] ) ) {
+			$GLOBALS['__chip_test_localized'] = array();
+		}
+		$GLOBALS['__chip_test_localized'][ $handle ][ $object_name ] = $data;
+	}
+}
+
+if ( ! function_exists( 'wp_parse_args' ) ) {
+	/**
+	 * Stub for wp_parse_args(). Merges defaults into args.
+	 *
+	 * @param array|object $args     Arguments to parse.
+	 * @param array        $defaults Default values.
+	 * @return array
+	 */
+	function wp_parse_args( $args, $defaults = array() ) {
+		$args = (array) $args;
+		return array_merge( $defaults, $args );
+	}
+}
+
+if ( ! function_exists( 'wp_kses' ) ) {
+	/**
+	 * Stub for wp_kses(). Returns the input unchanged.
+	 *
+	 * @param string $html  HTML to sanitize.
+	 * @param array  $allowed Allowed HTML tags.
+	 * @return string
+	 */
+	function wp_kses( $html, $allowed = array() ) {
+		return $html;
+	}
+}
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	/**
+	 * Stub for wp_kses_post(). Returns the input unchanged.
+	 *
+	 * @param string $html HTML to sanitize.
+	 * @return string
+	 */
+	function wp_kses_post( $html ) {
+		return $html;
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	/**
+	 * Stub for rest_url() in tests.
+	 *
+	 * @param string $path Optional REST path.
+	 * @return string
+	 */
+	function rest_url( $path = '' ) {
+		return 'http://example.com/wp-json/' . ltrim( $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+	/**
+	 * Stub for wp_create_nonce() in tests. Returns a fixed string.
+	 *
+	 * @return string
+	 */
+	function wp_create_nonce( $action = '' ) {
+		return 'test_nonce';
+	}
+}
+
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	/**
+	 * Stub for is_user_logged_in() in tests. Returns false by default.
+	 *
+	 * @return bool
+	 */
+	function is_user_logged_in() {
+		return false;
+	}
+}
+
+// ---- Stubs for the admin saved-card metabox (class-chip-woocommerce-admin-token.php) ----
+
+if ( ! function_exists( 'get_current_screen' ) ) {
+	/**
+	 * Stub for get_current_screen(). Returns an object with an id property
+	 * driven by a test global so metabox registration can be asserted.
+	 *
+	 * @return object|null
+	 */
+	function get_current_screen() {
+		if ( isset( $GLOBALS['__chip_test_screen_id'] ) ) {
+			return (object) array( 'id' => $GLOBALS['__chip_test_screen_id'] );
+		}
+		return null;
+	}
+}
+
+if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
+	/**
+	 * Stub for wc_get_page_screen_id(). Returns the raw type (legacy path).
+	 *
+	 * @param string $object_type Object type.
+	 * @return string
+	 */
+	function wc_get_page_screen_id( $object_type ) {
+		return $object_type;
+	}
+}
+
+if ( ! function_exists( 'add_meta_box' ) ) {
+	/**
+	 * Stub for add_meta_box(). Records the registration for assertions.
+	 *
+	 * @return void
+	 */
+	function add_meta_box( $id, $title, $callback, $screen, $context = 'advanced', $priority = 'default' ) {
+		$GLOBALS['__chip_test_meta_boxes'][ $id ] = array(
+			'title'    => $title,
+			'screen'   => $screen,
+			'context'  => $context,
+			'priority' => $priority,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_nonce_field' ) ) {
+	/**
+	 * Stub for wp_nonce_field().
+	 *
+	 * @return void
+	 */
+	function wp_nonce_field( $action = -1, $name = '_wpnonce', $referer = true, $echo = true ) {}
+}
+
+if ( ! function_exists( 'selected' ) ) {
+	/**
+	 * Stub for selected().
+	 *
+	 * @return string
+	 */
+	function selected( $selected, $current = true, $echo = true ) {
+		return (string) $selected === (string) $current ? ' selected="selected"' : '';
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * Stub for esc_html().
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function esc_html( $text ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+	/**
+	 * Stub for esc_html_e().
+	 *
+	 * @return void
+	 */
+	function esc_html_e( $text, $domain = '' ) {}
+}
+
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	/**
+	 * Stub for wp_verify_nonce(). Driven by a test global.
+	 *
+	 * @param string $nonce  Nonce.
+	 * @param string $action Action.
+	 * @return bool
+	 */
+	function wp_verify_nonce( $nonce, $action = -1 ) {
+		return $GLOBALS['__chip_test_nonce_valid'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	/**
+	 * Stub for current_user_can(). Driven by a test global.
+	 *
+	 * @param string $capability Capability.
+	 * @return bool
+	 */
+	function current_user_can( $capability ) {
+		return $GLOBALS['__chip_test_can_edit_orders'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'absint' ) ) {
+	/**
+	 * Stub for absint().
+	 *
+	 * @param mixed $maybeint Value.
+	 * @return int
+	 */
+	function absint( $maybeint ) {
+		return abs( (int) $maybeint );
+	}
+}
+
+if ( ! function_exists( 'wp_get_current_user' ) ) {
+	/**
+	 * Stub for wp_get_current_user(). Returns an object with display_name.
+	 *
+	 * @return object
+	 */
+	function wp_get_current_user() {
+		return (object) array( 'display_name' => 'admin' );
+	}
+}
+
+if ( ! function_exists( 'wcs_get_subscription' ) ) {
+	/**
+	 * Stub for wcs_get_subscription(). Returns a test subscription object
+	 * driven by a global, or null.
+	 *
+	 * @param int $id Subscription ID.
+	 * @return object|null
+	 */
+	function wcs_get_subscription( $id ) {
+		return $GLOBALS['__chip_test_subscription'] ?? null;
+	}
+}
+
+if ( ! class_exists( 'WC_Payment_Tokens' ) ) {
+	/**
+	 * Minimal WC_Payment_Tokens stub for the admin metabox tests.
+	 */
+	class WC_Payment_Tokens {
+		/**
+		 * Stub for get_customer_tokens().
+		 *
+		 * @param int    $customer_id Customer ID.
+		 * @param string $gateway_id  Gateway ID.
+		 * @return array
+		 */
+		public static function get_customer_tokens( $customer_id, $gateway_id = '' ) {
+			$tokens = $GLOBALS['__chip_test_customer_tokens'] ?? array();
+			if ( '' === $gateway_id ) {
+				return $tokens;
+			}
+			return array_values(
+				array_filter(
+					$tokens,
+					static function ( $token ) use ( $gateway_id ) {
+						return $token->get_gateway_id() === $gateway_id;
+					}
+				)
+			);
+		}
+
+		/**
+		 * Stub for get().
+		 *
+		 * @param int $token_id Token ID.
+		 * @return object|null
+		 */
+		public static function get( $token_id ) {
+			$tokens = $GLOBALS['__chip_test_customer_tokens'] ?? array();
+			foreach ( $tokens as $token ) {
+				if ( (string) $token->get_id() === (string) $token_id ) {
+					return $token;
+				}
+			}
+			return null;
+		}
+	}
+}
+
+if ( ! class_exists( 'WC_Data_Store' ) ) {
+	/**
+	 * Minimal WC_Data_Store stub for the admin metabox tests.
+	 */
+	class WC_Data_Store {
+		/**
+		 * Stub for load().
+		 *
+		 * @param string $type Data store type.
+		 * @return object
+		 */
+		public static function load( $type ) {
+			return new class() {
+				/**
+				 * Stub for update_payment_token_ids().
+				 *
+				 * @return void
+				 */
+				public function update_payment_token_ids( $order, $ids ) {}
+			};
+		}
 	}
 }
 

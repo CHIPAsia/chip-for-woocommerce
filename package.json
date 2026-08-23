@@ -1,7 +1,7 @@
 {
   "name": "chip-for-woocommerce",
   "title": "CHIP for WooCommerce",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "author": "CHIP IN SDN BHD",
   "license": "GPL-3.0+",
   "keywords": [],
@@ -20,5 +20,8 @@
     "start": "wp-scripts start",
     "build": "wp-scripts build",
     "check-engines": "wp-scripts check-engines"
+  },
+  "dependencies": {
+    "@wordpress/icons": "^15.4.0"
   }
 }

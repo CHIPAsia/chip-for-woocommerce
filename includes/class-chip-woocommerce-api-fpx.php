@@ -116,13 +116,19 @@ class Chip_Woocommerce_API_FPX {
 	 * @return string
 	 */
 	private function request( $method, $url, $params = array(), $headers = array() ) {
+		// Redact the Authorization header (Bearer secret key) before logging.
+		$log_headers = $headers;
+		if ( isset( $log_headers['Authorization'] ) ) {
+			$log_headers['Authorization'] = 'Bearer [REDACTED]';
+		}
+
 		$this->log_info(
 			sprintf(
 				'%s `%s`\n%s\n%s',
 				$method,
 				$url,
 				wc_print_r( $params, true ),
-				wc_print_r( $headers, true )
+				wc_print_r( $log_headers, true )
 			)
 		);
 

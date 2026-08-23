@@ -193,6 +193,10 @@ class Chip_Woocommerce_Payment_Details {
 			$this->render_fpx_details( $purchase );
 		} elseif ( in_array( $payment_method, array( 'visa', 'mastercard', 'maestro' ), true ) ) {
 			$this->render_card_details( $purchase );
+		} elseif ( in_array( $payment_method, array( 'dnqr', 'duitnow_qr' ), true ) ) {
+			$this->render_dnqr_details( $purchase );
+		} elseif ( 'shopee_pay' === $payment_method ) {
+			$this->render_shopeepay_details( $purchase );
 		}
 
 		echo '</div>';
@@ -358,6 +362,108 @@ class Chip_Woocommerce_Payment_Details {
 
 		if ( ! empty( $extra['authorization_approval_code'] ) ) {
 			$this->render_detail_row( __( 'Auth Code', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['authorization_approval_code'] ) . '</code>' );
+		}
+
+		echo '</tbody>';
+		echo '</table>';
+	}
+
+	/**
+	 * Get attempt extra data from purchase.
+	 *
+	 * Tries attempts[0].extra first, then transaction_data.extra.
+	 *
+	 * @param array $purchase Purchase data.
+	 * @return array Extra data or empty array.
+	 */
+	private function get_extra( $purchase ) {
+		if ( ! empty( $purchase['transaction_data']['attempts'][0]['extra'] ) ) {
+			return $purchase['transaction_data']['attempts'][0]['extra'];
+		}
+		if ( ! empty( $purchase['transaction_data']['extra'] ) ) {
+			return $purchase['transaction_data']['extra'];
+		}
+		return array();
+	}
+
+	/**
+	 * Render DuitNow QR details.
+	 *
+	 * DNQR attempt extra contains: transaction_id, end_to_end_identification,
+	 * partner_transaction_reference, amount, currency, bill_id, state.
+	 * In test mode extra is empty, so nothing is rendered.
+	 *
+	 * @param array $purchase Purchase data.
+	 * @return void
+	 */
+	private function render_dnqr_details( $purchase ) {
+		$extra = $this->get_extra( $purchase );
+
+		if ( empty( $extra ) ) {
+			return;
+		}
+
+		echo '<table class="chip-details-table">';
+		echo '<tbody>';
+
+		if ( ! empty( $extra['transaction_id'] ) ) {
+			$this->render_detail_row( __( 'Transaction ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['transaction_id'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['end_to_end_identification'] ) ) {
+			$this->render_detail_row( __( 'End-to-End ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['end_to_end_identification'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['partner_transaction_reference'] ) ) {
+			$this->render_detail_row( __( 'Partner Ref', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['partner_transaction_reference'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['bill_id'] ) ) {
+			$this->render_detail_row( __( 'Bill ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['bill_id'] ) . '</code>' );
+		}
+
+		if ( ! empty( $extra['state'] ) ) {
+			$this->render_detail_row( __( 'State', 'chip-for-woocommerce' ), esc_html( ucwords( str_replace( '_', ' ', $extra['state'] ) ) ) );
+		}
+
+		echo '</tbody>';
+		echo '</table>';
+	}
+
+	/**
+	 * Render ShopeePay details.
+	 *
+	 * ShopeePay extra contains: transaction_id, amount, currency, state, expires_at.
+	 * In test mode extra is empty, so nothing is rendered.
+	 *
+	 * @param array $purchase Purchase data.
+	 * @return void
+	 */
+	private function render_shopeepay_details( $purchase ) {
+		$extra = $this->get_extra( $purchase );
+
+		if ( empty( $extra ) ) {
+			return;
+		}
+
+		echo '<table class="chip-details-table">';
+		echo '<tbody>';
+
+		if ( ! empty( $extra['transaction_id'] ) ) {
+			$this->render_detail_row( __( 'Transaction ID', 'chip-for-woocommerce' ), '<code>' . esc_html( $extra['transaction_id'] ) . '</code>' );
+		}
+
+		if ( isset( $extra['amount'], $extra['currency'] ) ) {
+			$this->render_detail_row( __( 'Amount', 'chip-for-woocommerce' ), esc_html( $extra['currency'] . ' ' . number_format_i18n( (float) $extra['amount'], 2 ) ) );
+		}
+
+		if ( ! empty( $extra['state'] ) ) {
+			$this->render_detail_row( __( 'State', 'chip-for-woocommerce' ), esc_html( ucwords( str_replace( '_', ' ', $extra['state'] ) ) ) );
+		}
+
+		if ( ! empty( $extra['expires_at'] ) ) {
+			$expires = gmdate( 'Y-m-d H:i:s', (int) $extra['expires_at'] );
+			$this->render_detail_row( __( 'Expires At', 'chip-for-woocommerce' ), esc_html( $expires ) );
 		}
 
 		echo '</tbody>';

@@ -72,6 +72,7 @@ class Chip_Woocommerce {
 			include $includes_dir . 'class-chip-woocommerce-void-payment.php';
 			include $includes_dir . 'class-chip-woocommerce-capture-payment.php';
 			include $includes_dir . 'class-chip-woocommerce-payment-details.php';
+			include $includes_dir . 'class-chip-woocommerce-admin-token.php';
 		}
 	}
 
@@ -165,12 +166,18 @@ class Chip_Woocommerce {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_banks_endpoint' ),
-				'permission_callback' => '__return_true',
+				// Verify the wp_rest nonce (sent as X-WP-Nonce by the Blocks
+				// checkout). This keeps the endpoint public for logged-out
+				// customers (the wp_rest nonce is session-based and works
+				// without auth) while rejecting requests that lack a valid
+				// nonce, so an unauthenticated caller can no longer trigger
+				// the outbound health-check curl at will.
+				'permission_callback' => array( $this, 'banks_endpoint_permission' ),
 				'args'                => array(
 					'type'       => array(
 						'required'          => true,
 						'validate_callback' => function ( $param ) {
-							return in_array( $param, array( 'fpx_b2c', 'fpx_b2b1', 'razer' ), true );
+							return in_array( $param, array( 'fpx_b2c', 'fpx_b2b1', 'razer', 'unified' ), true );
 						},
 					),
 					'gateway_id' => array(
@@ -180,6 +187,31 @@ class Chip_Woocommerce {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Permission callback for the banks REST endpoint.
+	 *
+	 * Verifies the wp_rest nonce from the X-WP-Nonce header. The nonce is
+	 * session-based, so it works for logged-out checkout customers (the
+	 * Blocks checkout localizes it via wp_create_nonce('wp_rest')) while
+	 * rejecting requests without a valid nonce.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return bool|WP_Error
+	 */
+	public function banks_endpoint_permission( $request ) {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		if ( empty( $nonce ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Missing nonce.', 'chip-for-woocommerce' ), array( 'status' => 403 ) );
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Invalid nonce.', 'chip-for-woocommerce' ), array( 'status' => 403 ) );
+		}
+
+		return true;
 	}
 
 	/**
@@ -200,24 +232,69 @@ class Chip_Woocommerce {
 			return new WP_REST_Response( array( 'error' => 'Invalid gateway' ), 400 );
 		}
 
-		$banks = array();
+		$banks       = array();
+		$unavailable = array();
 
 		switch ( $type ) {
 			case 'fpx_b2c':
 				$banks = $gateway_instance->list_fpx_banks();
 				unset( $banks[''] );
+				$banks = $this->prefix_bank_tags( $banks, 'fpx' );
+				foreach ( $gateway_instance->get_unavailable_fpx_banks() as $code ) {
+					$unavailable[] = 'fpx:' . $code;
+				}
 				break;
 			case 'fpx_b2b1':
 				$banks = $gateway_instance->list_fpx_b2b1_banks();
 				unset( $banks[''] );
+				$banks = $this->prefix_bank_tags( $banks, 'fpx_b2b1' );
+				foreach ( $gateway_instance->get_unavailable_fpx_b2b1_banks() as $code ) {
+					$unavailable[] = 'fpx_b2b1:' . $code;
+				}
 				break;
 			case 'razer':
 				$banks = $gateway_instance->list_razer_ewallets();
 				unset( $banks[''] );
+				$banks = $this->prefix_bank_tags( $banks, 'razer' );
+				break;
+			case 'unified':
+				$banks = $gateway_instance->list_unified_payment_methods();
+				unset( $banks[''] );
+				foreach ( $gateway_instance->get_unavailable_fpx_banks() as $code ) {
+					$unavailable[] = 'fpx:' . $code;
+				}
+				foreach ( $gateway_instance->get_unavailable_fpx_b2b1_banks() as $code ) {
+					$unavailable[] = 'fpx_b2b1:' . $code;
+				}
 				break;
 		}
 
-		return new WP_REST_Response( $banks, 200 );
+		return new WP_REST_Response(
+			array(
+				'banks'       => $banks,
+				'unavailable' => $unavailable,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Prefix bank/e-wallet codes with their method tag so the Blocks dropdown
+	 * submits the same tag-encoded value (e.g. 'fpx_b2b1:PBB0234') that
+	 * bypass_chip() expects. The single-method REST endpoints previously
+	 * returned bare codes ('PBB0234'), which bypass_chip() could not parse
+	 * and so never appended the ?preferred= redirect parameter.
+	 *
+	 * @param array  $banks Bank list keyed by code.
+	 * @param string $tag   Method tag to prefix (fpx, fpx_b2b1, razer).
+	 * @return array
+	 */
+	private function prefix_bank_tags( $banks, $tag ) {
+		$prefixed = array();
+		foreach ( $banks as $code => $label ) {
+			$prefixed[ $tag . ':' . $code ] = $label;
+		}
+		return $prefixed;
 	}
 
 	/**

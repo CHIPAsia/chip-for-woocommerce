@@ -28,6 +28,27 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	const DUITNOW_GROUP = array( 'duitnow_qr', 'dnqr' );
 
 	/**
+	 * Shopee Pay group: payment-method identifiers that are interchangeable
+	 * for the merchant at runtime. shopee_pay is the modern identifier;
+	 * razer_shopeepay is the legacy Razer identifier kept as the single
+	 * multiselect entry and as a fallback when the brand does not expose
+	 * shopee_pay. Mirrors WHMCS helpers.php.
+	 *
+	 * @var array
+	 */
+	const SHOPEE_GROUP = array( 'razer_shopeepay', 'shopee_pay' );
+
+	/**
+	 * Card group: payment-method identifiers that are interchangeable
+	 * for the merchant at runtime. Card is the user-selectable multiselect
+	 * key; visa/mastercard/maestro are injected at load time by the
+	 * constructor's group expansion.
+	 *
+	 * @var array
+	 */
+	const CARD_GROUP = array( 'visa', 'mastercard', 'maestro' );
+
+	/**
 	 * Gateway ID (wc_gateway_chip).
 	 *
 	 * @var string
@@ -228,6 +249,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $unavailable_fpx_banks = array();
 
 	/**
+	 * Whether the FPX B2C unavailable-bank list has been computed.
+	 *
+	 * @var bool
+	 */
+	protected $unavailable_fpx_banks_computed = false;
+
+	/**
 	 * Cached result of the dnqr resolver from the most recent resolve_duitnow_methods() call.
 	 * Used by bypass_chip() to pick the correct ?preferred=dnqr|duitnow_qr without
 	 * a second /payment_methods/ API call.
@@ -237,11 +265,28 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $resolved_dnqr_group = array();
 
 	/**
+	 * Cached result of the shopee resolver from the most recent
+	 * resolve_payment_method_groups() call. Used to pick the correct
+	 * ?preferred=shopee_pay|razer_shopeepay without a second
+	 * /payment_methods/ API call.
+	 *
+	 * @var array
+	 */
+	protected $resolved_shopee_group = array();
+
+	/**
 	 * Unavailable FPX B2B1 bank codes.
 	 *
 	 * @var array
 	 */
 	protected $unavailable_fpx_b2b1_banks = array();
+
+	/**
+	 * Whether the FPX B2B1 unavailable-bank list has been computed.
+	 *
+	 * @var bool
+	 */
+	protected $unavailable_fpx_b2b1_banks_computed = false;
 
 	/**
 	 * Preferred payment type.
@@ -285,8 +330,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$whitelist = array();
 		}
 
+		// Backward-compat migration: legacy saved values contained
+		// 'visa', 'mastercard', 'maestro' (and 'razer_shopeepay') as
+		// separate multiselect keys. Those keys no longer exist in the
+		// admin options list (replaced by 'card' and 'shopee_pay'), so a
+		// merchant with a legacy saved value would see nothing selected
+		// in the admin multiselect. Collapse them to the modern keys
+		// in-memory AND persist the migrated shape, so the admin renders
+		// the correct selection immediately. The write only happens when
+		// a legacy key is present, so it is a one-time migration
+		// (idempotent). Runs before the group expansions below so the
+		// single modern keys are then widened to their full groups.
+		$migrated_whitelist = $this->migrate_legacy_payment_method_whitelist( $whitelist );
+		if ( $migrated_whitelist !== $whitelist ) {
+			$this->update_option( 'payment_method_whitelist', $migrated_whitelist );
+			$whitelist = $migrated_whitelist;
+		}
+
 		// DuitNow QR group expansion: when the merchant selects 'duitnow_qr'
-		// in the multiselect, that selection means "the DuitNow QR group" —
+		// in the multiselect, that selection means "the DuitNow QR group" --
 		// i.e. the plugin should pick whichever of {duitnow_qr, dnqr} the
 		// merchant actually has at runtime, prioritizing dnqr. Expand the
 		// single multiselect key into the full group at load time so the
@@ -295,6 +357,30 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( in_array( 'duitnow_qr', $whitelist, true ) ) {
 			$whitelist = array_values(
 				array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) )
+			);
+		}
+
+		// Shopee Pay group expansion: when the merchant selects
+		// 'shopee_pay' in the multiselect, that selection means
+		// "the Shopee Pay group" -- i.e. the plugin should pick whichever
+		// of {razer_shopeepay, shopee_pay} the merchant actually has at
+		// runtime, prioritizing shopee_pay. Expand the single multiselect
+		// key into the full group at load time so the resolver, dropdown,
+		// e-wallet list, and bypass_chip see the group semantics. The
+		// expansion is in-memory only and does not mutate the saved option.
+		if ( count( array_intersect( $whitelist, self::SHOPEE_GROUP ) ) > 0 ) {
+			$whitelist = array_values(
+				array_unique( array_merge( $whitelist, self::SHOPEE_GROUP ) )
+			);
+		}
+
+		// Card group expansion: when the merchant selects 'card' in the
+		// multiselect, that selection means "the Card group" -- i.e. the
+		// plugin should accept visa, mastercard, and maestro. Expand the
+		// single multiselect key into the full group at load time.
+		if ( in_array( 'card', $whitelist, true ) ) {
+			$whitelist = array_values(
+				array_unique( array_merge( $whitelist, self::CARD_GROUP ) )
 			);
 		}
 
@@ -505,25 +591,43 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
+		// Capture the Blocks dropdown selection while $context->payment_data is
+		// still populated. Blocks can swap payment_data into $_POST and empty the
+		// context object by the time later checks read it, so snap the card
+		// selection here (and from $_POST as a fallback) to decide the direct-post
+		// path consistently.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WooCommerce checkout.
+		$context_payment_data = is_array( $context->payment_data ) ? $context->payment_data : array();
+		$card_selected        = isset( $context_payment_data['chip_payment_method'] ) && 'card' === $context_payment_data['chip_payment_method'];
+		if ( ! $card_selected ) {
+			$card_selected = isset( $_POST['chip_payment_method'] ) && 'card' === sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
 		// Check if payment methods include card methods that support direct post.
-		$card_methods = array( 'visa', 'mastercard', 'maestro', 'mpgs_google_pay', 'mpgs_apple_pay' );
+		// The constructor expands a saved ['card'] to ['card', 'visa', 'mastercard',
+		// 'maestro'] in memory, so the whitelist can contain the 'card' aggregator
+		// as well as the legacy card-network keys and the MPGS keys.
 		$pm_whitelist = $this->get_payment_method_whitelist();
 
 		if ( ! is_array( $pm_whitelist ) || empty( $pm_whitelist ) ) {
 			return;
 		}
 
-		// Check if all whitelisted methods are card methods.
-		$is_card_only = true;
-		foreach ( $pm_whitelist as $pm ) {
-			if ( ! in_array( $pm, $card_methods, true ) ) {
-				$is_card_only = false;
-				break;
-			}
-		}
+		// Whitelist is card-only iff it contains no methods outside the union of
+		// the legacy CARD_GROUP, the MPGS keys, and the 'card' aggregator.
+		$allowed_for_card_only = array_merge( self::CARD_GROUP, array( 'mpgs_google_pay', 'mpgs_apple_pay', 'card' ) );
+		$is_card_only          = empty( array_diff( $pm_whitelist, $allowed_for_card_only ) );
 
 		if ( ! $is_card_only ) {
-			return;
+			// Mixed whitelists (e.g. card + FPX) render the unified dropdown.
+			// When the customer selects Card there, process_payment() narrows
+			// the whitelist to card-only and CHIP returns direct_post_url.
+			// Let this handler run so the Blocks JS can POST the card data
+			// directly to CHIP instead of discarding it and redirecting.
+			if ( ! $card_selected ) {
+				return;
+			}
 		}
 
 		// Check if a saved token is being used.
@@ -547,10 +651,32 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			return;
 		}
 
+		// Blocks submits the dropdown selection via payment_data, not $_POST.
+		// process_payment() consults $_POST['chip_payment_method'] to decide
+		// whether to narrow the whitelist to card-only; inject the selection
+		// for the duration of the call so the direct-post path is taken.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		$posted_method = null;
+		if ( isset( $_POST['chip_payment_method'] ) ) {
+			$posted_method = sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) );
+		}
+		if ( isset( $payment_data['chip_payment_method'] ) && 'card' === $payment_data['chip_payment_method'] ) {
+			$_POST['chip_payment_method'] = 'card';
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
 		// Call process_payment to create the CHIP payment.
 		// This hook fires BEFORE legacy process_payment, so we need to call it ourselves.
 		$order_id       = $context->order->get_id();
 		$payment_result = $this->process_payment( $order_id );
+
+		// Restore the original $_POST value (Legacy::process_legacy_payment
+		// swaps $_POST with payment_data on its own).
+		if ( null === $posted_method ) {
+			unset( $_POST['chip_payment_method'] );
+		} else {
+			$_POST['chip_payment_method'] = $posted_method;
+		}
 
 		if ( 'success' !== $payment_result['result'] ) {
 			return;
@@ -1272,22 +1398,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return bool True if whitelist contains only card methods.
 	 */
 	private function is_card_only_whitelist() {
-		$allowed_card_methods = array( 'visa', 'mastercard', 'maestro' );
-		$whitelist            = $this->payment_method_whitelist;
+		$whitelist = $this->payment_method_whitelist;
 
 		// If whitelist is empty or not an array, return false.
 		if ( empty( $whitelist ) || ! is_array( $whitelist ) ) {
 			return false;
 		}
 
-		// Check if all items in whitelist are allowed card methods.
-		foreach ( $whitelist as $method ) {
-			if ( ! in_array( $method, $allowed_card_methods, true ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		// Whitelist is card-only iff it contains no methods outside the
+		// card group (which includes the 'card' aggregator key plus the
+		// three card-network identifiers). The constructor expands a saved
+		// ['card'] to ['card', 'visa', 'mastercard', 'maestro'] in memory.
+		$card_group_with_aggregator = array_merge( array( 'card' ), self::CARD_GROUP );
+		return empty( array_diff( $whitelist, $card_group_with_aggregator ) );
 	}
 
 	/**
@@ -1318,6 +1441,134 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Whether the gateway should render the unified dropdown in classic checkout.
+	 *
+	 * True when at least one dropdown-eligible method (FPX, Razer, or DuitNow QR)
+	 * is in the whitelist and bypass_chip is enabled.
+	 *
+	 * @return bool
+	 */
+	private function has_unified_dropdown(): bool {
+		if ( 'yes' !== $this->bypass_chip ) {
+			return false;
+		}
+		$dropdown_methods = array( 'fpx', 'fpx_b2b1', 'razer_atome', 'razer_grabpay', 'razer_maybankqr', 'razer_shopeepay', 'shopee_pay', 'razer_tng', 'duitnow_qr', 'dnqr', 'crypto_coin', 'mpgs_google_pay', 'mpgs_apple_pay' );
+		return count( array_intersect( $this->payment_method_whitelist, $dropdown_methods ) ) > 0;
+	}
+
+	/**
+	 * Whether the unified dropdown actually renders in the current context.
+	 *
+	 * The dropdown is skipped on the add-payment-method page and on
+	 * subscription payment-method changes, where a method picker does not
+	 * make sense. validate_fields() and payment_fields() both consult this
+	 * so the required-field validation is only enforced when the dropdown
+	 * is present. (On order-pay the dropdown still renders, but the 'card'
+	 * option is excluded there because the card form is not available.)
+	 *
+	 * @return bool
+	 */
+	private function should_render_unified_dropdown(): bool {
+		if ( ! $this->has_unified_dropdown() ) {
+			return false;
+		}
+		if ( is_add_payment_method_page() ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page context check.
+		if ( isset( $_GET['change_payment_method'] ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Render the unified payment-method picker.
+	 *
+	 * Emits a single <select name="chip_payment_method"> whose values are
+	 * tag-encoded (e.g. 'fpx:MB2U0227', 'dnqr', 'card'). The 'card' option
+	 * is omitted on order-pay, where the card form is not rendered.
+	 *
+	 * When the merchant has a DuitNow QR-only whitelist (e.g. Gateway 6),
+	 * a dropdown with a single option adds friction and invites support
+	 * tickets; a hidden pre-selected input keeps the previous zero-click
+	 * behavior while still feeding validate_fields()/bypass_chip().
+	 *
+	 * @return void
+	 */
+	private function render_unified_dropdown() {
+		$unified = $this->list_unified_payment_methods();
+		// list_unified_payment_methods() calls list_fpx_banks()/list_fpx_b2b1_banks(),
+		// which populate the unavailable-bank properties. register_script() ran
+		// earlier (on init) and localized empty unavailable lists, so re-localize
+		// now that the offline banks are known.
+		$this->localize_unified_dropdown();
+		if ( 1 === count( $unified ) ) {
+			$value = (string) array_key_first( $unified );
+			// Single-method whitelists (DuitNow QR-only, Crypto-only) keep
+			// the zero-click UX: a hidden pre-selected input instead of a
+			// dropdown with a single option.
+			echo '<input type="hidden" name="' . esc_attr( $this->chip_payment_method_field() ) . '" value="' . esc_attr( $value ) . '" />';
+			return;
+		}
+		wp_enqueue_script( "wc-{$this->id}-unified-dropdown" );
+		$options = array( '' => __( 'Choose a payment method', 'chip-for-woocommerce' ) );
+		foreach ( $unified as $value => $label ) {
+			$options[ $value ] = $label;
+		}
+		woocommerce_form_field(
+			$this->chip_payment_method_field(),
+			array(
+				'type'     => 'select',
+				'class'    => array( 'chip-unified-payment-method' ),
+				'label'    => __( 'Payment Method', 'chip-for-woocommerce' ),
+				'options'  => $options,
+				'required' => true,
+			)
+		);
+	}
+
+	/**
+	 * The POST field name for this gateway's unified dropdown selection.
+	 *
+	 * Scoped per gateway ID so that on order-pay (and any page rendering
+	 * multiple CHIP gateway clones in one form) each gateway's <select> or
+	 * hidden input submits a distinct key. A shared 'chip_payment_method'
+	 * name collides — PHP keeps the last field in DOM order, so a
+	 * DuitNow QR-only clone's hidden 'dnqr' input would clobber another
+	 * gateway's FPX selection.
+	 *
+	 * @return string
+	 */
+	private function chip_payment_method_field() {
+		return 'chip_payment_method_' . $this->id;
+	}
+
+	/**
+	 * Read the posted dropdown selection for this gateway.
+	 *
+	 * Prefers the gateway-scoped field (classic checkout/order-pay submit
+	 * 'chip_payment_method_<id>'), then the scoped hidden mirror field, then
+	 * falls back to the unscoped 'chip_payment_method' key that the Blocks
+	 * checkout submits via payment_data (Legacy.php swaps payment_data into
+	 * $_POST, so the unscoped key is what blocks uses).
+	 *
+	 * @return string
+	 */
+	private function get_posted_payment_method() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
+		$scoped        = $this->chip_payment_method_field();
+		$scoped_hidden = $scoped . '_hidden';
+		foreach ( array( $scoped, $scoped_hidden, 'chip_payment_method' ) as $key ) {
+			if ( isset( $_POST[ $key ] ) && ! empty( $_POST[ $key ] ) ) {
+				return sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+			}
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return '';
+	}
+
+	/**
 	 * Output payment fields on checkout.
 	 *
 	 * @return void
@@ -1339,218 +1590,27 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$this->tokenization_script();
 			$this->saved_payment_methods();
 
+			// The unified dropdown is skipped on add-payment-method and
+			// change-payment-method pages; render it here so mixed
+			// whitelists keep working even when tokenization is enabled.
+			if ( $this->should_render_unified_dropdown() ) {
+				$this->render_unified_dropdown();
+			}
+
+			// Note: selectWoo initialization, bank/e-wallet logos, and
+			// offline-bank disabling for the unified dropdown are handled
+			// in includes/js/chip-unified-dropdown.js.
+
 		} else {
 			parent::payment_fields();
 
-			// Check for razer.
-			$pattern  = '/^razer_/';
-			$is_razer = false;
-
-			// Check if payment_met empty.
-			if ( is_array( $this->payment_method_whitelist ) ) {
-				$output = preg_grep( $pattern, $this->payment_method_whitelist );
-
-				if ( count( $output ) > 0 ) {
-					$is_razer = true;
-				}
+			if ( 'yes' === $this->bypass_chip && $this->should_render_unified_dropdown() ) {
+				$this->render_unified_dropdown();
 			}
 
-			$select_field_id = '';
-
-			if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
-				$select_field_id = 'chip_fpx_bank';
-				woocommerce_form_field(
-					$select_field_id,
-					array(
-						'type'     => 'select',
-						'required' => true,
-						'label'    => __( 'Internet Banking', 'chip-for-woocommerce' ),
-						'options'  => $this->list_fpx_banks(),
-						'class'    => array( 'form-row-wide' ),
-					)
-				);
-			} elseif ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'fpx_b2b1' === $this->payment_method_whitelist[0] && 'yes' === $this->bypass_chip ) {
-				$select_field_id = 'chip_fpx_b2b1_bank';
-				woocommerce_form_field(
-					$select_field_id,
-					array(
-						'type'     => 'select',
-						'required' => true,
-						'label'    => __( 'Corporate Internet Banking', 'chip-for-woocommerce' ),
-						'options'  => $this->list_fpx_b2b1_banks(),
-						'class'    => array( 'form-row-wide' ),
-					)
-				);
-			} elseif ( is_array( $this->payment_method_whitelist ) && $is_razer && 'yes' === $this->bypass_chip ) {
-				$select_field_id = 'chip_razer_ewallet';
-				woocommerce_form_field(
-					$select_field_id,
-					array(
-						'type'     => 'select',
-						'required' => true,
-						'label'    => __( 'E-Wallet', 'chip-for-woocommerce' ),
-						'options'  => $this->list_razer_ewallets(),
-						'class'    => array( 'form-row-wide' ),
-					)
-				);
-			}
-
-			// Initialize Select2 (selectWoo) on the dropdown for better UX.
-			if ( '' !== $select_field_id ) {
-				$placeholder       = '';
-				$unavailable_banks = array();
-				$show_bank_logos   = false;
-				$bank_logo_base    = '';
-
-				if ( 'chip_fpx_bank' === $select_field_id ) {
-					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
-					$unavailable_banks = $this->get_unavailable_fpx_banks();
-					$show_bank_logos   = true;
-					$bank_logo_base    = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
-				} elseif ( 'chip_fpx_b2b1_bank' === $select_field_id ) {
-					$placeholder       = __( 'Select a bank…', 'chip-for-woocommerce' );
-					$unavailable_banks = $this->get_unavailable_fpx_b2b1_banks();
-					$show_bank_logos   = true;
-					$bank_logo_base    = CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/';
-				} elseif ( 'chip_razer_ewallet' === $select_field_id ) {
-					$placeholder     = __( 'Select an e-wallet…', 'chip-for-woocommerce' );
-					$show_bank_logos = true;
-					$bank_logo_base  = CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/';
-				}
-				?>
-				<script type="text/javascript">
-					jQuery( function( $ ) {
-						var $select = $( '#<?php echo esc_js( $select_field_id ); ?>' );
-						var unavailableBanks = <?php echo wp_json_encode( $unavailable_banks ); ?>;
-						var showBankLogos = <?php echo $show_bank_logos ? 'true' : 'false'; ?>;
-						var bankLogoBase = '<?php echo esc_js( $bank_logo_base ); ?>';
-
-						// Disable unavailable bank options.
-						if ( unavailableBanks && unavailableBanks.length > 0 ) {
-							unavailableBanks.forEach( function( bankCode ) {
-								$select.find( 'option[value="' + bankCode + '"]' ).prop( 'disabled', true );
-							});
-						}
-
-						// Custom template for bank options with logos (dropdown).
-						function formatBankResult( option ) {
-							if ( ! option.id || ! showBankLogos ) {
-								return option.text;
-							}
-
-							var logoUrl = bankLogoBase + option.id + '.png';
-							var $option = $(
-								'<span class="chip-bank-option">' +
-									'<img src="' + logoUrl + '" class="chip-bank-logo" onerror="this.style.display=\'none\'" />' +
-									'<span class="chip-bank-name">' + option.text + '</span>' +
-								'</span>'
-							);
-
-							return $option;
-						}
-
-						// Custom template for selected bank (input display) - text only to avoid rendering issues.
-						function formatBankSelection( option ) {
-							return option.text || '';
-						}
-
-						// Add icon container before the select for displaying selected bank logo.
-						var $iconContainer = $('<span class="chip-selected-bank-icon"><img src="" alt="" /></span>');
-						$select.closest('.form-row').find('.woocommerce-input-wrapper').prepend($iconContainer);
-						$iconContainer.hide();
-
-						// Update icon when selection changes.
-						$select.on('change', function() {
-							var selectedValue = $(this).val();
-							if ( selectedValue && showBankLogos ) {
-								var logoUrl = bankLogoBase + selectedValue + '.png';
-								$iconContainer.find('img').attr('src', logoUrl);
-								$iconContainer.show();
-							} else {
-								$iconContainer.hide();
-							}
-						});
-
-						$select.selectWoo({
-							placeholder: '<?php echo esc_js( $placeholder ); ?>',
-							allowClear: false,
-							width: 'resolve',
-							templateResult: formatBankResult,
-							templateSelection: formatBankSelection
-						});
-					});
-				</script>
-				<style>
-					.chip-bank-option {
-						display: flex;
-						align-items: center;
-						gap: 10px;
-					}
-					.chip-bank-logo {
-						width: 32px;
-						height: 32px;
-						object-fit: contain;
-						flex-shrink: 0;
-					}
-					.chip-bank-name {
-						flex: 1;
-					}
-					.select2-results__option .chip-bank-option,
-					.select2-selection__rendered .chip-bank-option {
-						display: flex;
-						align-items: center;
-					}
-					/* Selected bank icon container */
-					#chip_fpx_bank_field .woocommerce-input-wrapper,
-					#chip_fpx_b2b1_bank_field .woocommerce-input-wrapper,
-					#chip_razer_ewallet_field .woocommerce-input-wrapper {
-						position: relative;
-						display: flex;
-						align-items: center;
-					}
-					.chip-selected-bank-icon {
-						position: absolute;
-						left: 12px;
-						top: 50%;
-						transform: translateY(-50%);
-						z-index: 10;
-						pointer-events: none;
-					}
-					.chip-selected-bank-icon img {
-						width: 32px;
-						height: 32px;
-						object-fit: contain;
-						display: block;
-					}
-					/* Make select wider and add padding for the icon */
-					#chip_fpx_bank_field .select2-container,
-					#chip_fpx_b2b1_bank_field .select2-container,
-					#chip_razer_ewallet_field .select2-container {
-						min-width: 100% !important;
-						width: 100% !important;
-					}
-					#chip_fpx_bank_field .select2-selection--single,
-					#chip_fpx_b2b1_bank_field .select2-selection--single,
-					#chip_razer_ewallet_field .select2-selection--single {
-						padding-left: 56px !important;
-						min-height: 48px !important;
-						display: flex !important;
-						align-items: center !important;
-					}
-					#chip_fpx_bank_field .select2-selection__rendered,
-					#chip_fpx_b2b1_bank_field .select2-selection__rendered,
-					#chip_razer_ewallet_field .select2-selection__rendered {
-						padding-left: 0 !important;
-						line-height: 1.4 !important;
-					}
-					/* Dropdown options styling */
-					.select2-results__option .chip-bank-logo {
-						width: 32px;
-						height: 32px;
-					}
-				</style>
-				<?php
-			}
+			// Note: selectWoo initialization, bank/e-wallet logos, and
+			// offline-bank disabling for the unified dropdown are handled
+			// in includes/js/chip-unified-dropdown.js.
 			// Note: wc_gateway_chip_5 requires no additional fields.
 		}
 
@@ -1563,6 +1623,69 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					break;
 				}
 			}
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// In mixed mode (card + redirect methods) the card form renders
+		// alongside the unified dropdown. WooCommerce's checkout.js flags any
+		// visible empty required field, so the card fields must be hidden
+		// unless the customer actually selected Card. Also hide them for
+		// saved-token charges, which never use the card form.
+		//
+		// Scoped to $this->id because several CHIP gateway clones can be
+		// active at once and the last wp_localize_script() call wins for the
+		// global 'gateway_option' — relying on that global made us toggle a
+		// different clone's card form. A card-only whitelist renders no
+		// unified dropdown, so this block (and the toggle) never applies
+		// there: the card form simply stays visible.
+		if ( $this->should_render_unified_dropdown() ) {
+			$card_in_whitelist = count( array_intersect( $this->payment_method_whitelist, array( 'visa', 'mastercard', 'maestro' ) ) ) > 0;
+			?>
+			<script type="text/javascript">
+				jQuery( function( $ ) {
+					var gatewayId = '<?php echo esc_attr( $this->id ); ?>';
+					var pmField = 'chip_payment_method_' + gatewayId;
+					var cardInWhitelist = <?php echo $card_in_whitelist ? 'true' : 'false'; ?>;
+					var syncCardFormVisibility = function() {
+						var $box = $( 'li.payment_method_' + gatewayId );
+						if ( $box.length === 0 ) {
+							return;
+						}
+						var $unified  = $box.find( 'select[name="' + pmField + '"]' );
+						var $wrapper  = $unified.closest( '.chip-unified-payment-method' );
+						var $cardForm = $box.find( '#wc-' + gatewayId + '-cc-form' );
+						// The "Save to account" checkbox is rendered by WC's
+						// save_payment_method_checkbox() OUTSIDE the card-form
+						// fieldset (a sibling <p class="...-saveNew">), so toggling
+						// $cardForm alone would leave it visible before Card is
+						// selected. Toggle it with the same visibility rule.
+						var $saveNew  = $box.find( '.woocommerce-SavedPaymentMethods-saveNew' );
+						// A saved token charge never uses the dropdown or the
+						// card form: hide both. Only when the customer picks
+						// "new" (or there are no saved tokens) does the
+						// dropdown show.
+						var $checked  = $box.find( 'input.woocommerce-SavedPaymentMethods-tokenInput:checked' );
+						var savedTokenChosen = $checked.length > 0 && $checked.val() !== 'new';
+						if ( $wrapper.length ) {
+							$wrapper.toggle( ! savedTokenChosen );
+						}
+						var cardVisible = ! savedTokenChosen && cardInWhitelist && $unified.length && $unified.val() === 'card';
+						if ( $cardForm.length ) {
+							// The card form only shows for a new (non-saved)
+							// charge when 'card' is actually selected in the
+							// dropdown AND card is in this gateway's whitelist.
+							$cardForm.toggle( cardVisible );
+						}
+						if ( $saveNew.length ) {
+							$saveNew.toggle( cardVisible );
+						}
+					};
+					$( document.body ).on( 'change', 'input.woocommerce-SavedPaymentMethods-tokenInput, select[name="' + pmField + '"]', syncCardFormVisibility );
+					$( document.body ).on( 'updated_checkout', syncCardFormVisibility );
+					syncCardFormVisibility();
+				} );
+			</script>
+			<?php
 		}
 	}
 
@@ -1601,41 +1724,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * Validate payment fields.
 	 *
 	 * @return bool
-	 * @throws Exception When required field is missing.
+	 * @throws \Exception When the unified dropdown is rendered and the customer
+	 *                   did not select a payment method.
 	 */
 	public function validate_fields() {
-		// Check and throw error if payment method not selected.
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		$fpx_bank      = isset( $_POST['chip_fpx_bank'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_fpx_bank'] ) ) : '';
-		$fpx_b2b1_bank = isset( $_POST['chip_fpx_b2b1_bank'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) ) : '';
-
-		if ( is_array( $this->payment_method_whitelist ) && 1 === count( $this->payment_method_whitelist ) && 'yes' === $this->bypass_chip ) {
-			if ( 'fpx' === $this->payment_method_whitelist[0] && 0 === strlen( $fpx_bank ) ) {
-				throw new Exception( esc_html__( 'Internet Banking is a required field.', 'chip-for-woocommerce' ) );
-			} elseif ( 'fpx_b2b1' === $this->payment_method_whitelist[0] && 0 === strlen( $fpx_b2b1_bank ) ) {
-				throw new Exception( esc_html__( 'Corporate Internet Banking is a required field.', 'chip-for-woocommerce' ) );
-			}
-		}
-
-		// Check for razer.
-		$pattern  = '/^razer_/';
-		$is_razer = false;
-
-		// Check if payment_met empty.
-		if ( is_array( $this->payment_method_whitelist ) ) {
-			$output = preg_grep( $pattern, $this->payment_method_whitelist );
-
-			if ( count( $output ) > 0 ) {
-				$is_razer = true;
-			}
-		}
-
-		$razer_ewallet = isset( $_POST['chip_razer_ewallet'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) ) : '';
-		if ( is_array( $this->payment_method_whitelist ) && 'yes' === $this->bypass_chip && $is_razer && 0 === strlen( $razer_ewallet ) ) {
-			throw new Exception( esc_html__( 'E-Wallet is a required field.', 'chip-for-woocommerce' ) );
+		// Only enforce the required dropdown when it is actually rendered:
+		// it is skipped on add-payment-method and change-payment-method
+		// pages, where POSTing chip_payment_method would fail validation.
+		// A saved-token charge never uses the dropdown either (Blocks
+		// submits only the token key in payment_data), so skip it there too.
+		$token_key            = 'wc-' . $this->id . '-payment-token';
+		$saved_token_selected = ( isset( $_POST[ $token_key ] ) && ! empty( $_POST[ $token_key ] ) && 'new' !== $_POST[ $token_key ] )
+			|| ( isset( $_POST['token'] ) && ! empty( $_POST['token'] ) && 'new' !== $_POST['token'] );
+		$has_method           = ! empty( $this->get_posted_payment_method() );
+		if ( $this->should_render_unified_dropdown() && ! $saved_token_selected && ! $has_method ) {
+			throw new \Exception( esc_html__( 'Please choose a payment method.', 'chip-for-woocommerce' ) );
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
-
+		// Card form validation is handled client-side by direct-post.js (existing).
 		return true;
 	}
 
@@ -1655,13 +1762,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		do_action( 'chip_' . $this->id . '_before_process_payment', $order_id, $this );
 
 		// Start of logic for subscription_payment_method_change_customer supports.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only flow selector, sanitized with absint below.
 		if ( isset( $_GET['change_payment_method'] ) ) {
 			$subscription_id = absint( $_GET['change_payment_method'] );
 			if ( $subscription_id > 0 && function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $subscription_id ) ) {
 				return $this->process_payment_method_change( $subscription_id );
 			}
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		// End of logic for subscription_payment_method_change_customer supports.
 
 		$order   = new WC_Order( $order_id );
@@ -1806,10 +1914,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$chip = $this->api();
 
 		if ( is_array( $this->payment_method_whitelist ) && ! empty( $this->payment_method_whitelist ) ) {
-			$woocommerce_currency               = get_woocommerce_currency();
+			$woocommerce_currency               = $order->get_currency();
 			$order_total                        = $order->get_total();
 			$amount                             = (int) round( $order_total * 100 ); // sen.
-			$params['payment_method_whitelist'] = $this->resolve_duitnow_methods(
+			$params['payment_method_whitelist'] = $this->resolve_payment_method_groups(
 				$this->payment_method_whitelist,
 				$woocommerce_currency,
 				$amount
@@ -1851,6 +1959,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		if ( 'yes' === $this->disable_redirect ) {
 			unset( $params['success_redirect'] );
+		}
+
+		// Narrow to card-only when the customer selected Card in the unified
+		// dropdown. The gateway only exposes direct_post_url for card-only
+		// payments; without this the card form data would be discarded and
+		// the customer redirected to the CHIP payment page. A saved-token
+		// charge never posts card data, so the narrowing is skipped there
+		// (the payment keeps its redirect URL). On order-pay the card form
+		// is not rendered and direct-post is unsupported, so the narrowing
+		// is skipped too — the customer is redirected to the CHIP payment
+		// page with ?preferred=card instead.
+		if ( $this->bypass_chip_is_card_selection() && empty( $token_id ) && isset( $params['payment_method_whitelist'] ) && ! is_wc_endpoint_url( 'order-pay' ) ) {
+			$params['payment_method_whitelist'] = $this->card_only_whitelist( $params['payment_method_whitelist'] );
 		}
 
 		if ( ! empty( $order->get_customer_note() ) ) {
@@ -1896,7 +2017,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( isset( $params['force_recurring'] ) && true === $params['force_recurring'] ) {
 			if ( isset( $params['payment_method_whitelist'] ) && is_array( $params['payment_method_whitelist'] ) ) {
 				$allowed_recurring_methods          = array( 'visa', 'mastercard', 'maestro' );
-				$params['payment_method_whitelist'] = array_intersect( $params['payment_method_whitelist'], $allowed_recurring_methods );
+				$params['payment_method_whitelist'] = array_values( array_intersect( $params['payment_method_whitelist'], $allowed_recurring_methods ) );
 				// If no valid methods remain, set default to visa, mastercard, and maestro.
 				if ( empty( $params['payment_method_whitelist'] ) ) {
 					$params['payment_method_whitelist'] = array( 'visa', 'mastercard', 'maestro' );
@@ -1947,7 +2068,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 			/* translators: %1$s: Payment token ID */
 			$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
-			$this->maybe_delete_payment_token( $charge_payment, $token_id );
 
 			$get_payment            = $chip->get_payment( $payment['id'] );
 			$payment_requery_status = $get_payment['status'];
@@ -2287,11 +2407,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
+		// Guard: if no token matches this gateway (e.g. a legacy renewal
+		// order still holding a token from a different CHIP clone), charging
+		// with an empty token would fail with a confusing "Invalid or
+		// inactive recurring token" error. Fail fast with a clear note.
+		// No lock has been acquired yet at this point.
+		if ( empty( $token->get_token() ) ) {
+			$renewal_order->update_status( 'failed' );
+			$renewal_order->add_order_note( __( 'No card token matching this gateway is available to charge.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
 		$this->get_lock( $renewal_order_id );
 
 		$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
-
-		$this->maybe_delete_payment_token( $charge_payment, $token->get_id() );
 
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$renewal_order->update_status( 'failed' );
@@ -2810,7 +2939,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	protected function get_fpx_banks_data( $transient_key ) {
-		$expiration = 60 * 3; // 3 minutes
+		$expiration = HOUR_IN_SECONDS; // 1 hour
 
 		$data = get_transient( $transient_key );
 
@@ -2927,18 +3056,34 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Get unavailable FPX B2C bank codes.
 	 *
+	 * Lazily computes the list on first access so it is correct regardless
+	 * of when the gateway instance is queried (register_script() runs on
+	 * init, before payment_fields() has called list_fpx_banks()).
+	 *
 	 * @return array
 	 */
 	public function get_unavailable_fpx_banks() {
+		if ( ! $this->unavailable_fpx_banks_computed ) {
+			$this->list_fpx_banks();
+			$this->unavailable_fpx_banks_computed = true;
+		}
 		return $this->unavailable_fpx_banks;
 	}
 
 	/**
 	 * Get unavailable FPX B2B1 bank codes.
 	 *
+	 * Lazily computes the list on first access so it is correct regardless
+	 * of when the gateway instance is queried (register_script() runs on
+	 * init, before payment_fields() has called list_fpx_b2b1_banks()).
+	 *
 	 * @return array
 	 */
 	public function get_unavailable_fpx_b2b1_banks() {
+		if ( ! $this->unavailable_fpx_b2b1_banks_computed ) {
+			$this->list_fpx_b2b1_banks();
+			$this->unavailable_fpx_b2b1_banks_computed = true;
+		}
 		return $this->unavailable_fpx_b2b1_banks;
 	}
 
@@ -2963,7 +3108,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$ewallet_list['MB2U_QRPay-Push'] = __( 'Maybank QRPay', 'chip-for-woocommerce' );
 		}
 
-		if ( in_array( 'razer_shopeepay', $this->payment_method_whitelist, true ) ) {
+		if ( count( array_intersect( $this->payment_method_whitelist, self::SHOPEE_GROUP ) ) > 0 ) {
 			$ewallet_list['ShopeePay'] = __( 'ShopeePay', 'chip-for-woocommerce' );
 		}
 
@@ -2972,7 +3117,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
-			$ewallet_list['duitnow-qr'] = __( 'Duitnow QR', 'chip-for-woocommerce' );
+			$ewallet_list['duitnow-qr'] = __( 'DuitNow QR', 'chip-for-woocommerce' );
 		}
 
 		if ( has_filter( 'wc_' . $this->id . '_list_razer_ewallets' ) ) {
@@ -2985,6 +3130,90 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the unified list of payment methods for the unified dropdown.
+	 *
+	 * Returns a flat array keyed by tag-encoded values (e.g. 'fpx:MB2U0227',
+	 * 'fpx_b2b1:PBB0234', 'razer:GrabPay', 'dnqr', 'card'). Each entry's value
+	 * is the customer-facing display label. Used by the REST endpoint type
+	 * 'unified' and by classic checkout's payment_fields().
+	 *
+	 * @return array
+	 */
+	public function list_unified_payment_methods(): array {
+		$list = array();
+
+		// FPX B2C banks (only if 'fpx' is in the whitelist).
+		if ( in_array( 'fpx', $this->payment_method_whitelist, true ) ) {
+			foreach ( $this->list_fpx_banks() as $code => $label ) {
+				if ( '' === $code ) {
+					continue;
+				}
+				$list[ 'fpx:' . $code ] = $label;
+			}
+		}
+
+		// FPX B2B1 banks (only if 'fpx_b2b1' is in the whitelist).
+		if ( in_array( 'fpx_b2b1', $this->payment_method_whitelist, true ) ) {
+			foreach ( $this->list_fpx_b2b1_banks() as $code => $label ) {
+				if ( '' === $code ) {
+					continue;
+				}
+				$list[ 'fpx_b2b1:' . $code ] = $label;
+			}
+		}
+
+		// Razer e-wallets (only for keys the merchant has enabled in the whitelist).
+		foreach ( $this->list_razer_ewallets() as $code => $label ) {
+			if ( '' === $code || 'duitnow-qr' === $code || __( 'Choose your e-wallet', 'chip-for-woocommerce' ) === $label ) {
+				continue;
+			}
+			// Map display code to whitelist key. Use an explicit map (mirroring
+			// build_razer_url) because a naive slugify of the display code does
+			// not match the whitelist keys for Maybank QRPay and Touch 'n Go.
+			$display_to_key = array(
+				'Atome'           => 'razer_atome',
+				'GrabPay'         => 'razer_grabpay',
+				'MB2U_QRPay-Push' => 'razer_maybankqr',
+				'ShopeePay'       => 'razer_shopeepay',
+				'TNG-EWALLET'     => 'razer_tng',
+			);
+			if ( ! isset( $display_to_key[ $code ] ) ) {
+				continue;
+			}
+			$whitelist_key = $display_to_key[ $code ];
+			if ( ! in_array( $whitelist_key, $this->payment_method_whitelist, true ) ) {
+				continue;
+			}
+			$list[ 'razer:' . $code ] = $label;
+		}
+
+		// DuitNow QR (only if the dnqr group is enabled in the whitelist).
+		if ( count( array_intersect( $this->payment_method_whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
+			$list['dnqr'] = __( 'DuitNow QR', 'chip-for-woocommerce' );
+		}
+
+		// Card (only if the card group is enabled in the whitelist).
+		if ( count( array_intersect( $this->payment_method_whitelist, self::CARD_GROUP ) ) > 0 ) {
+			$list['card'] = __( 'Card (Visa/Mastercard/Maestro)', 'chip-for-woocommerce' );
+		}
+
+		// Crypto Coin (only if enabled in the whitelist).
+		if ( in_array( 'crypto_coin', $this->payment_method_whitelist, true ) ) {
+			$list['crypto_coin'] = __( 'Crypto Coin', 'chip-for-woocommerce' );
+		}
+
+		// Google Pay / Apple Pay (only if enabled in the whitelist).
+		if ( in_array( 'mpgs_google_pay', $this->payment_method_whitelist, true ) ) {
+			$list['mpgs_google_pay'] = __( 'Google Pay', 'chip-for-woocommerce' );
+		}
+		if ( in_array( 'mpgs_apple_pay', $this->payment_method_whitelist, true ) ) {
+			$list['mpgs_apple_pay'] = __( 'Apple Pay', 'chip-for-woocommerce' );
+		}
+
+		return $list;
+	}
+
+	/**
 	 * Bypass CHIP payment page if configured.
 	 *
 	 * @param string $url     Checkout URL.
@@ -2992,63 +3221,227 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	public function bypass_chip( $url, $payment ) {
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verification handled by WooCommerce checkout.
-		if ( 'yes' === $this->bypass_chip && ! $payment['is_test'] ) {
-			if ( isset( $_POST['chip_fpx_bank'] ) && ! empty( $_POST['chip_fpx_bank'] ) ) {
-				$url .= '?preferred=fpx&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_bank'] ) );
-			} elseif ( isset( $_POST['chip_fpx_b2b1_bank'] ) && ! empty( $_POST['chip_fpx_b2b1_bank'] ) ) {
-				$url .= '?preferred=fpx_b2b1&fpx_bank_code=' . sanitize_text_field( wp_unslash( $_POST['chip_fpx_b2b1_bank'] ) );
-			} elseif ( isset( $_POST['chip_razer_ewallet'] ) && ! empty( $_POST['chip_razer_ewallet'] ) ) {
-				$razer_ewallet = sanitize_text_field( wp_unslash( $_POST['chip_razer_ewallet'] ) );
-				$preferred     = '';
-				switch ( $razer_ewallet ) {
-					case 'Atome':
-						$preferred = 'razer_atome';
-						break;
-					case 'GrabPay':
-						$preferred = 'razer_grabpay';
-						break;
-					case 'TNG-EWALLET':
-						$preferred = 'razer_tng';
-						break;
-					case 'ShopeePay':
-						$preferred = 'razer_shopeepay';
-						break;
-					case 'MB2U_QRPay-Push':
-						$preferred = 'razer_maybankqr';
-						break;
-					case 'duitnow-qr':
-						// Priority: dnqr if available, duitnow_qr fallback.
-						// Reuse the resolver output from process_payment().
-						$group     = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : array( 'dnqr', 'duitnow_qr' );
-						$preferred = ! empty( $group ) ? $group[0] : 'dnqr';
-						break;
-				}
-
-				// DuitNow QR is its own payment method, not a Razer bank code.
-				// Append `?preferred=...` only -- no `&razer_bank_code=...` because
-				// that parameter is meaningless for DuitNow QR (it was a pre-PR
-				// bug to include it).
-				if ( '' !== $preferred ) {
-					if ( 'duitnow-qr' === $razer_ewallet ) {
-						$url .= '?preferred=' . $preferred;
-					} else {
-						$url .= '?preferred=' . $preferred . '&razer_bank_code=' . $razer_ewallet;
-					}
-				}
-			} else {
-				// Single-method DuitNow QR branch: trigger when the configured
-				// whitelist is purely the dnqr group (handles [duitnow_qr],
-				// [dnqr], and [duitnow_qr, dnqr] for the dnqr-only gateway).
-				$preferred = $this->get_duitnow_qr_preferred();
-				if ( '' !== $preferred ) {
-					$url .= '?preferred=' . $preferred;
-				}
-			}
-		} elseif ( 'wc_gateway_chip_5' === $this->id ) {
-			$url .= '?preferred=razer_atome&razer_bank_code=Atome';
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		// When the merchant enables "skip payment page" (bypass_chip), the
+		// ?preferred= parameter is always sent — regardless of whether the
+		// purchase is a test-mode payment. A merchant who configures skip
+		// expects the auto-redirect in every environment; gatekeeping on
+		// $payment['is_test'] silently broke that for test-mode purchases.
+		if ( 'yes' !== $this->bypass_chip ) {
+			return $this->maybe_atome_redirect( $url );
 		}
+		// Read the payment method. Prefer this gateway's scoped field (classic
+		// checkout/order-pay submit 'chip_payment_method_<id>'), then the
+		// unscoped key used by Blocks payment_data.
+		$chip_pm = $this->get_posted_payment_method();
+		if ( empty( $chip_pm ) ) {
+			return $this->maybe_atome_redirect( $url );
+		}
+		// A saved-token charge never uses the dropdown: the token is charged
+		// server-side and the redirect URL must be left untouched (appending
+		// ?preferred= would corrupt the direct-post URL for card-only tokens).
+		$token_key = 'wc-' . $this->id . '-payment-token';
+		if ( ( isset( $_POST[ $token_key ] ) && ! empty( $_POST[ $token_key ] ) && 'new' !== $_POST[ $token_key ] )
+			|| ( isset( $_POST['token'] ) && ! empty( $_POST['token'] ) && 'new' !== $_POST['token'] ) ) {
+			return $this->maybe_atome_redirect( $url );
+		}
+		$value = $chip_pm;
+		if ( false === strpos( $value, ':' ) ) {
+			if ( 'dnqr' === $value ) {
+				return $this->build_explicit_dnqr_url( $url );
+			}
+			if ( 'crypto_coin' === $value ) {
+				return $url . '?preferred=crypto_coin';
+			}
+			if ( 'mpgs_google_pay' === $value || 'mpgs_apple_pay' === $value ) {
+				// Google Pay / Apple Pay are wallet methods handled on the
+				// CHIP payment page. Use the checkout URL (the redirect URL
+				// may be a direct_post_url for card-only whitelists, which
+				// cannot carry a ?preferred= parameter).
+				$base = isset( $payment['checkout_url'] ) && ! empty( $payment['checkout_url'] ) ? $payment['checkout_url'] : $url;
+				return $base . '?preferred=' . $value;
+			}
+			if ( 'card' === $value ) {
+				// On order-pay the card form is not rendered and direct-post is
+				// not supported, so redirect to the CHIP payment page with the
+				// card method pre-selected instead of the direct_post_url. The
+				// customer enters their card details on CHIP's page.
+				if ( is_wc_endpoint_url( 'order-pay' ) ) {
+					$base = isset( $payment['checkout_url'] ) && ! empty( $payment['checkout_url'] ) ? $payment['checkout_url'] : $url;
+					return $base . '?preferred=card';
+				}
+				return $url;
+			}
+			// Any other unrecognised single-method tag: no redirect; the
+			// direct-post flow or default gateway behavior applies. When
+			// the customer selected Card, process_payment() has already
+			// narrowed the whitelist to card-only, so the payment carries
+			// direct_post_url and the URL returned here is that URL.
+			return $url;
+		}
+		[ $type, $code ] = explode( ':', $value, 2 );
+		switch ( $type ) {
+			case 'fpx':
+				return $url . '?preferred=fpx&fpx_bank_code=' . rawurlencode( $code );
+			case 'fpx_b2b1':
+				return $url . '?preferred=fpx_b2b1&fpx_bank_code=' . rawurlencode( $code );
+			case 'razer':
+				return $this->build_razer_url( $url, $code );
+		}
+		return $url;
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
+	}
+
+	/**
+	 * Whether the customer selected Card in the unified dropdown.
+	 *
+	 * @return bool
+	 */
+	private function bypass_chip_is_card_selection(): bool {
+		if ( 'yes' !== $this->bypass_chip ) {
+			return false;
+		}
+		return 'card' === $this->get_posted_payment_method();
+	}
+
+	/**
+	 * Whether the customer selected Card in the unified dropdown during
+	 * WooCommerce Blocks checkout.
+	 *
+	 * Blocks submits the dropdown selection via payment_data (Store API),
+	 * not $_POST.
+	 *
+	 * @param \Automattic\WooCommerce\Blocks\Payments\PaymentContext $context Payment context.
+	 * @return bool
+	 */
+	private function context_is_card_selection( $context ): bool {
+		if ( 'yes' !== $this->bypass_chip ) {
+			return false;
+		}
+		// Blocks submits the dropdown selection via payment_data (Store API).
+		// In some flows payment_data is empty by the time this runs (Blocks
+		// can swap payment_data into $_POST), so fall back to $_POST.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by WooCommerce checkout.
+		$payment_data = isset( $context->payment_data ) ? $context->payment_data : array();
+		if ( is_array( $payment_data ) && isset( $payment_data['chip_payment_method'] ) && 'card' === $payment_data['chip_payment_method'] ) {
+			return true;
+		}
+		$posted = isset( $_POST['chip_payment_method'] ) ? sanitize_text_field( wp_unslash( $_POST['chip_payment_method'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return 'card' === $posted;
+	}
+
+	/**
+	 * Reduce a payment-method whitelist to card-only identifiers.
+	 *
+	 * Card networks are resolved here (the gateway only knows the
+	 * visa/mastercard/maestro identifiers and the MPGS keys, not the 'card'
+	 * aggregator). When no card method is present the whitelist is returned
+	 * unchanged so redirect methods keep working.
+	 *
+	 * @param array $whitelist Payment-method whitelist.
+	 * @return array Card-only whitelist (or the input unchanged).
+	 */
+	private function card_only_whitelist( $whitelist ): array {
+		if ( ! is_array( $whitelist ) ) {
+			return is_array( $this->payment_method_whitelist ) ? $this->payment_method_whitelist : array();
+		}
+
+		$card_only = array_values(
+			array_intersect(
+				$whitelist,
+				array_merge( self::CARD_GROUP, array( 'mpgs_google_pay', 'mpgs_apple_pay' ) )
+			)
+		);
+
+		if ( empty( $card_only ) ) {
+			return $whitelist;
+		}
+
+		return $card_only;
+	}
+
+	/**
+	 * Build the redirect URL for a Razer e-wallet selection.
+	 *
+	 * @param string $url          Base redirect URL.
+	 * @param string $display_name Display name of the selected e-wallet (e.g. 'GrabPay').
+	 * @return string URL with the appropriate ?preferred=razer_<x>&razer_bank_code=... suffix.
+	 */
+	private function build_razer_url( $url, $display_name ) {
+		$map = array(
+			'Atome'           => 'razer_atome',
+			'GrabPay'         => 'razer_grabpay',
+			'ShopeePay'       => $this->get_shopee_pay_preferred(),
+			'TNG-EWALLET'     => 'razer_tng',
+			'MB2U_QRPay-Push' => 'razer_maybankqr',
+		);
+		if ( ! isset( $map[ $display_name ] ) || '' === $map[ $display_name ] ) {
+			return $url;
+		}
+		return $url . '?preferred=' . rawurlencode( $map[ $display_name ] ) . '&razer_bank_code=' . rawurlencode( $display_name );
+	}
+
+	/**
+	 * Get the ?preferred= value for Shopee Pay when it is configured.
+	 *
+	 * Returns 'shopee_pay' (modern, priority) or 'razer_shopeepay' (legacy
+	 * fallback) when the configured whitelist intersects SHOPEE_GROUP and
+	 * the resolver has populated $this->resolved_shopee_group. Falls back
+	 * to 'razer_shopeepay' defensively when the resolver has not run.
+	 *
+	 * @return string 'shopee_pay' | 'razer_shopeepay' | ''
+	 */
+	private function get_shopee_pay_preferred(): string {
+		$whitelist = is_array( $this->payment_method_whitelist ) ? $this->payment_method_whitelist : array();
+		if ( count( array_intersect( $whitelist, self::SHOPEE_GROUP ) ) === 0 ) {
+			return '';
+		}
+		$resolved = ! empty( $this->resolved_shopee_group ) ? $this->resolved_shopee_group : self::SHOPEE_GROUP;
+		return ! empty( $resolved ) ? $resolved[0] : '';
+	}
+
+	/**
+	 * Build the redirect URL for a DuitNow QR selection.
+	 *
+	 * @param string $url Base redirect URL.
+	 * @return string URL with the appropriate ?preferred=dnqr (or duitnow_qr) suffix.
+	 */
+	private function build_dnqr_url( $url ) {
+		$preferred = $this->get_duitnow_qr_preferred();
+		return '' === $preferred ? $url : $url . '?preferred=' . $preferred;
+	}
+
+	/**
+	 * Build the redirect URL when the customer explicitly picks DuitNow QR
+	 * from the unified dropdown.
+	 *
+	 * Unlike get_duitnow_qr_preferred(), this must always append
+	 * ?preferred= even when the merchant's whitelist mixes other payment
+	 * methods. The group-count rule in get_duitnow_qr_preferred() only
+	 * applies to the zero-click DuitNow QR-only flow (Gateway 6); a customer
+	 * who actively chooses DuitNow QR expects to be sent straight to it.
+	 *
+	 * @param string $url Base redirect URL.
+	 * @return string URL with the ?preferred=dnqr|duitnow_qr suffix.
+	 */
+	private function build_explicit_dnqr_url( $url ) {
+		$resolved  = ! empty( $this->resolved_dnqr_group ) ? $this->resolved_dnqr_group : array( 'dnqr' );
+		$preferred = in_array( 'dnqr', $resolved, true ) ? 'dnqr' : ( $resolved[0] ?? 'dnqr' );
+		return $url . '?preferred=' . $preferred;
+	}
+
+	/**
+	 * If this is the Atome clone (wc_gateway_chip_5), force a redirect to
+	 * ?preferred=razer_atome&razer_bank_code=Atome regardless of any POST data.
+	 *
+	 * @param string $url Base redirect URL.
+	 * @return string URL with the Atome redirect suffix, or the input URL unchanged.
+	 */
+	private function maybe_atome_redirect( $url ) {
+		if ( 'wc_gateway_chip_5' === $this->id ) {
+			return $url . '?preferred=razer_atome&razer_bank_code=Atome';
+		}
 		return $url;
 	}
 
@@ -3338,11 +3731,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function register_script() {
+		// Use file modification time as the cache-busting version for the two
+		// frontend JS assets. The module version constant stays constant across
+		// commits, so a CDN (e.g. Cloudflare) would keep serving the OLD file
+		// under the same ?ver= URL after an update. filemtime changes the query
+		// string whenever the file is edited, guaranteeing fresh copies.
+		$direct_post_path = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/js/direct-post.js';
+		$dropdown_path    = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/js/chip-unified-dropdown.js';
+		$direct_post_ver  = file_exists( $direct_post_path ) ? (string) filemtime( $direct_post_path ) : CHIP_WOOCOMMERCE_MODULE_VERSION;
+		$dropdown_ver     = file_exists( $dropdown_path ) ? (string) filemtime( $dropdown_path ) : CHIP_WOOCOMMERCE_MODULE_VERSION;
+
 		wp_register_script(
 			"wc-{$this->id}-direct-post",
 			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/direct-post.js',
 			array( 'jquery' ),
-			CHIP_WOOCOMMERCE_MODULE_VERSION,
+			$direct_post_ver,
 			true
 		);
 
@@ -3352,6 +3755,55 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			array(
 				'id'             => $this->id,
 				'card_logos_url' => CHIP_WOOCOMMERCE_URL . 'assets/',
+			)
+		);
+
+		wp_register_script(
+			"wc-{$this->id}-unified-dropdown",
+			trailingslashit( CHIP_WOOCOMMERCE_URL ) . 'includes/js/chip-unified-dropdown.js',
+			array( 'jquery' ),
+			$dropdown_ver,
+			true
+		);
+
+		// NOTE: do NOT call localize_unified_dropdown() here. register_script()
+		// runs on `init` for EVERY request (frontend and admin), and the
+		// localization reads the unavailable-bank lists via the lazy getters,
+		// which would trigger a curl to api.chip-in.asia/health_check on every
+		// page load (3s timeout, 3-minute cache). The script is only enqueued
+		// from render_unified_dropdown() on the checkout page, which localizes
+		// the data (with the correct offline-bank lists) right before enqueue.
+	}
+
+	/**
+	 * Localize the unified-dropdown script data.
+	 *
+	 * Called from render_unified_dropdown() (on the checkout page) after
+	 * list_fpx_banks()/list_fpx_b2b1_banks() have populated the
+	 * unavailable-bank properties. It is deliberately NOT called from
+	 * register_script(): that hook runs on `init` for every request, and
+	 * localizing there would read the unavailable-bank lists via the lazy
+	 * getters, triggering a curl to api.chip-in.asia/health_check on every
+	 * page load.
+	 *
+	 * @return void
+	 */
+	private function localize_unified_dropdown() {
+		wp_localize_script(
+			"wc-{$this->id}-unified-dropdown",
+			'gateway_unified_option',
+			array(
+				'id'             => $this->id,
+				'card_logos_url' => CHIP_WOOCOMMERCE_URL . 'assets/',
+				'unified'        => array(
+					'fpx_logo_base'    => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
+					'razer_logo_base'  => CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/',
+					'dnqr_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/duitnow_qr.png',
+					'card_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/card_only.png',
+					'crypto_logo_url'  => CHIP_WOOCOMMERCE_URL . 'assets/crypto_coin.svg',
+					'unavailable_fpx'  => $this->get_unavailable_fpx_banks(),
+					'unavailable_b2b1' => $this->get_unavailable_fpx_b2b1_banks(),
+				),
 			)
 		);
 	}
@@ -3426,7 +3878,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$cvc_field       = '<p class="form-row form-row-last validate-required" id="' . esc_attr( $this->id ) . '-card-cvc_field">
 			<label for="' . esc_attr( $this->id ) . '-card-cvc" class="required_field">' . esc_html__( 'CVC', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 			<span class="woocommerce-input-wrapper">
-				<input type="password" class="input-text" name="' . esc_attr( $this->id ) . '-card-cvc" id="' . esc_attr( $this->id ) . '-card-cvc" placeholder="' . $cvc_placeholder . '" aria-required="true" autocomplete="off" inputmode="numeric" maxlength="4" data-placeholder="' . $cvc_placeholder . '" />
+				<input type="password" class="input-text" id="' . esc_attr( $this->id ) . '-card-cvc" placeholder="' . $cvc_placeholder . '" aria-required="true" autocomplete="off" inputmode="numeric" maxlength="4" data-placeholder="' . $cvc_placeholder . '" />
 			</span>
 		</p>';
 
@@ -3438,20 +3890,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'card-name-field'   => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-name_field">
 				<label for="' . esc_attr( $this->id ) . '-card-name" class="required_field">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper">
-					<input type="text" class="input-text" name="' . esc_attr( $this->id ) . '-card-name" id="' . esc_attr( $this->id ) . '-card-name" placeholder="' . $name_placeholder . '" aria-required="true" autocomplete="cc-name" inputmode="text" maxlength="30" data-placeholder="' . $name_placeholder . '" />
+					<input type="text" class="input-text" id="' . esc_attr( $this->id ) . '-card-name" placeholder="' . $name_placeholder . '" aria-required="true" autocomplete="cc-name" inputmode="text" maxlength="30" data-placeholder="' . $name_placeholder . '" />
 				</span>
 			</p>',
 			'card-number-field' => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-number_field">
 				<label for="' . esc_attr( $this->id ) . '-card-number" class="required_field">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper chip-card-number-wrapper">
-					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-number" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
+					<input type="tel" class="input-text" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
 					<img class="chip-card-brand-icon chip-hidden" src="" alt="" />
 				</span>
 			</p>',
 			'card-expiry-field' => '<p class="form-row form-row-first validate-required" id="' . esc_attr( $this->id ) . '-card-expiry_field">
 				<label for="' . esc_attr( $this->id ) . '-card-expiry" class="required_field">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper">
-					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-expiry" id="' . esc_attr( $this->id ) . '-card-expiry" placeholder="' . $expiry_placeholder . '" aria-required="true" autocomplete="cc-exp" inputmode="numeric" maxlength="7" data-placeholder="' . $expiry_placeholder . '" />
+					<input type="tel" class="input-text" id="' . esc_attr( $this->id ) . '-card-expiry" placeholder="' . $expiry_placeholder . '" aria-required="true" autocomplete="cc-exp" inputmode="numeric" maxlength="7" data-placeholder="' . $expiry_placeholder . '" />
 				</span>
 			</p>',
 		);
@@ -3545,36 +3997,155 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		return array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
-			'mastercard'      => 'Mastercard',
-			'maestro'         => 'Maestro',
-			'visa'            => 'Visa',
+			'card'            => 'Card (Visa, Mastercard, Maestro)',
 			'mpgs_google_pay' => 'Google Pay',
 			'mpgs_apple_pay'  => 'Apple Pay',
 			'razer_atome'     => 'Atome',
 			'razer_grabpay'   => 'GrabPay',
 			'razer_maybankqr' => 'Maybank QRPay',
-			'razer_shopeepay' => 'ShopeePay',
+			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
-			// DuitNow QR group: a single multiselect key that the gateway
-			// expands to {duitnow_qr, dnqr} at load time. The resolver
-			// picks whichever the merchant has, prioritizing dnqr.
 			'duitnow_qr'      => 'DuitNow QR',
+			'crypto_coin'     => 'Crypto Coin',
 		);
 	}
 
 	/**
 	 * Resolve the configured payment_method_whitelist against the merchant's
-	 * actual /payment_methods/ response, with dnqr-priority for the DuitNow QR group.
+	 * actual /payment_methods/ response. Resolves every "preferred" runtime
+	 * group (DuitNow QR and Shopee Pay) with a single /payment_methods/ call:
+	 *
+	 *   - DuitNow QR group: dnqr wins when both {duitnow_qr, dnqr} are present.
+	 *   - Shopee Pay group: shopee_pay wins when both {razer_shopeepay, shopee_pay}
+	 *     are present; razer_shopeepay is the fallback.
 	 *
 	 * Steps:
-	 *   1. Group expansion: any dnqr-group member in the whitelist expands to the full group.
-	 *   2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
-	 *   3. Try cache. On miss, call /payment_methods/.
-	 *   4. Fallback: return expanded whitelist unchanged if the API fails.
-	 *   5. Intersect with available methods.
-	 *   6. Priority: dnqr wins when both are present.
-	 *   7. Cache the resolved group on $this->resolved_dnqr_group for bypass_chip().
-	 *   8. Build the final whitelist (original non-group entries + resolved group).
+	 *   1. Group detection: which of DUITNOW_GROUP / SHOPEE_GROUP intersect the whitelist.
+	 *   2. Expand each configured group to its full member list (in-memory only).
+	 *   3. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
+	 *   4. Try cache. On miss, call /payment_methods/.
+	 *   5. Fallback: return the expanded whitelist unchanged if the API fails.
+	 *   6. Intersect each configured group with the merchant's available methods.
+	 *   7. Apply per-group priority.
+	 *   8. Cache each resolved group on $this->resolved_dnqr_group /
+	 *      $this->resolved_shopee_group for bypass_chip().
+	 *   9. Build the final whitelist (original non-group entries + resolved groups).
+	 *
+	 * @param array  $whitelist Configured payment_method_whitelist.
+	 * @param string $currency  Order currency code (e.g. 'MYR').
+	 * @param int    $amount    Order total in sen (e.g. 12345 = RM 123.45).
+	 * @return array            Final whitelist to send to CHIP.
+	 */
+	protected function resolve_payment_method_groups( array $whitelist, string $currency, int $amount ): array {
+		// Strip the 'card' aggregator key before sending the whitelist to
+		// CHIP. CHIP's API expects only the resolved card-network
+		// identifiers (visa/mastercard/maestro); the 'card' key is the
+		// in-memory aggregator set up by the constructor's group
+		// expansion and is not a value CHIP recognises. The runtime
+		// continues to use the expanded list locally.
+		$whitelist = array_values( array_diff( $whitelist, array( 'card' ) ) );
+
+		// 1. Group detection.
+		$groups = array();
+		if ( count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0 ) {
+			$groups['dnqr'] = self::DUITNOW_GROUP;
+		}
+		if ( count( array_intersect( $whitelist, self::SHOPEE_GROUP ) ) > 0 ) {
+			$groups['shopee'] = self::SHOPEE_GROUP;
+		}
+
+		// Short-circuit: a whitelist that does not intersect any preferred
+		// group must be returned untouched (no API call, no group injection).
+		// This guarantees that group members can never appear in the final
+		// whitelist unless the merchant configured one of them.
+		if ( empty( $groups ) ) {
+			$this->resolved_dnqr_group   = array();
+			$this->resolved_shopee_group = array();
+			return $whitelist;
+		}
+
+		// 2. Expanded whitelist: original entries + every configured group member.
+		$expanded = $whitelist;
+		foreach ( $groups as $members ) {
+			$expanded = array_values( array_unique( array_merge( $expanded, $members ) ) );
+		}
+
+		// 3. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
+		$cache_key = 'chip_pm_' . md5( $this->brand_id . '|' . $currency . '|' . intval( $amount / 100 ) );
+
+		// 4. Try cache. If hit, use it. If miss, call /payment_methods/.
+		$available = get_transient( $cache_key );
+		if ( false === $available ) {
+			$chip     = $this->api();
+			$response = $chip->payment_methods( $currency, '', $amount ); // No language param.
+			if ( ! is_array( $response ) || ! isset( $response['available_payment_methods'] ) ) {
+				// 5a. Fallback: return expanded whitelist unchanged.
+				foreach ( $groups as $key => $members ) {
+					if ( 'dnqr' === $key ) {
+						$this->resolved_dnqr_group = $members;
+					} else {
+						$this->resolved_shopee_group = $members;
+					}
+				}
+				$this->api()->log_info( sprintf( 'payment_method_groups resolver: API failed, fallback to expanded whitelist=%s', implode( ',', $expanded ) ) );
+				return $expanded;
+			}
+			$available = $response['available_payment_methods']; // Example shape: list of method ids the merchant has.
+			set_transient( $cache_key, $available, HOUR_IN_SECONDS );
+		}
+
+		$resolved = array();
+		foreach ( $groups as $key => $members ) {
+			// 6. Intersect: keep only group members the merchant actually has.
+			$resolved_group = array_values( array_intersect( $members, $available ) );
+
+			// 7. Priority: dnqr wins when both are present; shopee_pay wins when both are present.
+			$preferred = 'dnqr' === $key ? 'dnqr' : 'shopee_pay';
+			$dropped   = 'dnqr' === $key ? 'duitnow_qr' : 'razer_shopeepay';
+			if ( in_array( $preferred, $resolved_group, true ) ) {
+				$resolved_group = array_values( array_diff( $resolved_group, array( $dropped ) ) );
+			}
+
+			// 8. Cache for bypass_chip() to read.
+			if ( 'dnqr' === $key ) {
+				$this->resolved_dnqr_group = $resolved_group;
+			} else {
+				$this->resolved_shopee_group = $resolved_group;
+			}
+			$resolved[ $key ] = $resolved_group;
+		}
+
+		// 9. Build final whitelist: original entries (with group members stripped) + resolved groups.
+		$all_group_members = array();
+		foreach ( $groups as $members ) {
+			$all_group_members = array_merge( $all_group_members, $members );
+		}
+		$final = array_values( array_diff( $expanded, $all_group_members ) );
+		foreach ( $resolved as $resolved_group ) {
+			$final = array_merge( $final, $resolved_group );
+		}
+
+		$this->api()->log_info(
+			sprintf(
+				'payment_method_groups resolver: configured=%s expanded=%s available=%s sent=%s dnqr=%s shopee=%s',
+				implode( ',', $whitelist ),
+				implode( ',', $expanded ),
+				implode( ',', (array) $available ),
+				implode( ',', $final ),
+				implode( ',', $resolved['dnqr'] ?? array() ),
+				implode( ',', $resolved['shopee'] ?? array() )
+			)
+		);
+
+		return $final;
+	}
+
+	/**
+	 * Resolve the DuitNow QR group against the merchant's available methods.
+	 *
+	 * Backward-compatible wrapper around resolve_payment_method_groups() for
+	 * the DuitNow QR group. Retained so existing callers/tests keep working;
+	 * new code should call resolve_payment_method_groups().
 	 *
 	 * @param array  $whitelist Configured payment_method_whitelist.
 	 * @param string $currency  Order currency code (e.g. 'MYR').
@@ -3582,67 +4153,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array            Final whitelist to send to CHIP.
 	 */
 	protected function resolve_duitnow_methods( array $whitelist, string $currency, int $amount ): array {
-		// 1. Group expansion.
-		$has_group_member = count( array_intersect( $whitelist, self::DUITNOW_GROUP ) ) > 0;
-
-		// Short-circuit: a whitelist that does not intersect the dnqr group
-		// must be returned untouched (no API call, no group injection).
-		// This is what the spec prose requires: "[fpx, mastercard] is returned
-		// untouched (no API call)" and it guarantees that dnqr-group members
-		// can never appear in the final whitelist unless the merchant
-		// configured one of them.
-		if ( ! $has_group_member ) {
-			$this->resolved_dnqr_group = array();
-			return $whitelist;
-		}
-
-		$expanded = array_values( array_unique( array_merge( $whitelist, self::DUITNOW_GROUP ) ) );
-
-		// 2. Cache key: brand + currency + amount-bucket (round to 100-sen steps).
-		$cache_key = 'chip_pm_' . md5( $this->brand_id . '|' . $currency . '|' . intval( $amount / 100 ) );
-
-		// 3. Try cache. If hit, use it. If miss, call /payment_methods/.
-		$available = get_transient( $cache_key );
-		if ( false === $available ) {
-			$chip     = $this->api();
-			$response = $chip->payment_methods( $currency, '', $amount ); // No language param.
-			if ( ! is_array( $response ) || ! isset( $response['available_payment_methods'] ) ) {
-				// 4a. Fallback: return expanded whitelist unchanged.
-				$this->resolved_dnqr_group = $has_group_member ? self::DUITNOW_GROUP : array();
-				$this->api()->log_info( sprintf( 'dnqr resolver: API failed, fallback to expanded whitelist=%s', implode( ',', $expanded ) ) );
-				return $expanded;
-			}
-			$available = $response['available_payment_methods']; // Example shape: list of method ids the merchant has.
-			set_transient( $cache_key, $available, 30 * MINUTE_IN_SECONDS );
-		}
-
-		// 5. Intersect: keep only group members the merchant actually has.
-		$resolved_group = array_values( array_intersect( self::DUITNOW_GROUP, $available ) );
-
-		// 6. Priority: dnqr wins when both are present.
-		if ( in_array( 'dnqr', $resolved_group, true ) ) {
-			$resolved_group = array_values( array_diff( $resolved_group, array( 'duitnow_qr' ) ) );
-		}
-
-		// 7. Cache for bypass_chip() to read.
-		$this->resolved_dnqr_group = $resolved_group;
-
-		// 8. Build final whitelist: original entries (with group members stripped) + resolved group.
-		$final = array_values( array_diff( $expanded, self::DUITNOW_GROUP ) );
-		$final = array_merge( $final, $resolved_group );
-
-		$this->api()->log_info(
-			sprintf(
-				'dnqr resolver: configured=%s expanded=%s available=%s sent=%s preferred=%s',
-				implode( ',', $whitelist ),
-				implode( ',', $expanded ),
-				implode( ',', (array) $available ),
-				implode( ',', $final ),
-				$resolved_group[0] ?? '(none)'
-			)
-		);
-
-		return $final;
+		return $this->resolve_payment_method_groups( $whitelist, $currency, $amount );
 	}
 
 	/**
@@ -3739,6 +4250,49 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Migrate a legacy saved payment_method_whitelist to the modern shape.
+	 *
+	 * The unified dropdown redesign removed 'visa', 'mastercard', 'maestro'
+	 * and 'razer_shopeepay' from the admin multiselect options, replacing
+	 * them with the 'card' and 'shopee_pay' group keys. Merchants who saved
+	 * a legacy value would otherwise see nothing selected in the admin
+	 * multiselect (the saved keys are no longer options). This method:
+	 *
+	 *   1. Collapses any 'visa' / 'mastercard' / 'maestro' entries to the
+	 *      single 'card' key (added if missing).
+	 *   2. Renames a lone legacy 'razer_shopeepay' to 'shopee_pay' (only
+	 *      when 'shopee_pay' is not already present, so it is idempotent).
+	 *
+	 * Returns the input array unchanged when no legacy key is present, so
+	 * callers can detect "changed" by strict comparison and persist the
+	 * migrated shape exactly once.
+	 *
+	 * @param array $whitelist Saved payment_method_whitelist.
+	 * @return array Migrated whitelist (identical to input when no change).
+	 */
+	public function migrate_legacy_payment_method_whitelist( array $whitelist ) {
+		// 1. Collapse legacy card-network keys to the 'card' group key.
+		if ( count( array_intersect( $whitelist, self::CARD_GROUP ) ) > 0 ) {
+			$whitelist = array_values( array_diff( $whitelist, self::CARD_GROUP ) );
+			if ( ! in_array( 'card', $whitelist, true ) ) {
+				$whitelist[] = 'card';
+			}
+		}
+
+		// 2. Rename a lone legacy 'razer_shopeepay' to 'shopee_pay'.
+		if ( in_array( 'razer_shopeepay', $whitelist, true ) && ! in_array( 'shopee_pay', $whitelist, true ) ) {
+			$whitelist = array_map(
+				static function ( $method ) {
+					return 'razer_shopeepay' === $method ? 'shopee_pay' : $method;
+				},
+				$whitelist
+			);
+		}
+
+		return $whitelist;
+	}
+
+	/**
 	 * Get bypass chip setting.
 	 *
 	 * @return string
@@ -3761,7 +4315,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$filtered_pmw              = array_intersect( $pmw, $allowed_recurring_methods );
 			// If no valid methods remain after filtering, return default.
 			if ( ! empty( $filtered_pmw ) ) {
-				return $filtered_pmw;
+				// array_intersect() preserves the keys of the first array, so a
+				// whitelist that was group-expanded (e.g. ['card','visa',...])
+				// yields a non-zero-indexed result like [1=>'visa', 2=>...].
+				// json_encode() would then serialize that as a JSON object
+				// ("dict") instead of a list, and CHIP rejects it with
+				// "Expected a list of items but got type dict". Re-index.
+				return array_values( $filtered_pmw );
 			}
 		}
 		if ( $this->supports( 'tokenization' ) ) {
@@ -3769,25 +4329,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Maybe delete payment token if invalid.
-	 *
-	 * @param array $charge_payment Charge payment response.
-	 * @param int   $token_id       Token ID.
-	 * @return void
-	 */
-	public function maybe_delete_payment_token( $charge_payment, $token_id ) {
-		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
-			if ( is_array( $charge_payment['__all__'] ) ) {
-				foreach ( $charge_payment['__all__'] as $errors ) {
-					if ( isset( $errors['code'] ) && 'invalid_recurring_token' === $errors['code'] ) {
-						WC_Payment_Tokens::delete( $token_id );
-					}
-				}
-			}
-		}
 	}
 
 	/**
@@ -3948,11 +4489,17 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
+		// Guard: fail fast with a clear note if no token matches this
+		// gateway, instead of charging with an empty token.
+		if ( empty( $token->get_token() ) ) {
+			$order->update_status( 'failed' );
+			$order->add_order_note( __( 'No card token matching this gateway is available to charge.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
 		$this->get_lock( $order->get_id() );
 
 		$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
-
-		$this->maybe_delete_payment_token( $charge_payment, $token->get_id() );
 
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$order->update_status( 'failed' );

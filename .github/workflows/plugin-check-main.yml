@@ -1,0 +1,47 @@
+name: WordPress Plugin Check (Main)
+
+on:
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '^24.11.0'
+
+      - name: Build plugin folder for CI
+        run: |
+          mkdir -p ci-build/chip-for-woocommerce
+          # Copy source files (respects .gitignore)
+          git archive HEAD | tar -x -C ci-build/chip-for-woocommerce
+          # Copy .wp-env.json if present (needed by plugin-check)
+          if [ -f .wp-env.json ]; then
+            cp .wp-env.json ci-build/chip-for-woocommerce/
+          fi
+          # Install dependencies and build JS assets
+          npm install
+          npm run build
+          # Overlay built artifacts that are gitignored
+          mkdir -p ci-build/chip-for-woocommerce/assets/js/frontend
+          cp assets/js/frontend/* ci-build/chip-for-woocommerce/assets/js/frontend/
+          echo "✅ Build artifacts prepared"
+          ls -la ci-build/chip-for-woocommerce/assets/js/frontend/
+
+      - name: Run Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: './ci-build/chip-for-woocommerce'
+          exclude-directories: 'vendor,node_modules'

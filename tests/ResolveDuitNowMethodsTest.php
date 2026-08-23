@@ -211,7 +211,7 @@ class ResolveDuitNowMethodsTest extends GatewayTestCase {
 		$this->callGatewayMethod( $gateway, 'resolve_duitnow_methods', array( array( 'duitnow_qr' ), 'MYR', 12399 ) );
 	}
 
-	public function test_resolved_dnqr_group_is_emptied_on_no_group_member() {
+public function test_resolved_dnqr_group_is_emptied_on_no_group_member() {
 		// When the whitelist has no dnqr-group member, resolved_dnqr_group
 		// should be set to array() (per the resolver's short-circuit).
 		$gateway = $this->newGateway( array( 'resolved_dnqr_group' => array( 'stale' ) ) );
@@ -224,5 +224,45 @@ class ResolveDuitNowMethodsTest extends GatewayTestCase {
 
 		$this->assertSame( array( 'fpx' ), $result );
 		$this->assertSame( array(), $this->getGatewayProperty( $gateway, 'resolved_dnqr_group' ) );
+	}
+
+	public function test_card_aggregator_is_stripped_from_whitelist() {
+		// The 'card' aggregator key is a runtime-only marker produced by
+		// the constructor's group expansion. CHIP's API does not
+		// recognise it, so resolve_duitnow_methods() must strip it
+		// before the whitelist is sent upstream.
+		$gateway = $this->newGateway();
+
+		$result = $this->callGatewayMethod(
+			$gateway,
+			'resolve_duitnow_methods',
+			array( array( 'card', 'fpx' ), 'MYR', 12345 )
+		);
+
+		$this->assertNotContains( 'card', $result, "The 'card' aggregator must be stripped from the whitelist." );
+		$this->assertContains( 'fpx', $result );
+	}
+
+	public function test_card_aggregator_is_stripped_even_on_short_circuit() {
+		// The 'card' strip happens at the top of resolve_duitnow_methods()
+		// so it applies to the short-circuit path too (no dnqr group
+		// member in the whitelist).
+		$api = $this->createMock( 'Chip_Woocommerce_API' );
+		$api->expects( $this->never() )->method( 'payment_methods' );
+		$gateway = $this->newGateway();
+		$this->setGatewayProperty( $gateway, 'cached_api', $api );
+
+		$result = $this->callGatewayMethod(
+			$gateway,
+			'resolve_duitnow_methods',
+			array( array( 'card', 'visa', 'mastercard', 'maestro' ), 'MYR', 12345 )
+		);
+
+		$this->assertNotContains( 'card', $result );
+		// The card-network identifiers remain.
+		$this->assertSame(
+			array( 'visa', 'mastercard', 'maestro' ),
+			$result
+		);
 	}
 }
