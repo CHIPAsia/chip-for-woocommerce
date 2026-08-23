@@ -85,6 +85,10 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 * Fixed - Card data is now posted to CHIP via jQuery `.val()` setters instead of string concatenation, removing a DOM-based XSS vector in the direct-post flow.
 * Fixed - Bank codes and `?preferred=` values are now `rawurlencode()`d before being appended to the redirect URL, preventing parameter injection.
 * Added - A "CHIP Saved Card" metabox on the subscription admin page lets a store owner switch the subscription's saved card without the customer logging in. Only existing saved tokens are offered (never a raw card number), and switching records a consent note on the subscription for audit.
+* Fixed - The `/chip/v1/banks` REST endpoint now requires a valid `wp_rest` nonce (sent as `X-WP-Nonce` by the Blocks checkout), so unauthenticated callers can no longer trigger the outbound health-check request at will.
+* Fixed - Cardholder name and masked PAN are now redacted from debug logs, so enabling debug mode does not write customer PII to the log file.
+* Changed - Payment-methods API cache TTL raised to 1 hour (from 3 minutes / 30 minutes) to reduce outbound API latency on checkout.
+* Fixed - Renewal and pre-order charges now fail fast with a clear note when no saved card matches the gateway, instead of charging with an empty token and surfacing a confusing "Invalid or inactive recurring token" error.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
