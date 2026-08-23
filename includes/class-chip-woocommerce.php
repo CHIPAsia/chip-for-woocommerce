@@ -192,6 +192,21 @@ class Chip_Woocommerce {
 		$type       = $request->get_param( 'type' );
 		$gateway_id = $request->get_param( 'gateway_id' );
 
+		// Lightweight per-IP rate limit. This endpoint is public (checkout
+		// customers are not logged in) and each miss triggers an outbound
+		// curl to api.chip-in.asia/health_check, so an unauthenticated
+		// caller could otherwise force repeated outbound calls and tie up a
+		// PHP worker. Cap at 30 requests per 60 seconds per IP.
+		$client_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		if ( '' !== $client_ip ) {
+			$rate_key   = 'chip_banks_rl_' . md5( $client_ip );
+			$rate_count = (int) get_transient( $rate_key );
+			if ( $rate_count >= 30 ) {
+				return new WP_REST_Response( array( 'error' => 'Too many requests' ), 429 );
+			}
+			set_transient( $rate_key, $rate_count + 1, 60 );
+		}
+
 		// Get the gateway instance.
 		$gateways         = WC()->payment_gateways()->payment_gateways();
 		$gateway_instance = isset( $gateways[ $gateway_id ] ) ? $gateways[ $gateway_id ] : null;

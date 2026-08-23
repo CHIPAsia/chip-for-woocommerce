@@ -2017,7 +2017,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( isset( $params['force_recurring'] ) && true === $params['force_recurring'] ) {
 			if ( isset( $params['payment_method_whitelist'] ) && is_array( $params['payment_method_whitelist'] ) ) {
 				$allowed_recurring_methods          = array( 'visa', 'mastercard', 'maestro' );
-				$params['payment_method_whitelist'] = array_intersect( $params['payment_method_whitelist'], $allowed_recurring_methods );
+				$params['payment_method_whitelist'] = array_values( array_intersect( $params['payment_method_whitelist'], $allowed_recurring_methods ) );
 				// If no valid methods remain, set default to visa, mastercard, and maestro.
 				if ( empty( $params['payment_method_whitelist'] ) ) {
 					$params['payment_method_whitelist'] = array( 'visa', 'mastercard', 'maestro' );
@@ -3274,9 +3274,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		[ $type, $code ] = explode( ':', $value, 2 );
 		switch ( $type ) {
 			case 'fpx':
-				return $url . '?preferred=fpx&fpx_bank_code=' . $code;
+				return $url . '?preferred=fpx&fpx_bank_code=' . rawurlencode( $code );
 			case 'fpx_b2b1':
-				return $url . '?preferred=fpx_b2b1&fpx_bank_code=' . $code;
+				return $url . '?preferred=fpx_b2b1&fpx_bank_code=' . rawurlencode( $code );
 			case 'razer':
 				return $this->build_razer_url( $url, $code );
 		}
@@ -3371,7 +3371,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		if ( ! isset( $map[ $display_name ] ) || '' === $map[ $display_name ] ) {
 			return $url;
 		}
-		return $url . '?preferred=' . $map[ $display_name ] . '&razer_bank_code=' . $display_name;
+		return $url . '?preferred=' . rawurlencode( $map[ $display_name ] ) . '&razer_bank_code=' . rawurlencode( $display_name );
 	}
 
 	/**
@@ -4307,7 +4307,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$filtered_pmw              = array_intersect( $pmw, $allowed_recurring_methods );
 			// If no valid methods remain after filtering, return default.
 			if ( ! empty( $filtered_pmw ) ) {
-				return $filtered_pmw;
+				// array_intersect() preserves the keys of the first array, so a
+				// whitelist that was group-expanded (e.g. ['card','visa',...])
+				// yields a non-zero-indexed result like [1=>'visa', 2=>...].
+				// json_encode() would then serialize that as a JSON object
+				// ("dict") instead of a list, and CHIP rejects it with
+				// "Expected a list of items but got type dict". Re-index.
+				return array_values( $filtered_pmw );
 			}
 		}
 		if ( $this->supports( 'tokenization' ) ) {

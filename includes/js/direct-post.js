@@ -239,14 +239,18 @@ jQuery(($) => {
     if ( result.result === 'success' ) {
       var redirect_location = result.redirect;
       var card_expiry = $( '#' + methodId + '-card-expiry' ).val().replace(/\s/g, '');
-      var form = '<input type="hidden" name="cardholder_name" value="' + $( '#' + methodId + '-card-name' ).val() + '">';
-      form += '<input type="hidden" name="card_number" value="' + $( '#' + methodId + '-card-number' ).val() + '">';
-      form += '<input type="hidden" name="expires" value="' + card_expiry + '">';
-      form += '<input type="hidden" name="cvc" value="' + $( '#' + methodId + '-card-cvc' ).val() + '">';
+      // Build the form with jQuery .val() setters instead of string
+      // concatenation so card data is never interpolated into raw HTML
+      // (avoids a DOM-based XSS vector if client-side validation is bypassed).
+      var $form = $('<form></form>').attr({ action: redirect_location, method: 'POST' });
+      $form.append($('<input type="hidden" name="cardholder_name">').val($('#' + methodId + '-card-name').val()));
+      $form.append($('<input type="hidden" name="card_number">').val($('#' + methodId + '-card-number').val()));
+      $form.append($('<input type="hidden" name="expires">').val(card_expiry));
+      $form.append($('<input type="hidden" name="cvc">').val($('#' + methodId + '-card-cvc').val()));
       var save_card_checkbox = $( '#wc-' + methodId + '-new-payment-method' );
       var remember_card = ( save_card_checkbox.length && save_card_checkbox.is(':checked') ) ? 'on' : 'off';
-      form += '<input type="hidden" name="remember_card" value="' + remember_card + '">';
-      $('<form action="' + redirect_location + '" method="POST">' + form + '</form>').appendTo('body').submit();
+      $form.append($('<input type="hidden" name="remember_card">').val(remember_card));
+      $form.appendTo('body').submit();
       return false;
     }
     return true;
