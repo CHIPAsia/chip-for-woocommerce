@@ -119,6 +119,37 @@ class Chip_Woocommerce {
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 		add_action( 'admin_notices', array( $this, 'missing_assets_notice' ) );
 		add_action( 'woocommerce_cart_calculate_fees', array( $this, 'add_checkout_fee' ) );
+		add_action( 'wp_footer', array( $this, 'checkout_fee_refresh_script' ) );
+	}
+
+	/**
+	 * Output a small script that refreshes the legacy checkout order review
+	 * when the payment method changes.
+	 *
+	 * The additional-charges fee is applied via woocommerce_cart_calculate_fees,
+	 * which only runs when the cart totals are recalculated. In the legacy
+	 * (shortcode) checkout, changing the payment method does NOT trigger an
+	 * order-review refresh (only address/shipping changes do), so a fee added
+	 * for one gateway would linger after switching to a gateway without fees.
+	 * This script triggers update_checkout on payment-method change so the fee
+	 * is recalculated immediately. The Blocks checkout already recalculates on
+	 * every change and is unaffected.
+	 *
+	 * @return void
+	 */
+	public function checkout_fee_refresh_script() {
+		if ( ! is_checkout() ) {
+			return;
+		}
+		?>
+		<script type="text/javascript">
+		( function( $ ) {
+			$( document.body ).on( 'change', 'input[name="payment_method"]', function() {
+				$( document.body ).trigger( 'update_checkout' );
+			} );
+		} )( jQuery );
+		</script>
+		<?php
 	}
 
 	/**
