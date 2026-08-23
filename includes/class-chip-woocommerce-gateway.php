@@ -1484,9 +1484,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	private function render_unified_dropdown() {
 		$unified = $this->list_unified_payment_methods();
-		if ( is_wc_endpoint_url( 'order-pay' ) ) {
-			unset( $unified['card'] );
-		}
 		if ( 1 === count( $unified ) ) {
 			$value = (string) array_key_first( $unified );
 			// Single-method whitelists (DuitNow QR-only, Crypto-only) keep
@@ -1950,8 +1947,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// payments; without this the card form data would be discarded and
 		// the customer redirected to the CHIP payment page. A saved-token
 		// charge never posts card data, so the narrowing is skipped there
-		// (the payment keeps its redirect URL).
-		if ( $this->bypass_chip_is_card_selection() && empty( $token_id ) && isset( $params['payment_method_whitelist'] ) ) {
+		// (the payment keeps its redirect URL). On order-pay the card form
+		// is not rendered and direct-post is unsupported, so the narrowing
+		// is skipped too — the customer is redirected to the CHIP payment
+		// page with ?preferred=card instead.
+		if ( $this->bypass_chip_is_card_selection() && empty( $token_id ) && isset( $params['payment_method_whitelist'] ) && ! is_wc_endpoint_url( 'order-pay' ) ) {
 			$params['payment_method_whitelist'] = $this->card_only_whitelist( $params['payment_method_whitelist'] );
 		}
 
@@ -3218,8 +3218,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$base = isset( $payment['checkout_url'] ) && ! empty( $payment['checkout_url'] ) ? $payment['checkout_url'] : $url;
 				return $base . '?preferred=' . $value;
 			}
-			// 'card' or any other unrecognised single-method tag: no redirect;
-			// the direct-post flow or default gateway behavior applies. When
+			if ( 'card' === $value ) {
+				// On order-pay the card form is not rendered and direct-post is
+				// not supported, so redirect to the CHIP payment page with the
+				// card method pre-selected instead of the direct_post_url. The
+				// customer enters their card details on CHIP's page.
+				if ( is_wc_endpoint_url( 'order-pay' ) ) {
+					$base = isset( $payment['checkout_url'] ) && ! empty( $payment['checkout_url'] ) ? $payment['checkout_url'] : $url;
+					return $base . '?preferred=card';
+				}
+				return $url;
+			}
+			// Any other unrecognised single-method tag: no redirect; the
+			// direct-post flow or default gateway behavior applies. When
 			// the customer selected Card, process_payment() has already
 			// narrowed the whitelist to card-only, so the payment carries
 			// direct_post_url and the URL returned here is that URL.

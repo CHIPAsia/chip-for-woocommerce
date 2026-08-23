@@ -157,19 +157,20 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$this->assertArrayNotHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
 	}
 
-	public function test_payment_fields_omits_card_option_on_order_pay_page() {
+	public function test_payment_fields_keeps_card_option_on_order_pay_page() {
 		$gateway = $this->newMixedGateway( array( 'fpx', 'card', 'visa', 'mastercard', 'maestro' ) );
 		$gateway->supports = array( 'products', 'tokenization' );
 		$GLOBALS['__chip_test_is_order_pay'] = true;
 
 		$this->renderPaymentFields( $gateway );
 
-		// The dropdown still renders redirect methods on order-pay, but the
-		// 'card' option is omitted (no card form exists there).
+		// The dropdown renders all methods on order-pay, including 'card'.
+		// Selecting Card there redirects to the CHIP payment page with
+		// ?preferred=card (direct-post is unsupported on order-pay).
 		$this->assertArrayHasKey( 'chip_payment_method_wc_gateway_chip', $GLOBALS['__chip_test_form_fields'] );
 		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
 		$this->assertArrayHasKey( 'fpx:MBB0228', $field['options'] );
-		$this->assertArrayNotHasKey( 'card', $field['options'] );
+		$this->assertArrayHasKey( 'card', $field['options'] );
 	}
 
 	public function test_card_selection_narrows_whitelist_to_card_only() {
