@@ -81,6 +81,9 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 * Fixed - Card option on the order-pay "try again" page now redirects to the CHIP payment page (`?preferred=card`) so the customer fills card details at CHIP.
 * Fixed - Offline bank list race condition: the unavailable-bank lists are now computed lazily so they are correct regardless of when the gateway is queried.
 * Fixed - Removed a per-page-load curl to the CHIP health-check API (`api.chip-in.asia/health_check`) that ran on every request via `register_script()`; the bank data is now only fetched on the checkout page.
+* Fixed - Saved-card subscription payments failed with "Expected a list of items but got type dict". `array_intersect()` preserved the keys of the group-expanded whitelist, so `json_encode()` serialized the recurring whitelist as a JSON object instead of a list. The recurring whitelist is now re-indexed with `array_values()`.
+* Fixed - Card data is now posted to CHIP via jQuery `.val()` setters instead of string concatenation, removing a DOM-based XSS vector in the direct-post flow.
+* Fixed - Bank codes and `?preferred=` values are now `rawurlencode()`d before being appended to the redirect URL, preventing parameter injection.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
