@@ -249,6 +249,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	protected $unavailable_fpx_banks = array();
 
 	/**
+	 * Whether the FPX B2C unavailable-bank list has been computed.
+	 *
+	 * @var bool
+	 */
+	protected $unavailable_fpx_banks_computed = false;
+
+	/**
 	 * Cached result of the dnqr resolver from the most recent resolve_duitnow_methods() call.
 	 * Used by bypass_chip() to pick the correct ?preferred=dnqr|duitnow_qr without
 	 * a second /payment_methods/ API call.
@@ -273,6 +280,13 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @var array
 	 */
 	protected $unavailable_fpx_b2b1_banks = array();
+
+	/**
+	 * Whether the FPX B2B1 unavailable-bank list has been computed.
+	 *
+	 * @var bool
+	 */
+	protected $unavailable_fpx_b2b1_banks_computed = false;
 
 	/**
 	 * Preferred payment type.
@@ -1484,6 +1498,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	private function render_unified_dropdown() {
 		$unified = $this->list_unified_payment_methods();
+		// list_unified_payment_methods() calls list_fpx_banks()/list_fpx_b2b1_banks(),
+		// which populate the unavailable-bank properties. register_script() ran
+		// earlier (on init) and localized empty unavailable lists, so re-localize
+		// now that the offline banks are known.
+		$this->localize_unified_dropdown();
 		if ( 1 === count( $unified ) ) {
 			$value = (string) array_key_first( $unified );
 			// Single-method whitelists (DuitNow QR-only, Crypto-only) keep
@@ -3029,18 +3048,34 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Get unavailable FPX B2C bank codes.
 	 *
+	 * Lazily computes the list on first access so it is correct regardless
+	 * of when the gateway instance is queried (register_script() runs on
+	 * init, before payment_fields() has called list_fpx_banks()).
+	 *
 	 * @return array
 	 */
 	public function get_unavailable_fpx_banks() {
+		if ( ! $this->unavailable_fpx_banks_computed ) {
+			$this->list_fpx_banks();
+			$this->unavailable_fpx_banks_computed = true;
+		}
 		return $this->unavailable_fpx_banks;
 	}
 
 	/**
 	 * Get unavailable FPX B2B1 bank codes.
 	 *
+	 * Lazily computes the list on first access so it is correct regardless
+	 * of when the gateway instance is queried (register_script() runs on
+	 * init, before payment_fields() has called list_fpx_b2b1_banks()).
+	 *
 	 * @return array
 	 */
 	public function get_unavailable_fpx_b2b1_banks() {
+		if ( ! $this->unavailable_fpx_b2b1_banks_computed ) {
+			$this->list_fpx_b2b1_banks();
+			$this->unavailable_fpx_b2b1_banks_computed = true;
+		}
 		return $this->unavailable_fpx_b2b1_banks;
 	}
 
@@ -3723,6 +3758,21 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			true
 		);
 
+		$this->localize_unified_dropdown();
+	}
+
+	/**
+	 * Localize the unified-dropdown script data.
+	 *
+	 * Called from register_script() (on init) and again from
+	 * render_unified_dropdown() after list_fpx_banks()/list_fpx_b2b1_banks()
+	 * have populated the unavailable-bank properties. The second call is
+	 * required because register_script() runs before the bank lists are
+	 * computed, so the first localization carries empty unavailable lists.
+	 *
+	 * @return void
+	 */
+	private function localize_unified_dropdown() {
 		wp_localize_script(
 			"wc-{$this->id}-unified-dropdown",
 			'gateway_unified_option',
