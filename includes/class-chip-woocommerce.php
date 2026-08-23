@@ -118,6 +118,53 @@ class Chip_Woocommerce {
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'block_support' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 		add_action( 'admin_notices', array( $this, 'missing_assets_notice' ) );
+		add_action( 'woocommerce_cart_calculate_fees', array( $this, 'add_checkout_fee' ) );
+	}
+
+	/**
+	 * Add the additional-charges fee to the cart so it is visible on the
+	 * checkout page before the customer pays.
+	 *
+	 * The fee is only applied when the chosen payment method is a CHIP
+	 * gateway and that gateway has additional charges enabled. This mirrors
+	 * the fee that add_item_order_fee() applies to the order at
+	 * process_payment() time, so the customer sees the exact amount they will
+	 * be charged.
+	 *
+	 * @param WC_Cart $cart Cart object.
+	 * @return void
+	 */
+	public function add_checkout_fee( $cart ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return;
+		}
+
+		$chosen = WC()->session ? WC()->session->get( 'chosen_payment_method' ) : '';
+		if ( empty( $chosen ) || 0 !== strpos( $chosen, 'wc_gateway_chip' ) ) {
+			return;
+		}
+
+		$gateways = WC()->payment_gateways() ? WC()->payment_gateways()->payment_gateways() : array();
+		if ( empty( $gateways[ $chosen ] ) ) {
+			return;
+		}
+
+		$gateway = $gateways[ $chosen ];
+
+		if ( 'yes' !== $gateway->get_option( 'enable_additional_charges' ) ) {
+			return;
+		}
+
+		$fixed_charges   = (int) $gateway->get_option( 'fixed_charges', 100 );
+		$percent_charges = (int) $gateway->get_option( 'percent_charges', 0 );
+
+		if ( $fixed_charges > 0 ) {
+			$cart->add_fee( __( 'Fixed Processing Fee', 'chip-for-woocommerce' ), $fixed_charges / 100 );
+		}
+
+		if ( $percent_charges > 0 ) {
+			$cart->add_fee( __( 'Variable Processing Fee', 'chip-for-woocommerce' ), $cart->get_total() * ( $percent_charges / 100 ) / 100 );
+		}
 	}
 
 	/**
