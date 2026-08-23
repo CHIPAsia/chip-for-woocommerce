@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 2.1.1 2026-08-23 =
+* Added - Additional charges (fixed and percentage fees) are now shown on the checkout page before payment, so customers see the exact amount they will be charged. The fee is applied via the cart when a CHIP gateway with additional charges enabled is selected, mirroring the order fee added at payment time.
+* Changed - Updated the plugin description to list all supported payment methods (Atome, ShopeePay, Maybank QRPay, Crypto Coin) and removed the incorrect "Boost" e-wallet reference.
+* Changed - Bumped "Tested up to" to WordPress 7.1.
+
 = 2.1.0 =
 * Added - Unified payment method dropdown. The classic and Blocks checkout now renders a single dropdown listing all eligible payment methods (FPX banks, Razer e-wallets, DuitNow QR, Card) instead of three separate POST fields. The selected value is submitted as a tag-encoded `chip_payment_method` field (e.g. `fpx:MB2U0227`, `fpx_b2b1:PBB0234`, `razer:GrabPay`, `dnqr`, `card`).
 * Added - Card group. The Card entry in the `payment_method_whitelist` multiselect now expands at runtime to the full `{visa, mastercard, maestro}` group, matching the existing DuitNow QR group pattern. Saved values containing the legacy `visa`/`mastercard`/`maestro` multiselect keys are auto-migrated in memory to the new `card` key on the next load.

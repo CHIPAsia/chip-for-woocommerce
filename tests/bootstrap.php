@@ -96,6 +96,17 @@ if ( ! function_exists( 'is_admin' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+	/**
+	 * Stub for wp_doing_ajax().
+	 *
+	 * @return bool
+	 */
+	function wp_doing_ajax() {
+		return false;
+	}
+}
+
 if ( ! function_exists( 'wp_enqueue_script' ) ) {
 	/**
 	 * Stub for wp_enqueue_script().
@@ -387,11 +398,55 @@ if ( ! function_exists( 'WC' ) ) {
 			public $session;
 
 			public function __construct() {
-				$this->session = new stdClass();
+				$this->session = new Chip_Test_Session();
 			}
 
 			public function api_request_url( $id ) {
 				return 'http://example.com/wc-api/' . $id . '/';
+			}
+
+			public function payment_gateways() {
+				return new Chip_Test_Payment_Gateways();
+			}
+		}
+	}
+
+	/**
+	 * Minimal session stub with a get() method.
+	 */
+	if ( ! class_exists( 'Chip_Test_Session' ) ) {
+		class Chip_Test_Session {
+			public function get( $key, $default = null ) {
+				return $GLOBALS['__chip_test_chosen_payment_method'] ?? $default;
+			}
+		}
+	}
+
+	/**
+	 * Minimal payment gateways stub exposing payment_gateways().
+	 */
+	if ( ! class_exists( 'Chip_Test_Payment_Gateways' ) ) {
+		class Chip_Test_Payment_Gateways {
+			public function payment_gateways() {
+				return $GLOBALS['__chip_test_payment_gateways'] ?? array();
+			}
+		}
+	}
+
+	/**
+	 * Minimal cart stub with add_fee() and get_total().
+	 */
+	if ( ! class_exists( 'Chip_Test_Cart' ) ) {
+		class Chip_Test_Cart {
+			public $fees = array();
+			public $total = 0;
+
+			public function add_fee( $name, $amount ) {
+				$this->fees[] = array( 'name' => $name, 'amount' => $amount );
+			}
+
+			public function get_total() {
+				return $this->total;
 			}
 		}
 	}

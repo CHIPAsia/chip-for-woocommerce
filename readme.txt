@@ -2,8 +2,8 @@
 Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
-Tested up to: 7.0
-Stable tag: 2.1.0
+Tested up to: 7.1
+Stable tag: 2.1.1
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -30,7 +30,9 @@ CHIP - Digital Finance Platform. Securely accept one-time and subscription payme
 * **FPX B2B1** - Corporate online banking
 * **Credit/Debit Cards** - Visa, Mastercard, Maestro
 * **DuitNow QR** - Malaysia's national QR payment
-* **E-Wallets** - GrabPay, Touch 'n Go, Boost, and more via Razer
+* **E-Wallets** - GrabPay, Touch 'n Go, ShopeePay, Maybank QRPay, and more via Razer
+* **Buy Now Pay Later** - Atome
+* **Crypto Coin** - Accept cryptocurrency payments
 
 = About CHIP =
 
@@ -48,8 +50,8 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 2. Payment gateways overview - All CHIP payment gateways available in WooCommerce Payments settings.
 3. Payment method settings - Configure accepted payment methods and card options.
 4. Card payment form (Legacy) - Secure card input with Visa/Mastercard brand detection.
-5. FPX bank selection - Choose from available Malaysian banks with status indicators.
-6. WooCommerce Blocks checkout - Modern checkout experience with card payment support.
+5. Unified payment method dropdown (Legacy) - Single dropdown listing FPX banks, e-wallets, DuitNow QR, and Card.
+6. WooCommerce Blocks checkout - Modern checkout with the unified payment method dropdown.
 7. Saved cards selection - Returning customers can pay with saved cards.
 8. CHIP payment page - Secure hosted checkout for completing payment.
 9. Order confirmation - Customer receives order confirmation after successful payment.
@@ -60,35 +62,10 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.1.0 =
-* Added - Unified payment method dropdown. The classic and Blocks checkout now renders a single dropdown listing all eligible payment methods (FPX banks, Razer e-wallets, DuitNow QR, Card) instead of three separate POST fields. The selected value is submitted as a tag-encoded `chip_payment_method` field (e.g. `fpx:MB2U0227`, `fpx_b2b1:PBB0234`, `razer:GrabPay`, `dnqr`, `card`).
-* Added - Card group. The Card entry in the `payment_method_whitelist` multiselect now expands at runtime to the full `{visa, mastercard, maestro}` group, matching the existing DuitNow QR group pattern. Saved values containing the legacy `visa`/`mastercard`/`maestro` multiselect keys are auto-migrated in memory to the new `card` key on the next load.
-* Added - REST endpoint type `unified`. `GET /chip/v1/banks/unified/<gateway>` returns the merchant's eligible payment methods as a flat `{ tag: label }` object, used by the unified dropdown for lazy loading.
-* Added - Blocks support class `unified` mode. Mixed whitelists (Card plus one or more dropdown methods, or two or more dropdown methods) now render the unified dropdown alongside the card form in Blocks checkout. Saved cards coexist with the dropdown.
-* Added - Shared `UnifiedPaymentMethodList` React component used by all five clone gateway bundles, exposed via `wp.element.createElement` and registered as a webpack `dependencies` injection so the shared bundle loads before each clone bundle in the browser.
-* Changed - `bypass_chip()` rewritten as a tag parser that handles `fpx:CODE`, `fpx_b2b1:CODE`, `razer:WALLET`, `dnqr`, `card`, plus the legacy single-method values.
-* Changed - Card option label clarified to "Card (Visa, Mastercard, Maestro)" in the unified dropdown for explicit disclosure of the accepted card networks.
-* Changed - Replaced the placeholder `assets/duitnow_qr.png` with a proper 50x50 DuitNow logo rendered from the existing `duitnow_only.svg`, matching the visual style of the other dropdown option icons.
-* Fixed - `is_card_only_whitelist()` and `process_payment_with_context()` correctly handle the constructor-expanded `['card']` whitelist so the card-only merchant flow (delayed capture, Blocks checkout direct POST) works after the Card group refactor.
-* Fixed - Blocks support class `js_display` decision now uses the in-memory expanded whitelist so saved `['card']` and `['fpx', 'card']` merchants correctly render `js_display='unified'` instead of an empty value.
-* Fixed - Shared `unified-payment-method-list` bundle is now enqueued via a webpack `SharedBundleDependencyPlugin` that injects the dependency into each clone's `.asset.php`, so the component renders at runtime instead of returning `null`.
-* Changed - Blocks checkout renders the unified dropdown as a native `<select>` element (no logo) for a lighter, more accessible experience.
-* Added - Offline FPX banks are now displayed but disabled (not selectable) in both classic and Blocks checkout, instead of being silently removed.
-* Added - Crypto Coin and Atome e-wallet logos in the unified dropdown.
-* Changed - Card option logo now uses the Visa/Mastercard-only asset (no CHIP badge).
-* Fixed - Cross-contamination between gateway clones on the order-pay page: each gateway's dropdown now submits a scoped field name (`chip_payment_method_<id>`) so a DuitNow QR-only clone can no longer clobber another gateway's FPX selection.
-* Fixed - Global JS collision where only the last gateway clone received the dropdown enhancement (selectWoo, logo, hidden mirror); all scoped selects are now enhanced in one pass.
-* Fixed - Card option on the order-pay "try again" page now redirects to the CHIP payment page (`?preferred=card`) so the customer fills card details at CHIP.
-* Fixed - Offline bank list race condition: the unavailable-bank lists are now computed lazily so they are correct regardless of when the gateway is queried.
-* Fixed - Removed a per-page-load curl to the CHIP health-check API (`api.chip-in.asia/health_check`) that ran on every request via `register_script()`; the bank data is now only fetched on the checkout page.
-* Fixed - Saved-card subscription payments failed with "Expected a list of items but got type dict". `array_intersect()` preserved the keys of the group-expanded whitelist, so `json_encode()` serialized the recurring whitelist as a JSON object instead of a list. The recurring whitelist is now re-indexed with `array_values()`.
-* Fixed - Card data is now posted to CHIP via jQuery `.val()` setters instead of string concatenation, removing a DOM-based XSS vector in the direct-post flow.
-* Fixed - Bank codes and `?preferred=` values are now `rawurlencode()`d before being appended to the redirect URL, preventing parameter injection.
-* Added - A "CHIP Saved Card" metabox on the subscription admin page lets a store owner switch the subscription's saved card without the customer logging in. Only existing saved tokens are offered (never a raw card number), and switching records a consent note on the subscription for audit.
-* Fixed - The `/chip/v1/banks` REST endpoint now requires a valid `wp_rest` nonce (sent as `X-WP-Nonce` by the Blocks checkout), so unauthenticated callers can no longer trigger the outbound health-check request at will.
-* Fixed - Cardholder name and masked PAN are now redacted from debug logs, so enabling debug mode does not write customer PII to the log file.
-* Changed - Payment-methods API cache TTL raised to 1 hour (from 3 minutes / 30 minutes) to reduce outbound API latency on checkout.
-* Fixed - Renewal and pre-order charges now fail fast with a clear note when no saved card matches the gateway, instead of charging with an empty token and surfacing a confusing "Invalid or inactive recurring token" error.
+= 2.1.1 2026-08-23 =
+* Added - Additional charges (fixed and percentage fees) are now shown on the checkout page before payment, so customers see the exact amount they will be charged. The fee is applied via the cart when a CHIP gateway with additional charges enabled is selected, mirroring the order fee added at payment time.
+* Changed - Updated the plugin description to list all supported payment methods (Atome, ShopeePay, Maybank QRPay, Crypto Coin) and removed the incorrect "Boost" e-wallet reference.
+* Changed - Bumped "Tested up to" to WordPress 7.1.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
