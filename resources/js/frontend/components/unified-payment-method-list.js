@@ -51,9 +51,19 @@ const UnifiedPaymentMethodList = ( props ) => {
         fetch( props.banksApi, { headers: { 'X-WP-Nonce': props.nonce } } )
             .then( ( r ) => r.json() )
             .then( ( data ) => {
-                const entries = Object.entries( data ).map( ( [ tag, label ] ) => ( {
+                // The endpoint returns { banks: { tag: label }, unavailable: [tag] }.
+                // Offline banks are kept in the list (displayed with an
+                // "(Offline)" suffix) but disabled so they cannot be selected.
+                const bankMap = data && typeof data === 'object' && data.banks
+                    ? data.banks
+                    : data;
+                const unavailable = ( data && Array.isArray( data.unavailable ) )
+                    ? data.unavailable
+                    : [];
+                const entries = Object.entries( bankMap ).map( ( [ tag, label ] ) => ( {
                     value: tag,
                     label,
+                    disabled: unavailable.indexOf( tag ) !== -1,
                 } ) );
                 setOptions( entries );
                 setLoading( false );
@@ -146,7 +156,7 @@ const UnifiedPaymentMethodList = ( props ) => {
                             __( 'Choose a payment method', 'chip-for-woocommerce' ) }
                     </option>
                     { options.map( ( opt ) => (
-                        <option key={ opt.value } value={ opt.value }>
+                        <option key={ opt.value } value={ opt.value } disabled={ opt.disabled }>
                             { opt.label }
                         </option>
                     ) ) }

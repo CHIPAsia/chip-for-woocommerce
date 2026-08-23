@@ -200,18 +200,25 @@ class Chip_Woocommerce {
 			return new WP_REST_Response( array( 'error' => 'Invalid gateway' ), 400 );
 		}
 
-		$banks = array();
+		$banks       = array();
+		$unavailable = array();
 
 		switch ( $type ) {
 			case 'fpx_b2c':
 				$banks = $gateway_instance->list_fpx_banks();
 				unset( $banks[''] );
 				$banks = $this->prefix_bank_tags( $banks, 'fpx' );
+				foreach ( $gateway_instance->get_unavailable_fpx_banks() as $code ) {
+					$unavailable[] = 'fpx:' . $code;
+				}
 				break;
 			case 'fpx_b2b1':
 				$banks = $gateway_instance->list_fpx_b2b1_banks();
 				unset( $banks[''] );
 				$banks = $this->prefix_bank_tags( $banks, 'fpx_b2b1' );
+				foreach ( $gateway_instance->get_unavailable_fpx_b2b1_banks() as $code ) {
+					$unavailable[] = 'fpx_b2b1:' . $code;
+				}
 				break;
 			case 'razer':
 				$banks = $gateway_instance->list_razer_ewallets();
@@ -221,10 +228,22 @@ class Chip_Woocommerce {
 			case 'unified':
 				$banks = $gateway_instance->list_unified_payment_methods();
 				unset( $banks[''] );
+				foreach ( $gateway_instance->get_unavailable_fpx_banks() as $code ) {
+					$unavailable[] = 'fpx:' . $code;
+				}
+				foreach ( $gateway_instance->get_unavailable_fpx_b2b1_banks() as $code ) {
+					$unavailable[] = 'fpx_b2b1:' . $code;
+				}
 				break;
 		}
 
-		return new WP_REST_Response( $banks, 200 );
+		return new WP_REST_Response(
+			array(
+				'banks'       => $banks,
+				'unavailable' => $unavailable,
+			),
+			200
+		);
 	}
 
 	/**
