@@ -72,6 +72,9 @@ jQuery( ( $ ) => {
 		if ( 'card' === tag ) {
 			return unified.card_logo_url || '';
 		}
+		if ( 'crypto_coin' === tag ) {
+			return unified.crypto_logo_url || '';
+		}
 		return '';
 	};
 
