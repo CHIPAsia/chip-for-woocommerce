@@ -98,7 +98,8 @@ const defaultLabel = __("CHIP", "chip-for-woocommerce");
 const label = decodeEntities(settings.title) || defaultLabel;
 
 const Content = () => {
-  return decodeEntities(settings.description || "");
+  const description = decodeEntities(settings.description || "");
+  return <div dangerouslySetInnerHTML={{ __html: description }} />;
 };
 
 const Icon = () => {

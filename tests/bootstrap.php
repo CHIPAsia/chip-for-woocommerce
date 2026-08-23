@@ -661,6 +661,18 @@ if ( ! function_exists( 'wp_kses' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	/**
+	 * Stub for wp_kses_post(). Returns the input unchanged.
+	 *
+	 * @param string $html HTML to sanitize.
+	 * @return string
+	 */
+	function wp_kses_post( $html ) {
+		return $html;
+	}
+}
+
 if ( ! function_exists( 'rest_url' ) ) {
 	/**
 	 * Stub for rest_url() in tests.
