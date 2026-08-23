@@ -195,7 +195,7 @@ class Chip_Woocommerce_API {
 
 		// time() is to force fresh instead cache.
 		$result = $this->call( 'GET', "/purchases/{$payment_id}/?time=" . time() );
-		$this->log_info( sprintf( 'success check result: %s', wc_print_r( $result, true ) ) );
+		$this->log_info( sprintf( 'success check result: %s', $this->redact_sensitive( wc_print_r( $result, true ) ) ) );
 
 		return $result;
 	}
@@ -212,7 +212,7 @@ class Chip_Woocommerce_API {
 
 		$result = $this->call( 'POST', "/purchases/{$payment_id}/refund/", $params );
 
-		$this->log_info( sprintf( 'payment refund result: %s', wc_print_r( $result, true ) ) );
+		$this->log_info( sprintf( 'payment refund result: %s', $this->redact_sensitive( wc_print_r( $result, true ) ) ) );
 
 		return $result;
 	}
@@ -227,7 +227,7 @@ class Chip_Woocommerce_API {
 
 		$result = $this->call( 'GET', '/public_key/' );
 
-		$this->log_info( sprintf( 'public key: %s', wc_print_r( $result, true ) ) );
+		$this->log_info( sprintf( 'public key: %s', $this->redact_sensitive( wc_print_r( $result, true ) ) ) );
 
 		return $result;
 	}
@@ -282,7 +282,7 @@ class Chip_Woocommerce_API {
 			)
 		);
 
-		$this->log_info( sprintf( 'received response: %s', $response ) );
+		$this->log_info( sprintf( 'received response: %s', $this->redact_sensitive( $response ) ) );
 
 		$result = json_decode( $response, true );
 
@@ -346,7 +346,7 @@ class Chip_Woocommerce_API {
 			default:
 				$this->log_error(
 					sprintf( '%s %s: %d', $method, $url, $code ),
-					$response
+					$this->redact_sensitive( $response )
 				);
 		}
 
@@ -367,6 +367,31 @@ class Chip_Woocommerce_API {
 		if ( 'yes' === $this->debug ) {
 			$this->logger->log( "INFO: {$text};" );
 		}
+	}
+
+	/**
+	 * Redact sensitive fields from a serialized API response before logging.
+	 *
+	 * The CHIP purchase response can contain cardholder name and masked PAN
+	 * (PII). Masked PAN is not a full card number, but the cardholder name is
+	 * personal data that should not land in debug logs. Replace those values
+	 * with a placeholder so debug logging stays safe to enable.
+	 *
+	 * @param string $text Serialized response text (e.g. wc_print_r output).
+	 * @return string Redacted text.
+	 */
+	private function redact_sensitive( $text ) {
+		if ( ! is_string( $text ) ) {
+			return $text;
+		}
+
+		// Redact cardholder name values (e.g. [cardholder_name] => John Doe).
+		$text = preg_replace( '/(\[cardholder_name\]\s*=>\s*)([^\n]+)/i', '$1[REDACTED]', $text );
+
+		// Redact masked PAN values (e.g. [masked_pan] => 411111******1111).
+		$text = preg_replace( '/(\[masked_pan\]\s*=>\s*)([^\n]+)/i', '$1[REDACTED]', $text );
+
+		return $text;
 	}
 
 	/**

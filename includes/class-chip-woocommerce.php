@@ -166,7 +166,13 @@ class Chip_Woocommerce {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_banks_endpoint' ),
-				'permission_callback' => '__return_true',
+				// Verify the wp_rest nonce (sent as X-WP-Nonce by the Blocks
+				// checkout). This keeps the endpoint public for logged-out
+				// customers (the wp_rest nonce is session-based and works
+				// without auth) while rejecting requests that lack a valid
+				// nonce, so an unauthenticated caller can no longer trigger
+				// the outbound health-check curl at will.
+				'permission_callback' => array( $this, 'banks_endpoint_permission' ),
 				'args'                => array(
 					'type'       => array(
 						'required'          => true,
@@ -181,6 +187,31 @@ class Chip_Woocommerce {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Permission callback for the banks REST endpoint.
+	 *
+	 * Verifies the wp_rest nonce from the X-WP-Nonce header. The nonce is
+	 * session-based, so it works for logged-out checkout customers (the
+	 * Blocks checkout localizes it via wp_create_nonce('wp_rest')) while
+	 * rejecting requests without a valid nonce.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return bool|WP_Error
+	 */
+	public function banks_endpoint_permission( $request ) {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		if ( empty( $nonce ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Missing nonce.', 'chip-for-woocommerce' ), array( 'status' => 403 ) );
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Invalid nonce.', 'chip-for-woocommerce' ), array( 'status' => 403 ) );
+		}
+
+		return true;
 	}
 
 	/**
