@@ -3870,7 +3870,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$cvc_field       = '<p class="form-row form-row-last validate-required" id="' . esc_attr( $this->id ) . '-card-cvc_field">
 			<label for="' . esc_attr( $this->id ) . '-card-cvc" class="required_field">' . esc_html__( 'CVC', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 			<span class="woocommerce-input-wrapper">
-				<input type="password" class="input-text" name="' . esc_attr( $this->id ) . '-card-cvc" id="' . esc_attr( $this->id ) . '-card-cvc" placeholder="' . $cvc_placeholder . '" aria-required="true" autocomplete="off" inputmode="numeric" maxlength="4" data-placeholder="' . $cvc_placeholder . '" />
+				<input type="password" class="input-text" id="' . esc_attr( $this->id ) . '-card-cvc" placeholder="' . $cvc_placeholder . '" aria-required="true" autocomplete="off" inputmode="numeric" maxlength="4" data-placeholder="' . $cvc_placeholder . '" />
 			</span>
 		</p>';
 
@@ -3882,20 +3882,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'card-name-field'   => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-name_field">
 				<label for="' . esc_attr( $this->id ) . '-card-name" class="required_field">' . esc_html__( 'Cardholder Name', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper">
-					<input type="text" class="input-text" name="' . esc_attr( $this->id ) . '-card-name" id="' . esc_attr( $this->id ) . '-card-name" placeholder="' . $name_placeholder . '" aria-required="true" autocomplete="cc-name" inputmode="text" maxlength="30" data-placeholder="' . $name_placeholder . '" />
+					<input type="text" class="input-text" id="' . esc_attr( $this->id ) . '-card-name" placeholder="' . $name_placeholder . '" aria-required="true" autocomplete="cc-name" inputmode="text" maxlength="30" data-placeholder="' . $name_placeholder . '" />
 				</span>
 			</p>',
 			'card-number-field' => '<p class="form-row form-row-wide validate-required" id="' . esc_attr( $this->id ) . '-card-number_field">
 				<label for="' . esc_attr( $this->id ) . '-card-number" class="required_field">' . esc_html__( 'Card number', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper chip-card-number-wrapper">
-					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-number" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
+					<input type="tel" class="input-text" id="' . esc_attr( $this->id ) . '-card-number" placeholder="' . $number_placeholder . '" aria-required="true" autocomplete="cc-number" inputmode="numeric" data-placeholder="' . $number_placeholder . '" />
 					<img class="chip-card-brand-icon chip-hidden" src="" alt="" />
 				</span>
 			</p>',
 			'card-expiry-field' => '<p class="form-row form-row-first validate-required" id="' . esc_attr( $this->id ) . '-card-expiry_field">
 				<label for="' . esc_attr( $this->id ) . '-card-expiry" class="required_field">' . esc_html__( 'Expiry (MM/YY)', 'chip-for-woocommerce' ) . '&nbsp;<span class="required" aria-hidden="true">*</span></label>
 				<span class="woocommerce-input-wrapper">
-					<input type="tel" class="input-text" name="' . esc_attr( $this->id ) . '-card-expiry" id="' . esc_attr( $this->id ) . '-card-expiry" placeholder="' . $expiry_placeholder . '" aria-required="true" autocomplete="cc-exp" inputmode="numeric" maxlength="7" data-placeholder="' . $expiry_placeholder . '" />
+					<input type="tel" class="input-text" id="' . esc_attr( $this->id ) . '-card-expiry" placeholder="' . $expiry_placeholder . '" aria-required="true" autocomplete="cc-exp" inputmode="numeric" maxlength="7" data-placeholder="' . $expiry_placeholder . '" />
 				</span>
 			</p>',
 		);
