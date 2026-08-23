@@ -3733,7 +3733,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					'fpx_logo_base'    => CHIP_WOOCOMMERCE_URL . 'assets/fpx_bank/',
 					'razer_logo_base'  => CHIP_WOOCOMMERCE_URL . 'assets/razer_ewallet/',
 					'dnqr_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/duitnow_qr.png',
-					'card_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/card.png',
+					'card_logo_url'    => CHIP_WOOCOMMERCE_URL . 'assets/card.svg',
 					'crypto_logo_url'  => CHIP_WOOCOMMERCE_URL . 'assets/crypto_coin.svg',
 					'unavailable_fpx'  => $this->get_unavailable_fpx_banks(),
 					'unavailable_b2b1' => $this->get_unavailable_fpx_b2b1_banks(),
