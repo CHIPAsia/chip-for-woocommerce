@@ -867,7 +867,18 @@ if ( ! class_exists( 'WC_Payment_Tokens' ) ) {
 		 * @return array
 		 */
 		public static function get_customer_tokens( $customer_id, $gateway_id = '' ) {
-			return $GLOBALS['__chip_test_customer_tokens'] ?? array();
+			$tokens = $GLOBALS['__chip_test_customer_tokens'] ?? array();
+			if ( '' === $gateway_id ) {
+				return $tokens;
+			}
+			return array_values(
+				array_filter(
+					$tokens,
+					static function ( $token ) use ( $gateway_id ) {
+						return $token->get_gateway_id() === $gateway_id;
+					}
+				)
+			);
 		}
 
 		/**

@@ -103,6 +103,13 @@ class Chip_Test_Subscription {
 	private $customer_id;
 
 	/**
+	 * Payment method (gateway id).
+	 *
+	 * @var string
+	 */
+	private $payment_method;
+
+	/**
 	 * Payment token IDs.
 	 *
 	 * @var array
@@ -126,12 +133,14 @@ class Chip_Test_Subscription {
 	/**
 	 * Constructor.
 	 *
-	 * @param int   $customer_id    Customer ID.
-	 * @param array $payment_tokens Initial payment token IDs.
+	 * @param int    $customer_id    Customer ID.
+	 * @param array  $payment_tokens Initial payment token IDs.
+	 * @param string $payment_method Payment method (gateway id).
 	 */
-	public function __construct( $customer_id, $payment_tokens = array() ) {
+	public function __construct( $customer_id, $payment_tokens = array(), $payment_method = 'wc_gateway_chip' ) {
 		$this->customer_id    = $customer_id;
 		$this->payment_tokens = $payment_tokens;
+		$this->payment_method = $payment_method;
 	}
 
 	/**
@@ -141,6 +150,15 @@ class Chip_Test_Subscription {
 	 */
 	public function get_customer_id() {
 		return $this->customer_id;
+	}
+
+	/**
+	 * Get payment method (gateway id).
+	 *
+	 * @return string
+	 */
+	public function get_payment_method() {
+		return $this->payment_method;
 	}
 
 	/**
@@ -313,6 +331,32 @@ class AdminTokenMetaboxTest extends PHPUnit\Framework\TestCase {
 
 		$GLOBALS['__chip_test_customer_tokens'] = array(
 			new Chip_Test_Token( 2, 'stripe', 7, 'Visa ending in 2222' ),
+		);
+
+		$GLOBALS['__chip_test_nonce_valid']     = true;
+		$GLOBALS['__chip_test_can_edit_orders'] = true;
+		$_POST['chip_admin_token_nonce']        = 'valid';
+		$_POST['chip_admin_token_id']           = '2';
+
+		$this->newMetabox()->save_token_metabox( 155 );
+
+		$this->assertCount( 0, $subscription->added_tokens );
+		$this->assertCount( 0, $subscription->notes );
+	}
+
+	/**
+	 * Saving a token from a different CHIP clone (gateway id mismatch) is
+	 * rejected — auto_charge() matches tokens by exact gateway id, so a
+	 * cross-clone token would fail every renewal.
+	 */
+	public function test_save_rejected_for_cross_clone_token() {
+		// Subscription uses wc_gateway_chip.
+		$subscription = new Chip_Test_Subscription( 7, array( 1 ), 'wc_gateway_chip' );
+		$GLOBALS['__chip_test_subscription'] = $subscription;
+
+		// Token belongs to wc_gateway_chip_3 (a different clone).
+		$GLOBALS['__chip_test_customer_tokens'] = array(
+			new Chip_Test_Token( 2, 'wc_gateway_chip_3', 7, 'Visa ending in 2222' ),
 		);
 
 		$GLOBALS['__chip_test_nonce_valid']     = true;

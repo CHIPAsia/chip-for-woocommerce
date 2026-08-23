@@ -112,12 +112,18 @@ class Chip_Woocommerce_Admin_Token {
 			return;
 		}
 
-		// Only offer tokens for CHIP gateways.
-		$tokens = WC_Payment_Tokens::get_customer_tokens( $customer_id );
+		// Only offer tokens for the subscription's own payment gateway. A
+		// token saved under a different CHIP clone (e.g. wc_gateway_chip_3)
+		// cannot be charged by this subscription's gateway (auto_charge()
+		// matches tokens by exact gateway id), so offering it would let the
+		// admin pick a card that fails every renewal with "Invalid or
+		// inactive recurring token".
+		$gateway_id = $subscription->get_payment_method();
+		$tokens     = WC_Payment_Tokens::get_customer_tokens( $customer_id, $gateway_id );
 
 		$chip_tokens = array();
 		foreach ( $tokens as $token ) {
-			if ( 0 === strpos( $token->get_gateway_id(), 'wc_gateway_chip' ) ) {
+			if ( $token->get_gateway_id() === $gateway_id ) {
 				$chip_tokens[] = $token;
 			}
 		}
@@ -191,7 +197,11 @@ class Chip_Woocommerce_Admin_Token {
 
 		$token = WC_Payment_Tokens::get( $token_id );
 
-		if ( ! $token || 0 !== strpos( $token->get_gateway_id(), 'wc_gateway_chip' ) ) {
+		// The token must belong to the subscription's own payment gateway.
+		// A token saved under a different CHIP clone cannot be charged by
+		// this subscription's gateway (auto_charge() matches by exact
+		// gateway id), so accepting it would fail every renewal.
+		if ( ! $token || $token->get_gateway_id() !== $subscription->get_payment_method() ) {
 			return;
 		}
 
