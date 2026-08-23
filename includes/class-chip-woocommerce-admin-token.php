@@ -223,6 +223,14 @@ class Chip_Woocommerce_Admin_Token {
 		$data_store->update_payment_token_ids( $subscription, array() );
 		$subscription->add_payment_token( $token );
 
+		// Also update any failed renewal orders that still hold the old
+		// token. A renewal order copies the subscription's token at creation
+		// time, so a failed renewal created before this switch keeps the old
+		// (possibly wrong-gateway) token in its own meta and would fail again
+		// on retry. Re-point them at the new token so a manual retry charges
+		// the correct card.
+		$this->update_failed_renewal_orders( $subscription, $token );
+
 		// Record consent for audit trail.
 		$admin_user = wp_get_current_user();
 		$subscription->add_order_note(
@@ -233,6 +241,37 @@ class Chip_Woocommerce_Admin_Token {
 				$token->get_display_name()
 			)
 		);
+	}
+
+	/**
+	 * Re-point failed renewal orders at the new token.
+	 *
+	 * @param WC_Subscription $subscription Subscription object.
+	 * @param object          $token        New payment token.
+	 * @return void
+	 */
+	private function update_failed_renewal_orders( $subscription, $token ) {
+		if ( ! function_exists( 'wcs_get_subscription' ) ) {
+			return;
+		}
+
+		$renewal_orders = $subscription->get_related_orders( 'all', 'renewal' );
+
+		if ( empty( $renewal_orders ) ) {
+			return;
+		}
+
+		$data_store = WC_Data_Store::load( 'order' );
+
+		foreach ( $renewal_orders as $renewal_order ) {
+			if ( ! $renewal_order->has_status( 'failed' ) ) {
+				continue;
+			}
+
+			$data_store->update_payment_token_ids( $renewal_order, array() );
+			$renewal_order->add_payment_token( $token );
+			$renewal_order->save();
+		}
 	}
 }
 

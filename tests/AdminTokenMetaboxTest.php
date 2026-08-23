@@ -8,6 +8,70 @@
 require_once dirname( __DIR__ ) . '/includes/class-chip-woocommerce-admin-token.php';
 
 /**
+ * A minimal renewal-order stub for the metabox tests.
+ */
+class Chip_Test_Renewal_Order {
+	/**
+	 * Order status.
+	 *
+	 * @var string
+	 */
+	private $status;
+
+	/**
+	 * Added tokens (recorded for assertions).
+	 *
+	 * @var array
+	 */
+	public $added_tokens = array();
+
+	/**
+	 * Whether save() was called.
+	 *
+	 * @var bool
+	 */
+	public $saved = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $status Order status.
+	 */
+	public function __construct( $status = 'failed' ) {
+		$this->status = $status;
+	}
+
+	/**
+	 * Check status.
+	 *
+	 * @param string $status Status to check.
+	 * @return bool
+	 */
+	public function has_status( $status ) {
+		return $this->status === $status;
+	}
+
+	/**
+	 * Add a payment token.
+	 *
+	 * @param object $token Token.
+	 * @return void
+	 */
+	public function add_payment_token( $token ) {
+		$this->added_tokens[] = $token;
+	}
+
+	/**
+	 * Save.
+	 *
+	 * @return void
+	 */
+	public function save() {
+		$this->saved = true;
+	}
+}
+
+/**
  * A minimal token stub for the metabox tests.
  */
 class Chip_Test_Token {
@@ -190,6 +254,24 @@ class Chip_Test_Subscription {
 	public function add_order_note( $note ) {
 		$this->notes[] = $note;
 	}
+
+	/**
+	 * Related renewal orders (recorded for assertions).
+	 *
+	 * @var array
+	 */
+	public $related_orders = array();
+
+	/**
+	 * Get related orders.
+	 *
+	 * @param string $return_fields Return fields ('ids' or 'all').
+	 * @param string $order_types   Order types.
+	 * @return array
+	 */
+	public function get_related_orders( $return_fields = 'ids', $order_types = array() ) {
+		return $this->related_orders;
+	}
 }
 
 /**
@@ -368,5 +450,40 @@ class AdminTokenMetaboxTest extends PHPUnit\Framework\TestCase {
 
 		$this->assertCount( 0, $subscription->added_tokens );
 		$this->assertCount( 0, $subscription->notes );
+	}
+
+	/**
+	 * Switching the token also re-points failed renewal orders at the new
+	 * token, so a manual retry charges the correct card.
+	 */
+	public function test_save_updates_failed_renewal_orders() {
+		$subscription = new Chip_Test_Subscription( 7, array( 1 ), 'wc_gateway_chip' );
+		$GLOBALS['__chip_test_subscription'] = $subscription;
+
+		$GLOBALS['__chip_test_customer_tokens'] = array(
+			new Chip_Test_Token( 1, 'wc_gateway_chip', 7, 'Visa ending in 1111' ),
+			new Chip_Test_Token( 2, 'wc_gateway_chip', 7, 'Visa ending in 2222' ),
+		);
+
+		// One failed renewal order and one processing order.
+		$failed     = new Chip_Test_Renewal_Order( 'failed' );
+		$processing = new Chip_Test_Renewal_Order( 'processing' );
+		$subscription->related_orders = array( $failed, $processing );
+
+		$GLOBALS['__chip_test_nonce_valid']     = true;
+		$GLOBALS['__chip_test_can_edit_orders'] = true;
+		$_POST['chip_admin_token_nonce']        = 'valid';
+		$_POST['chip_admin_token_id']           = '2';
+
+		$this->newMetabox()->save_token_metabox( 155 );
+
+		// Failed renewal order got the new token and was saved.
+		$this->assertCount( 1, $failed->added_tokens );
+		$this->assertSame( 2, $failed->added_tokens[0]->get_id() );
+		$this->assertTrue( $failed->saved );
+
+		// Processing order was left untouched.
+		$this->assertCount( 0, $processing->added_tokens );
+		$this->assertFalse( $processing->saved );
 	}
 }

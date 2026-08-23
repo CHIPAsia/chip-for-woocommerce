@@ -2068,7 +2068,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
 			/* translators: %1$s: Payment token ID */
 			$order->add_order_note( sprintf( __( 'Token ID: %1$s', 'chip-for-woocommerce' ), $token->get_token() ) );
-			$this->maybe_delete_payment_token( $charge_payment, $token_id );
 
 			$get_payment            = $chip->get_payment( $payment['id'] );
 			$payment_requery_status = $get_payment['status'];
@@ -2411,8 +2410,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->get_lock( $renewal_order_id );
 
 		$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
-
-		$this->maybe_delete_payment_token( $charge_payment, $token->get_id() );
 
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$renewal_order->update_status( 'failed' );
@@ -4324,25 +4321,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Maybe delete payment token if invalid.
-	 *
-	 * @param array $charge_payment Charge payment response.
-	 * @param int   $token_id       Token ID.
-	 * @return void
-	 */
-	public function maybe_delete_payment_token( $charge_payment, $token_id ) {
-		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
-			if ( is_array( $charge_payment['__all__'] ) ) {
-				foreach ( $charge_payment['__all__'] as $errors ) {
-					if ( isset( $errors['code'] ) && 'invalid_recurring_token' === $errors['code'] ) {
-						WC_Payment_Tokens::delete( $token_id );
-					}
-				}
-			}
-		}
-	}
-
-	/**
 	 * Check if order contains pre-order.
 	 *
 	 * @param WC_Order $order Order object.
@@ -4503,8 +4481,6 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$this->get_lock( $order->get_id() );
 
 		$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
-
-		$this->maybe_delete_payment_token( $charge_payment, $token->get_id() );
 
 		if ( is_array( $charge_payment ) && array_key_exists( '__all__', $charge_payment ) ) {
 			$order->update_status( 'failed' );
