@@ -2407,6 +2407,17 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
+		// Guard: if no token matches this gateway (e.g. a legacy renewal
+		// order still holding a token from a different CHIP clone), charging
+		// with an empty token would fail with a confusing "Invalid or
+		// inactive recurring token" error. Fail fast with a clear note.
+		// No lock has been acquired yet at this point.
+		if ( empty( $token->get_token() ) ) {
+			$renewal_order->update_status( 'failed' );
+			$renewal_order->add_order_note( __( 'No card token matching this gateway is available to charge.', 'chip-for-woocommerce' ) );
+			return;
+		}
+
 		$this->get_lock( $renewal_order_id );
 
 		$charge_payment = $chip->charge_payment( $payment['id'], array( 'recurring_token' => $token->get_token() ) );
@@ -4476,6 +4487,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				$token = $t;
 				break;
 			}
+		}
+
+		// Guard: fail fast with a clear note if no token matches this
+		// gateway, instead of charging with an empty token.
+		if ( empty( $token->get_token() ) ) {
+			$order->update_status( 'failed' );
+			$order->add_order_note( __( 'No card token matching this gateway is available to charge.', 'chip-for-woocommerce' ) );
+			return;
 		}
 
 		$this->get_lock( $order->get_id() );
