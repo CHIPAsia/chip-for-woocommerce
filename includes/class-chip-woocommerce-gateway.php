@@ -2939,7 +2939,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	protected function get_fpx_banks_data( $transient_key ) {
-		$expiration = 60 * 3; // 3 minutes
+		$expiration = HOUR_IN_SECONDS; // 1 hour
 
 		$data = get_transient( $transient_key );
 
@@ -4091,7 +4091,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				return $expanded;
 			}
 			$available = $response['available_payment_methods']; // Example shape: list of method ids the merchant has.
-			set_transient( $cache_key, $available, 30 * MINUTE_IN_SECONDS );
+			set_transient( $cache_key, $available, HOUR_IN_SECONDS );
 		}
 
 		$resolved = array();
