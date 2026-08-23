@@ -84,6 +84,7 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 * Fixed - Saved-card subscription payments failed with "Expected a list of items but got type dict". `array_intersect()` preserved the keys of the group-expanded whitelist, so `json_encode()` serialized the recurring whitelist as a JSON object instead of a list. The recurring whitelist is now re-indexed with `array_values()`.
 * Fixed - Card data is now posted to CHIP via jQuery `.val()` setters instead of string concatenation, removing a DOM-based XSS vector in the direct-post flow.
 * Fixed - Bank codes and `?preferred=` values are now `rawurlencode()`d before being appended to the redirect URL, preventing parameter injection.
+* Added - A "CHIP Saved Card" metabox on the subscription admin page lets a store owner switch the subscription's saved card without the customer logging in. Only existing saved tokens are offered (never a raw card number), and switching records a consent note on the subscription for audit.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 

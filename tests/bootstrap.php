@@ -707,6 +707,211 @@ if ( ! function_exists( 'is_user_logged_in' ) ) {
 	}
 }
 
+// ---- Stubs for the admin saved-card metabox (class-chip-woocommerce-admin-token.php) ----
+
+if ( ! function_exists( 'get_current_screen' ) ) {
+	/**
+	 * Stub for get_current_screen(). Returns an object with an id property
+	 * driven by a test global so metabox registration can be asserted.
+	 *
+	 * @return object|null
+	 */
+	function get_current_screen() {
+		if ( isset( $GLOBALS['__chip_test_screen_id'] ) ) {
+			return (object) array( 'id' => $GLOBALS['__chip_test_screen_id'] );
+		}
+		return null;
+	}
+}
+
+if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
+	/**
+	 * Stub for wc_get_page_screen_id(). Returns the raw type (legacy path).
+	 *
+	 * @param string $object_type Object type.
+	 * @return string
+	 */
+	function wc_get_page_screen_id( $object_type ) {
+		return $object_type;
+	}
+}
+
+if ( ! function_exists( 'add_meta_box' ) ) {
+	/**
+	 * Stub for add_meta_box(). Records the registration for assertions.
+	 *
+	 * @return void
+	 */
+	function add_meta_box( $id, $title, $callback, $screen, $context = 'advanced', $priority = 'default' ) {
+		$GLOBALS['__chip_test_meta_boxes'][ $id ] = array(
+			'title'    => $title,
+			'screen'   => $screen,
+			'context'  => $context,
+			'priority' => $priority,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_nonce_field' ) ) {
+	/**
+	 * Stub for wp_nonce_field().
+	 *
+	 * @return void
+	 */
+	function wp_nonce_field( $action = -1, $name = '_wpnonce', $referer = true, $echo = true ) {}
+}
+
+if ( ! function_exists( 'selected' ) ) {
+	/**
+	 * Stub for selected().
+	 *
+	 * @return string
+	 */
+	function selected( $selected, $current = true, $echo = true ) {
+		return (string) $selected === (string) $current ? ' selected="selected"' : '';
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * Stub for esc_html().
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function esc_html( $text ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+	/**
+	 * Stub for esc_html_e().
+	 *
+	 * @return void
+	 */
+	function esc_html_e( $text, $domain = '' ) {}
+}
+
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	/**
+	 * Stub for wp_verify_nonce(). Driven by a test global.
+	 *
+	 * @param string $nonce  Nonce.
+	 * @param string $action Action.
+	 * @return bool
+	 */
+	function wp_verify_nonce( $nonce, $action = -1 ) {
+		return $GLOBALS['__chip_test_nonce_valid'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	/**
+	 * Stub for current_user_can(). Driven by a test global.
+	 *
+	 * @param string $capability Capability.
+	 * @return bool
+	 */
+	function current_user_can( $capability ) {
+		return $GLOBALS['__chip_test_can_edit_orders'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'absint' ) ) {
+	/**
+	 * Stub for absint().
+	 *
+	 * @param mixed $maybeint Value.
+	 * @return int
+	 */
+	function absint( $maybeint ) {
+		return abs( (int) $maybeint );
+	}
+}
+
+if ( ! function_exists( 'wp_get_current_user' ) ) {
+	/**
+	 * Stub for wp_get_current_user(). Returns an object with display_name.
+	 *
+	 * @return object
+	 */
+	function wp_get_current_user() {
+		return (object) array( 'display_name' => 'admin' );
+	}
+}
+
+if ( ! function_exists( 'wcs_get_subscription' ) ) {
+	/**
+	 * Stub for wcs_get_subscription(). Returns a test subscription object
+	 * driven by a global, or null.
+	 *
+	 * @param int $id Subscription ID.
+	 * @return object|null
+	 */
+	function wcs_get_subscription( $id ) {
+		return $GLOBALS['__chip_test_subscription'] ?? null;
+	}
+}
+
+if ( ! class_exists( 'WC_Payment_Tokens' ) ) {
+	/**
+	 * Minimal WC_Payment_Tokens stub for the admin metabox tests.
+	 */
+	class WC_Payment_Tokens {
+		/**
+		 * Stub for get_customer_tokens().
+		 *
+		 * @param int    $customer_id Customer ID.
+		 * @param string $gateway_id  Gateway ID.
+		 * @return array
+		 */
+		public static function get_customer_tokens( $customer_id, $gateway_id = '' ) {
+			return $GLOBALS['__chip_test_customer_tokens'] ?? array();
+		}
+
+		/**
+		 * Stub for get().
+		 *
+		 * @param int $token_id Token ID.
+		 * @return object|null
+		 */
+		public static function get( $token_id ) {
+			$tokens = $GLOBALS['__chip_test_customer_tokens'] ?? array();
+			foreach ( $tokens as $token ) {
+				if ( (string) $token->get_id() === (string) $token_id ) {
+					return $token;
+				}
+			}
+			return null;
+		}
+	}
+}
+
+if ( ! class_exists( 'WC_Data_Store' ) ) {
+	/**
+	 * Minimal WC_Data_Store stub for the admin metabox tests.
+	 */
+	class WC_Data_Store {
+		/**
+		 * Stub for load().
+		 *
+		 * @param string $type Data store type.
+		 * @return object
+		 */
+		public static function load( $type ) {
+			return new class() {
+				/**
+				 * Stub for update_payment_token_ids().
+				 *
+				 * @return void
+				 */
+				public function update_payment_token_ids( $order, $ids ) {}
+			};
+		}
+	}
+}
+
 // Load Composer autoloader if available.
 $autoloader = dirname( __DIR__ ) . '/vendor/autoload.php';
 if ( file_exists( $autoloader ) ) {
