@@ -1718,7 +1718,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		$token_key            = 'wc-' . $this->id . '-payment-token';
 		$saved_token_selected = ( isset( $_POST[ $token_key ] ) && ! empty( $_POST[ $token_key ] ) && 'new' !== $_POST[ $token_key ] )
 			|| ( isset( $_POST['token'] ) && ! empty( $_POST['token'] ) && 'new' !== $_POST['token'] );
-		$has_method = ! empty( $this->get_posted_payment_method() );
+		$has_method           = ! empty( $this->get_posted_payment_method() );
 		if ( $this->should_render_unified_dropdown() && ! $saved_token_selected && ! $has_method ) {
 			throw new \Exception( esc_html__( 'Please choose a payment method.', 'chip-for-woocommerce' ) );
 		}
