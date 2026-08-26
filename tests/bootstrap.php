@@ -440,6 +440,7 @@ if ( ! function_exists( 'WC' ) ) {
 		class Chip_Test_Cart {
 			public $fees = array();
 			public $total = 0;
+			public $cart_contents_total = 0;
 
 			public function add_fee( $name, $amount ) {
 				$this->fees[] = array( 'name' => $name, 'amount' => $amount );
@@ -447,6 +448,10 @@ if ( ! function_exists( 'WC' ) ) {
 
 			public function get_total() {
 				return $this->total;
+			}
+
+			public function get_cart_contents_total() {
+				return $this->cart_contents_total;
 			}
 		}
 	}

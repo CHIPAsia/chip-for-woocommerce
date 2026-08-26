@@ -194,7 +194,7 @@ class Chip_Woocommerce {
 		}
 
 		if ( $percent_charges > 0 ) {
-			$cart->add_fee( __( 'Variable Processing Fee', 'chip-for-woocommerce' ), $cart->get_total() * ( $percent_charges / 100 ) / 100 );
+			$cart->add_fee( __( 'Variable Processing Fee', 'chip-for-woocommerce' ), $cart->get_cart_contents_total() * ( $percent_charges / 100 ) / 100 );
 		}
 	}
 
