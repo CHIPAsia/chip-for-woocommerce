@@ -136,7 +136,7 @@ class CheckoutFeeTest extends \PHPUnit\Framework\TestCase {
 			),
 		);
 		$cart = new Chip_Test_Cart();
-		$cart->total = 45.00;
+		$cart->cart_contents_total = 45.00;
 
 		Chip_Woocommerce::get_instance()->add_checkout_fee( $cart );
 
