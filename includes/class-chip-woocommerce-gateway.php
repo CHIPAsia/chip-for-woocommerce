@@ -1795,9 +1795,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( 'yes' === $this->enable_additional_charges ) {
-			$this->add_item_order_fee( $order );
-		}
+		// Note: additional charges are applied at the cart level via
+		// add_checkout_fee() and copied to the order by WooCommerce's
+		// create_order_fee_lines(). Calling add_item_order_fee() here would
+		// double-count the fee. It is only needed for renewals (auto_charge),
+		// which do not go through the cart.
 
 		$callback_url = add_query_arg( array( 'id' => $order_id ), WC()->api_request_url( $this->id ) );
 		if ( defined( 'CHIP_WOOCOMMERCE_OLD_URL_SCHEME' ) && CHIP_WOOCOMMERCE_OLD_URL_SCHEME === true ) {

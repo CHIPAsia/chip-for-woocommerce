@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.1
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -62,8 +62,9 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.1.2 2026-08-26 =
-* Fixed - The percentage-based additional charge now uses the cart contents total instead of the cart total, which is not yet calculated when the fee is applied. This fixes the fee showing as zero (or a type error) on the checkout page.
+= 2.1.3 2026-08-26 =
+* Fixed - The additional-charges fee is no longer double-counted on the order. The cart fee is already copied to the order by WooCommerce, so the plugin no longer adds it a second time during checkout.
+* Fixed - The percentage-based additional charge no longer triggers a "string * int" fatal error by casting the cart contents total to a float.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
