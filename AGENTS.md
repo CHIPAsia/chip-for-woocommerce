@@ -94,6 +94,7 @@ Several classes are loaded only inside `is_admin()`:
 
 ## Important context
 
+- **`readme.txt` carries only the current release.** WordPress.org renders the changelog from `readme.txt`, so it must hold exactly one version entry; `changelog.txt` keeps the full history.
 - **No unit tests exist** in the `tests/` directory. It only contains `.DS_Store`.
 - **Release artifacts**: `git archive` is used by workflows to create clean exports; `.gitattributes` marks dev files (`vendor/`, `node_modules/`, `resources/`, `.github/`, etc.) as `export-ignore` so they are never shipped.
 - **WordPress.org assets**: The `.wordpress-org/` directory tracks banners, icons, and screenshots that are synced to SVN `assets/` by the deploy workflow.
