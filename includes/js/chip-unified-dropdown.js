@@ -51,7 +51,11 @@ jQuery( ( $ ) => {
 			'.chip-unified-option-logo { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }' +
 			'.chip-unified-option-text { flex: 1; }' +
 			'.select2-results__option .chip-unified-option,' +
-			'.select2-selection__rendered .chip-unified-option { display: flex; align-items: center; }';
+			'.select2-selection__rendered .chip-unified-option { display: flex; align-items: center; }' +
+			// The chosen value sits in a one-line control: centre it and make
+			// its logo smaller than the list's 32px.
+			'.chip-unified-selection-with-logo { display: flex; align-items: center; gap: 8px; }' +
+			'.chip-unified-option-logo--selection { width: 20px; height: 20px; }';
 		document.head.appendChild( styleSheet );
 	}
 
@@ -106,8 +110,37 @@ jQuery( ( $ ) => {
 		return $option;
 	};
 
+	// The closed control shows the method the customer picked, so it has to
+	// carry the same logo they just saw in the list. select2's
+	// templateSelection result is stringified ("[object Object]") when it is
+	// not a plain string, so the logo is painted into the rendered container
+	// instead -- see paintSelectionLogo() below.
 	var formatSelection = function( option ) {
 		return option.text || '';
+	};
+
+	// Prepend the chosen method's logo to the closed select's rendered value.
+	// select2 replaces that container's contents whenever the selection
+	// changes, so this runs on init and on every change / select / clear.
+	var paintSelectionLogo = function( $select ) {
+		var $rendered = $select.next( '.select2-container' ).find( '.select2-selection__rendered' );
+		if ( $rendered.length === 0 ) {
+			return;
+		}
+		$rendered.find( '.chip-unified-option-logo--selection' ).remove();
+		$rendered.removeClass( 'chip-unified-selection-with-logo' );
+
+		var logoUrl = logoForTag( $select.val() || '' );
+		if ( ! logoUrl ) {
+			return;
+		}
+		$rendered
+			.addClass( 'chip-unified-selection-with-logo' )
+			.prepend(
+				$( '<img class="chip-unified-option-logo chip-unified-option-logo--selection" alt="" />' )
+					.attr( 'src', logoUrl )
+					.on( 'error', function() { $( this ).remove(); } )
+			);
 	};
 
 	// Preserve each gateway's dropdown selection across updated_checkout
@@ -180,9 +213,17 @@ jQuery( ( $ ) => {
 				} );
 			}
 
-			// Persist the selection whenever the customer changes it.
+			// Show the chosen method's logo in the closed control too.
+			paintSelectionLogo( $select );
+
+			// Persist the selection whenever the customer changes it, and
+			// repaint the logo (select2 rebuilds the rendered container).
 			$select.on( 'change', function() {
 				savedByGateway[ gatewayId ] = $( this ).val() || '';
+				paintSelectionLogo( $( this ) );
+			} );
+			$select.on( 'select2:select select2:clear select2:unselect', function() {
+				paintSelectionLogo( $( this ) );
 			} );
 
 			// Sync with hidden input (survives updated_checkout rebuilds).
