@@ -2598,20 +2598,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		);
 
 		$params = array(
-			'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
-			'creator_agent'            => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
-			'platform'                 => 'woocommerce_subscriptions',
-			'success_redirect'         => $url,
-			'failure_redirect'         => $url,
-			'force_recurring'          => true,
-			'reference'                => get_current_user_id(),
-			'brand_id'                 => $this->brand_id,
-			'skip_capture'             => true,
-			'client'                   => array(
+			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
+			'platform'         => 'woocommerce_subscriptions',
+			'success_redirect' => $url,
+			'failure_redirect' => $url,
+			'force_recurring'  => true,
+			'reference'        => get_current_user_id(),
+			'brand_id'         => $this->brand_id,
+			'skip_capture'     => true,
+			'client'           => array(
 				'email'     => wp_get_current_user()->user_email,
 				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() ),
 			),
-			'purchase'                 => array(
+			'purchase'         => array(
 				'currency' => 'MYR',
 				'products' => array(
 					array(
@@ -2621,6 +2620,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				),
 			),
 		);
+
+		// Only send the whitelist when there is one to send. Omitting the key
+		// lets CHIP offer every available method; sending a null value is not
+		// equivalent and is rejected upstream.
+		$recurring_whitelist = $this->get_payment_method_for_recurring();
+		if ( ! empty( $recurring_whitelist ) ) {
+			$params['payment_method_whitelist'] = $recurring_whitelist;
+		}
 
 		$chip = $this->api();
 
@@ -3478,20 +3485,19 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		}
 
 		$params = array(
-			'payment_method_whitelist' => $this->get_payment_method_for_recurring(),
-			'creator_agent'            => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
-			'platform'                 => 'woocommerce_subscriptions',
-			'success_redirect'         => $url,
-			'failure_redirect'         => $url,
-			'force_recurring'          => true,
-			'reference'                => $order_id,
-			'brand_id'                 => $this->brand_id,
-			'skip_capture'             => true,
-			'client'                   => array(
+			'creator_agent'    => 'WooCommerce: ' . CHIP_WOOCOMMERCE_MODULE_VERSION,
+			'platform'         => 'woocommerce_subscriptions',
+			'success_redirect' => $url,
+			'failure_redirect' => $url,
+			'force_recurring'  => true,
+			'reference'        => $order_id,
+			'brand_id'         => $this->brand_id,
+			'skip_capture'     => true,
+			'client'           => array(
 				'email'     => wp_get_current_user()->user_email,
 				'full_name' => $this->filter_customer_full_name( $customer->get_first_name() . ' ' . $customer->get_last_name() ),
 			),
-			'purchase'                 => array(
+			'purchase'         => array(
 				'currency' => 'MYR',
 				'products' => array(
 					array(
@@ -3501,6 +3507,14 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 				),
 			),
 		);
+
+		// Only send the whitelist when there is one to send. Omitting the key
+		// lets CHIP offer every available method; sending a null value is not
+		// equivalent and is rejected upstream.
+		$recurring_whitelist = $this->get_payment_method_for_recurring();
+		if ( ! empty( $recurring_whitelist ) ) {
+			$params['payment_method_whitelist'] = $recurring_whitelist;
+		}
 
 		$chip = $this->api();
 
