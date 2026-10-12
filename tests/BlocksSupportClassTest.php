@@ -175,7 +175,7 @@ class BlocksSupportClassTest extends PHPUnit\Framework\TestCase {
 	}
 
 	public function test_js_display_unified_for_fpx_crypto() {
-		// FPX + Crypto Coin -> two dropdown methods -> 'unified'.
+		// FPX + Stablecoin -> two dropdown methods -> 'unified'.
 		list( $support ) = $this->newSupport( array( 'payment_method_whitelist' => array( 'fpx', 'crypto_coin' ) ) );
 		$data = $support->get_payment_method_data();
 		$this->assertSame( 'unified', $data['js_display'] );
