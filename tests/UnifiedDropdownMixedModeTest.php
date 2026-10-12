@@ -305,6 +305,17 @@ class UnifiedDropdownMixedModeTest extends GatewayTestCase {
 		$this->assertArrayHasKey( 'crypto_coin', $field['options'] );
 	}
 
+	public function test_crypto_display_label_is_stablecoin() {
+		$gateway = $this->newMixedGateway( array( 'fpx', 'crypto_coin' ) );
+		$gateway->supports = array( 'products', 'tokenization' );
+
+		$this->renderPaymentFields( $gateway );
+
+		$field = $GLOBALS['__chip_test_form_fields']['chip_payment_method_wc_gateway_chip'];
+		// Display label only -- the identifier sent to the gateway stays 'crypto_coin'.
+		$this->assertSame( 'Stablecoin', $field['options']['crypto_coin'] );
+	}
+
 	public function test_crypto_only_renders_hidden_input() {
 		$gateway = $this->newMixedGateway( array( 'crypto_coin' ) );
 		$gateway->supports = array( 'products', 'tokenization' );

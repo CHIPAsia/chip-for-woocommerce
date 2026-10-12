@@ -3213,9 +3213,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$list['card'] = __( 'Card (Visa/Mastercard/Maestro)', 'chip-for-woocommerce' );
 		}
 
-		// Crypto Coin (only if enabled in the whitelist).
+		// Stablecoin (only if enabled in the whitelist).
 		if ( in_array( 'crypto_coin', $this->payment_method_whitelist, true ) ) {
-			$list['crypto_coin'] = __( 'Crypto Coin', 'chip-for-woocommerce' );
+			$list['crypto_coin'] = __( 'Stablecoin', 'chip-for-woocommerce' );
 		}
 
 		// Google Pay / Apple Pay (only if enabled in the whitelist).
@@ -4036,7 +4036,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'shopee_pay'      => 'ShopeePay',
 			'razer_tng'       => "Touch 'n Go eWallet",
 			'duitnow_qr'      => 'DuitNow QR',
-			'crypto_coin'     => 'Crypto Coin',
+			'crypto_coin'     => 'Stablecoin',
 		);
 	}
 

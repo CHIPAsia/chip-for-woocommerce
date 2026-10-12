@@ -32,7 +32,7 @@ CHIP - Digital Finance Platform. Securely accept one-time and subscription payme
 * **DuitNow QR** - Malaysia's national QR payment
 * **E-Wallets** - GrabPay, Touch 'n Go, ShopeePay, Maybank QRPay, and more via Razer
 * **Buy Now Pay Later** - Atome
-* **Crypto Coin** - Accept cryptocurrency payments
+* **Stablecoin** - Accept stablecoin payments
 
 = About CHIP =
 
