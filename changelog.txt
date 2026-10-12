@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 2.1.5 2026-10-12 =
+* Fixed - The payment method logo now stays visible in the dropdown after a method is chosen. Previously the logo was only shown while the list was open, so the selected method (Stablecoin, DuitNow QR, Card, FPX or an e-wallet) appeared as plain text once picked.
+
 = 2.1.4 2026-10-12 =
 * Changed - The crypto payment method is now labelled Stablecoin (it was previously shown as "Crypto Coin") in the Payment Method Whitelist settings and on the checkout page. The value sent to CHIP is unchanged (crypto_coin), so existing settings keep working without any action.
 * Fixed - Recurring and saved-card payment flows now stop with a clear error when the account has no usable recurring payment method, instead of creating a payment whose method whitelist would let the customer pay with a non-recurring method.
