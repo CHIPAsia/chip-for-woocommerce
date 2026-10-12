@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.1
-Stable tag: 2.1.4
+Stable tag: 2.1.5
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -62,9 +62,8 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
-= 2.1.4 2026-10-12 =
-* Changed - The crypto payment method is now labelled Stablecoin (it was previously shown as "Crypto Coin") in the Payment Method Whitelist settings and on the checkout page. The value sent to CHIP is unchanged (crypto_coin), so existing settings keep working without any action.
-* Fixed - Recurring and saved-card payment flows now stop with a clear error when the account has no usable recurring payment method, instead of creating a payment whose method whitelist would let the customer pay with a non-recurring method.
+= 2.1.5 2026-10-12 =
+* Fixed - The payment method logo now stays visible in the dropdown after a method is chosen. Previously the logo was only shown while the list was open, so the selected method (Stablecoin, DuitNow QR, Card, FPX or an e-wallet) appeared as plain text once picked.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
