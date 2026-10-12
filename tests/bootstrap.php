@@ -412,12 +412,16 @@ if ( ! function_exists( 'WC' ) ) {
 	}
 
 	/**
-	 * Minimal session stub with a get() method.
+	 * Minimal session stub with get()/set() methods.
 	 */
 	if ( ! class_exists( 'Chip_Test_Session' ) ) {
 		class Chip_Test_Session {
 			public function get( $key, $default = null ) {
 				return $GLOBALS['__chip_test_chosen_payment_method'] ?? $default;
+			}
+
+			public function set( $key, $value ) {
+				$GLOBALS['__chip_test_session_data'][ $key ] = $value;
 			}
 		}
 	}
@@ -522,6 +526,48 @@ if ( ! function_exists( 'woocommerce_form_field' ) ) {
 		}
 		$GLOBALS['__chip_test_form_fields'][ $key ] = $args;
 		return '';
+	}
+}
+
+if ( ! function_exists( 'wc_add_notice' ) ) {
+	/**
+	 * Stub for wc_add_notice(). Records notices so tests can assert them.
+	 *
+	 * @param string $message Notice message.
+	 * @param string $type    Notice type.
+	 * @return void
+	 */
+	function wc_add_notice( $message, $type = 'success' ) {
+		if ( ! isset( $GLOBALS['__chip_test_notices'] ) ) {
+			$GLOBALS['__chip_test_notices'] = array();
+		}
+		$GLOBALS['__chip_test_notices'][] = array(
+			'message' => $message,
+			'type'    => $type,
+		);
+	}
+}
+
+if ( ! function_exists( 'wc_notice_count' ) ) {
+	/**
+	 * Stub for wc_notice_count().
+	 *
+	 * @param string $type Notice type to count.
+	 * @return int
+	 */
+	function wc_notice_count( $type = '' ) {
+		$notices = isset( $GLOBALS['__chip_test_notices'] ) ? $GLOBALS['__chip_test_notices'] : array();
+		if ( '' === $type ) {
+			return count( $notices );
+		}
+		return count(
+			array_filter(
+				$notices,
+				static function ( $notice ) use ( $type ) {
+					return $notice['type'] === $type;
+				}
+			)
+		);
 	}
 }
 
@@ -897,7 +943,32 @@ if ( ! function_exists( 'wp_get_current_user' ) ) {
 	 * @return object
 	 */
 	function wp_get_current_user() {
-		return (object) array( 'display_name' => 'admin' );
+		return (object) array(
+			'display_name' => 'admin',
+			'user_email'   => 'admin@example.com',
+		);
+	}
+}
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+	/**
+	 * Stub for get_current_user_id().
+	 *
+	 * @return int
+	 */
+	function get_current_user_id() {
+		return 7;
+	}
+}
+
+if ( ! class_exists( 'WC_Customer' ) ) {
+	/**
+	 * Minimal WC_Customer stub for the subscription payment-method flows.
+	 */
+	class WC_Customer {
+		public function __construct( $customer_id = 0 ) {}
+		public function get_first_name() { return 'Test'; }
+		public function get_last_name() { return 'Customer'; }
 	}
 }
 
