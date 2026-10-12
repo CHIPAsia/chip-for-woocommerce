@@ -529,6 +529,48 @@ if ( ! function_exists( 'woocommerce_form_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wc_add_notice' ) ) {
+	/**
+	 * Stub for wc_add_notice(). Records notices so tests can assert them.
+	 *
+	 * @param string $message Notice message.
+	 * @param string $type    Notice type.
+	 * @return void
+	 */
+	function wc_add_notice( $message, $type = 'success' ) {
+		if ( ! isset( $GLOBALS['__chip_test_notices'] ) ) {
+			$GLOBALS['__chip_test_notices'] = array();
+		}
+		$GLOBALS['__chip_test_notices'][] = array(
+			'message' => $message,
+			'type'    => $type,
+		);
+	}
+}
+
+if ( ! function_exists( 'wc_notice_count' ) ) {
+	/**
+	 * Stub for wc_notice_count().
+	 *
+	 * @param string $type Notice type to count.
+	 * @return int
+	 */
+	function wc_notice_count( $type = '' ) {
+		$notices = isset( $GLOBALS['__chip_test_notices'] ) ? $GLOBALS['__chip_test_notices'] : array();
+		if ( '' === $type ) {
+			return count( $notices );
+		}
+		return count(
+			array_filter(
+				$notices,
+				static function ( $notice ) use ( $type ) {
+					return $notice['type'] === $type;
+				}
+			)
+		);
+	}
+}
+
 if ( ! function_exists( 'has_filter' ) ) {
 	/**
 	 * Stub for has_filter(). No filters are registered in tests.

@@ -1,12 +1,19 @@
 <?php
 /**
- * Tests for get_payment_method_for_recurring() returning a zero-indexed list.
+ * Tests for get_payment_method_for_recurring() and the recurring create-payment flows.
  *
- * Regression: array_intersect() preserves the keys of the first array, so a
+ * Regression 1: array_intersect() preserves the keys of the first array, so a
  * group-expanded whitelist (['card','visa','mastercard','maestro']) produced a
  * non-zero-indexed result ([1=>'visa', 2=>'mastercard', 3=>'maestro']).
  * json_encode() serializes that as a JSON object ("dict") instead of a list,
  * and CHIP rejects it with "Expected a list of items but got type dict".
+ *
+ * Regression 2: the "Add payment method" and "Change payment method" flows
+ * assigned get_payment_method_for_recurring() straight into the create-payment
+ * params. A null result means the account has NO recurring-capable method, so
+ * the flow must fail with a notice instead of starting a recurring payment that
+ * the customer could settle with a non-recurring method (and instead of sending
+ * a null whitelist).
  *
  * @package CHIP_For_WooCommerce
  */
@@ -107,30 +114,41 @@ class RecurringWhitelistTest extends GatewayTestCase {
 	}
 
 	/**
-	 * A null recurring whitelist must be OMITTED from the create-payment
-	 * params of the "Add payment method" flow, not sent as a null value.
-	 * CHIP treats an absent key as "no restriction"; a null is rejected.
+	 * A null recurring whitelist means the account cannot do recurring at all,
+	 * so the "Add payment method" flow must fail instead of creating a payment
+	 * that the customer could settle with a non-recurring method.
 	 */
-	public function test_add_payment_method_omits_whitelist_when_recurring_is_null() {
+	public function test_add_payment_method_fails_when_recurring_is_null() {
 		$gateway = $this->newCapturingGateway( array( 'fpx' ), array( 'products', 'refunds' ) );
 
-		$gateway->add_payment_method();
+		$result = $gateway->add_payment_method();
 
-		$this->assertIsArray( $this->captured_params );
-		$this->assertArrayNotHasKey( 'payment_method_whitelist', $this->captured_params );
+		$this->assertSame( 'failure', $result['result'] );
+		// No purchase may be created.
+		$this->assertNull( $this->captured_params );
+		$this->assertSame( 1, wc_notice_count( 'error' ) );
+		$this->assertStringContainsString(
+			'Recurring payments are not available for this payment method',
+			$GLOBALS['__chip_test_notices'][0]['message']
+		);
 	}
 
 	/**
 	 * Same guard for the subscription "Change payment method" flow, which is
 	 * reachable through ?change_payment_method= on checkout.
 	 */
-	public function test_process_payment_method_change_omits_whitelist_when_recurring_is_null() {
+	public function test_process_payment_method_change_fails_when_recurring_is_null() {
 		$gateway = $this->newCapturingGateway( array( 'fpx' ), array( 'products', 'refunds' ) );
 
-		$gateway->process_payment_method_change( 55 );
+		$result = $gateway->process_payment_method_change( 55 );
 
-		$this->assertIsArray( $this->captured_params );
-		$this->assertArrayNotHasKey( 'payment_method_whitelist', $this->captured_params );
+		$this->assertSame( 'failure', $result['result'] );
+		$this->assertNull( $this->captured_params );
+		$this->assertSame( 1, wc_notice_count( 'error' ) );
+		$this->assertStringContainsString(
+			'Recurring payments are not available for this payment method',
+			$GLOBALS['__chip_test_notices'][0]['message']
+		);
 	}
 
 	/**

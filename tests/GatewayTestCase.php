@@ -104,6 +104,8 @@ abstract class GatewayTestCase extends PHPUnit\Framework\TestCase {
 		parent::setUp();
 		$GLOBALS['__chip_test_transients']                = array();
 		$GLOBALS['__chip_test_options']                   = array();
+		$GLOBALS['__chip_test_notices']                   = array();
+		$GLOBALS['__chip_test_session_data']              = array();
 		$GLOBALS['__chip_test_currency']                  = 'MYR';
 		$GLOBALS['__chip_test_is_checkout']               = true;
 		$GLOBALS['__chip_test_is_add_payment_method_page'] = false;

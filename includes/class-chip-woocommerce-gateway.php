@@ -2621,13 +2621,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			),
 		);
 
-		// Only send the whitelist when there is one to send. Omitting the key
-		// lets CHIP offer every available method; sending a null value is not
-		// equivalent and is rejected upstream.
+		// A recurring payment needs a recurring-capable method. When the merchant
+		// has no card network configured and the gateway has no tokenization
+		// support, get_payment_method_for_recurring() returns null: the account
+		// cannot do recurring at all. Stop here rather than let the customer pay
+		// with a non-recurring method on a subscription.
 		$recurring_whitelist = $this->get_payment_method_for_recurring();
-		if ( ! empty( $recurring_whitelist ) ) {
-			$params['payment_method_whitelist'] = $recurring_whitelist;
+		if ( empty( $recurring_whitelist ) ) {
+			wc_add_notice(
+				__( 'Recurring payments are not available for this payment method. Cards must be enabled on your CHIP account to continue.', 'chip-for-woocommerce' ),
+				'error'
+			);
+			return array( 'result' => 'failure' );
 		}
+		$params['payment_method_whitelist'] = $recurring_whitelist;
 
 		$chip = $this->api();
 
@@ -3508,13 +3515,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			),
 		);
 
-		// Only send the whitelist when there is one to send. Omitting the key
-		// lets CHIP offer every available method; sending a null value is not
-		// equivalent and is rejected upstream.
+		// A recurring payment needs a recurring-capable method. When the merchant
+		// has no card network configured and the gateway has no tokenization
+		// support, get_payment_method_for_recurring() returns null: the account
+		// cannot do recurring at all. Stop here rather than let the customer pay
+		// with a non-recurring method on a subscription.
 		$recurring_whitelist = $this->get_payment_method_for_recurring();
-		if ( ! empty( $recurring_whitelist ) ) {
-			$params['payment_method_whitelist'] = $recurring_whitelist;
+		if ( empty( $recurring_whitelist ) ) {
+			wc_add_notice(
+				__( 'Recurring payments are not available for this payment method. Cards must be enabled on your CHIP account to continue.', 'chip-for-woocommerce' ),
+				'error'
+			);
+			return array( 'result' => 'failure' );
 		}
+		$params['payment_method_whitelist'] = $recurring_whitelist;
 
 		$chip = $this->api();
 
