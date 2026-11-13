@@ -144,6 +144,39 @@ class PaymentBlocksTest extends GatewayTestCase {
 	}
 
 	/**
+	 * An enabled gateway with credentials wins over the primary block: a site can
+	 * keep credentials on a disabled legacy block while the live block carries a
+	 * different brand.
+	 *
+	 * @return void
+	 */
+	public function test_credential_source_prefers_an_enabled_gateway() {
+		update_option(
+			'woocommerce_wc_gateway_chip_settings',
+			array(
+				'brand_id'   => 'legacy-brand',
+				'secret_key' => 'legacy-secret',
+				'title'      => 'FPX (old)',
+				'enabled'    => 'no',
+			)
+		);
+		update_option(
+			'woocommerce_wc_gateway_chip_2_settings',
+			array(
+				'brand_id'   => 'live-brand',
+				'secret_key' => 'live-secret',
+				'title'      => 'FPX (B2C)',
+				'enabled'    => 'yes',
+			)
+		);
+
+		$source = Chip_Woocommerce_Payment_Blocks::credential_source();
+
+		$this->assertSame( 'wc_gateway_chip_2', $source['gateway_id'] );
+		$this->assertSame( 'live-brand', $source['brand_id'] );
+	}
+
+	/**
 	 * A block that does hold credentials can also be the source — that is how the
 	 * "Copy from Existing" list and the inheritance fallback stay consistent.
 	 *

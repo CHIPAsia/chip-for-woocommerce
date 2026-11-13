@@ -229,27 +229,49 @@ class Chip_Woocommerce_Payment_Blocks {
 	 * }
 	 */
 	public static function credential_source() {
+		$candidates = array();
+
 		foreach ( self::gateway_ids() as $gateway_id ) {
 			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
 			if ( ! is_array( $settings ) || empty( $settings['brand_id'] ) || empty( $settings['secret_key'] ) ) {
 				continue;
 			}
 
-			$title = ! empty( $settings['title'] ) ? $settings['title'] : ( ! empty( $settings['method_title'] ) ? $settings['method_title'] : $gateway_id );
-
-			return array(
+			$candidates[] = array(
 				'gateway_id' => $gateway_id,
-				'title'      => $title,
+				'enabled'    => isset( $settings['enabled'] ) && 'yes' === $settings['enabled'],
+				'title'      => ! empty( $settings['title'] ) ? $settings['title'] : ( ! empty( $settings['method_title'] ) ? $settings['method_title'] : $gateway_id ),
 				'brand_id'   => (string) $settings['brand_id'],
-				'found'      => true,
 			);
 		}
 
+		if ( empty( $candidates ) ) {
+			return array(
+				'gateway_id' => '',
+				'title'      => '',
+				'brand_id'   => '',
+				'found'      => false,
+			);
+		}
+
+		// Prefer a gateway that is actually in use: a site can hold credentials on
+		// a disabled legacy block while the live block carries a different brand,
+		// and inheriting the dead one would send the payment to the wrong brand.
+		$enabled = array_values(
+			array_filter(
+				$candidates,
+				static function ( $candidate ) {
+					return $candidate['enabled'];
+				}
+			)
+		);
+		$chosen  = ! empty( $enabled ) ? $enabled[0] : $candidates[0];
+
 		return array(
-			'gateway_id' => '',
-			'title'      => '',
-			'brand_id'   => '',
-			'found'      => false,
+			'gateway_id' => $chosen['gateway_id'],
+			'title'      => $chosen['title'],
+			'brand_id'   => $chosen['brand_id'],
+			'found'      => true,
 		);
 	}
 
