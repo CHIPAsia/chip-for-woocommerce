@@ -390,6 +390,43 @@ class PaymentBlocksTest extends GatewayTestCase {
 	}
 
 	/**
+	 * The family bundle is shared, so each block's script tag must be told which
+	 * gateway name to register — otherwise a created block registers under the
+	 * standard gateway's name and never appears on the Blocks checkout.
+	 *
+	 * @return void
+	 */
+	public function test_blocks_support_injects_its_own_gateway_name() {
+		require_once dirname( __DIR__ ) . '/includes/blocks/class-chip-woocommerce-gateway-blocks-support.php';
+		require_once dirname( __DIR__ ) . '/includes/blocks/class-chip-woocommerce-gateway-block-blocks-support.php';
+
+		$GLOBALS['__chip_test_inline_scripts'] = array();
+
+		$id      = $this->add_two_wallet_block();
+		$name    = Chip_Woocommerce_Payment_Blocks::gateway_id( $id );
+		$support = new Chip_Woocommerce_Gateway_Block_Blocks_Support( $name, 'chip_woocommerce_gateway_4' );
+
+		// get_payment_method_script_handles() needs a live gateway instance.
+		$gateway = new Chip_Woocommerce_Gateway_Block(
+			array(
+				'id'     => $id,
+				'family' => 'ewallet',
+			)
+		);
+		// initialize() resolves the gateway through WooCommerce's registry, which
+		// the test suite does not build; inject the instance directly.
+		$gateway_property = new ReflectionProperty( $support, 'gateway' );
+		$gateway_property->setAccessible( true );
+		$gateway_property->setValue( $support, $gateway );
+
+		$support->get_payment_method_script_handles();
+
+		$inline = $GLOBALS['__chip_test_inline_scripts'][ 'wc-' . $name . '-blocks' ]['before'][0] ?? '';
+		$this->assertStringContainsString( 'window.chipBlocksPaymentMethodName', $inline );
+		$this->assertStringContainsString( $name, $inline );
+	}
+
+	/**
 	 * Registering gateways is unchanged for a site with no created blocks, and
 	 * grows by exactly one instance when a block exists.
 	 *

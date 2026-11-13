@@ -200,6 +200,17 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 
 		wp_localize_script( "wc-{$this->name}-blocks", 'gateway_' . $this->name, $localize_variable );
 
+		// One bundle per family serves every block created from that family, so
+		// the bundle cannot hardcode its own gateway name. The name is injected
+		// immediately before the bundle runs; each block's script tag gets its
+		// own copy of this line, so two blocks from the same family register as
+		// two distinct payment methods.
+		wp_add_inline_script(
+			"wc-{$this->name}-blocks",
+			'window.chipBlocksPaymentMethodName = ' . wp_json_encode( $this->name ) . ';',
+			'before'
+		);
+
 		return array( "wc-{$this->name}-blocks" );
 	}
 

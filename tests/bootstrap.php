@@ -1241,6 +1241,36 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	/**
+	 * Stub for wp_json_encode().
+	 *
+	 * @param mixed $data Data.
+	 * @return string
+	 */
+	function wp_json_encode( $data ) {
+		return json_encode( $data );
+	}
+}
+
+if ( ! function_exists( 'wp_add_inline_script' ) ) {
+	/**
+	 * Stub for wp_add_inline_script().
+	 *
+	 * Records the inline payload so a test can assert what is printed before a
+	 * script handle runs.
+	 *
+	 * @param string $handle   Script handle.
+	 * @param string $data     Inline script.
+	 * @param string $position 'before' or 'after'.
+	 * @return bool
+	 */
+	function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+		$GLOBALS['__chip_test_inline_scripts'][ $handle ][ $position ][] = $data;
+		return true;
+	}
+}
+
 if ( ! function_exists( 'admin_url' ) ) {
 	/**
 	 * Stub for admin_url().
