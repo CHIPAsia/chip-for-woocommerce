@@ -52,7 +52,7 @@ class Chip_Woocommerce_Payment_Blocks {
 	 *
 	 * @return array
 	 */
-	public static function families() {
+	public static function payment_families() {
 		return array(
 			'fpx'      => array(
 				'label'       => __( 'Online Banking (FPX)', 'chip-for-woocommerce' ),
@@ -111,8 +111,8 @@ class Chip_Woocommerce_Payment_Blocks {
 	 * @param string $key Family key.
 	 * @return array|null
 	 */
-	public static function family( $key ) {
-		$families = self::families();
+	public static function payment_family( $key ) {
+		$families = self::payment_families();
 		return isset( $families[ $key ] ) ? $families[ $key ] : null;
 	}
 
@@ -132,7 +132,7 @@ class Chip_Woocommerce_Payment_Blocks {
 			if ( ! is_array( $block ) || empty( $block['id'] ) || empty( $block['family'] ) ) {
 				continue;
 			}
-			if ( null === self::family( $block['family'] ) ) {
+			if ( null === self::payment_family( $block['family'] ) ) {
 				continue;
 			}
 			$valid[] = array(
@@ -223,7 +223,7 @@ class Chip_Woocommerce_Payment_Blocks {
 	 * @return array
 	 */
 	public static function default_settings( $family, array $args = array() ) {
-		$family_def = self::family( $family );
+		$family_def = self::payment_family( $family );
 		if ( null === $family_def ) {
 			return array();
 		}
@@ -267,7 +267,7 @@ class Chip_Woocommerce_Payment_Blocks {
 	 * @return string|WP_Error Block id on success.
 	 */
 	public static function add_block( $family, array $args = array() ) {
-		$family_def = self::family( $family );
+		$family_def = self::payment_family( $family );
 		if ( null === $family_def ) {
 			return new WP_Error( 'chip_block_family', __( 'Unknown payment family.', 'chip-for-woocommerce' ) );
 		}
@@ -304,7 +304,7 @@ class Chip_Woocommerce_Payment_Blocks {
 			return new WP_Error( 'chip_block_missing', __( 'That payment block no longer exists.', 'chip-for-woocommerce' ) );
 		}
 
-		$family_def = self::family( $block['family'] );
+		$family_def = self::payment_family( $block['family'] );
 		$current    = self::get_block_settings( $id );
 		$settings   = array_merge( self::default_settings( $block['family'], $args ), $current );
 

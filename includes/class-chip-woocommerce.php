@@ -508,7 +508,7 @@ class Chip_Woocommerce {
 					// built Blocks asset. Without this the block would render on
 					// the classic checkout only and silently miss Blocks.
 					foreach ( Chip_Woocommerce_Payment_Blocks::get_blocks() as $block ) {
-						$family = Chip_Woocommerce_Payment_Blocks::family( $block['family'] );
+						$family = Chip_Woocommerce_Payment_Blocks::payment_family( $block['family'] );
 						$payment_method_registry->register(
 							new Chip_Woocommerce_Gateway_Block_Blocks_Support(
 								Chip_Woocommerce_Payment_Blocks::gateway_id( $block['id'] ),

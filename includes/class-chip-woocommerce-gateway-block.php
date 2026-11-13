@@ -84,8 +84,8 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 	 *
 	 * @return array
 	 */
-	protected function family_definition() {
-		$family = Chip_Woocommerce_Payment_Blocks::family( $this->block_family );
+	protected function block_family_definition() {
+		$family = Chip_Woocommerce_Payment_Blocks::payment_family( $this->block_family );
 		return is_array( $family ) ? $family : array();
 	}
 
@@ -95,7 +95,7 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 	 * @return void
 	 */
 	protected function init_title() {
-		$family      = $this->family_definition();
+		$family      = $this->block_family_definition();
 		$this->title = isset( $family['title'] ) ? $family['title'] : __( 'CHIP payment method', 'chip-for-woocommerce' );
 	}
 
@@ -111,7 +111,7 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 	protected function init_icon() {
 		$logo = $this->get_option( 'display_logo', 'logo' );
 		if ( 'auto' === $logo ) {
-			$family = $this->family_definition();
+			$family = $this->block_family_definition();
 			$logo   = isset( $family['logo'] ) ? $family['logo'] : 'logo';
 		}
 
@@ -175,7 +175,7 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 	public function init_form_fields() {
 		parent::init_form_fields();
 
-		$family = $this->family_definition();
+		$family = $this->block_family_definition();
 		if ( empty( $family ) ) {
 			return;
 		}
@@ -218,7 +218,7 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 	 * @return bool
 	 */
 	public function is_available() {
-		if ( empty( $this->block_family ) || null === Chip_Woocommerce_Payment_Blocks::family( $this->block_family ) ) {
+		if ( empty( $this->block_family ) || null === Chip_Woocommerce_Payment_Blocks::payment_family( $this->block_family ) ) {
 			return false;
 		}
 

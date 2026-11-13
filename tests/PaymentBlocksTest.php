@@ -71,7 +71,7 @@ class PaymentBlocksTest extends GatewayTestCase {
 	public function test_family_definitions_use_shared_method_labels() {
 		$labels = Chip_Woocommerce_Gateway::payment_method_labels();
 
-		foreach ( Chip_Woocommerce_Payment_Blocks::families() as $key => $family ) {
+		foreach ( Chip_Woocommerce_Payment_Blocks::payment_families() as $key => $family ) {
 			$this->assertNotEmpty( $family['methods'], 'Family ' . $key . ' has no methods.' );
 			foreach ( $family['methods'] as $method ) {
 				$this->assertArrayHasKey( $method, $labels, 'Unknown method ' . $method . ' in family ' . $key );

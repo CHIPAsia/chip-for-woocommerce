@@ -68,7 +68,7 @@ class Chip_Woocommerce_Payment_Blocks_Admin {
 		);
 
 		$families = array();
-		foreach ( Chip_Woocommerce_Payment_Blocks::families() as $key => $family ) {
+		foreach ( Chip_Woocommerce_Payment_Blocks::payment_families() as $key => $family ) {
 			$families[ $key ] = array(
 				'title'       => $family['title'],
 				'description' => $family['description'],
@@ -290,7 +290,7 @@ class Chip_Woocommerce_Payment_Blocks_Admin {
 		}
 
 		$blocks   = Chip_Woocommerce_Payment_Blocks::get_blocks();
-		$families = Chip_Woocommerce_Payment_Blocks::families();
+		$families = Chip_Woocommerce_Payment_Blocks::payment_families();
 		$labels   = Chip_Woocommerce_Gateway::payment_method_labels();
 		$standard = self::standard_gateways();
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only notice display.
