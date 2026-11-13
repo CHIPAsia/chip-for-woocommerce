@@ -4024,6 +4024,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function get_payment_method_list() {
+		return self::payment_method_labels();
+	}
+
+	/**
+	 * Payment method key => user-facing label.
+	 *
+	 * Static so configuration screens (the payment-block page) can render the
+	 * same labels the gateway uses, without constructing a gateway instance.
+	 * Labels must match the shared string list: "DuitNow QR", "Stablecoin",
+	 * "Touch 'n Go eWallet", "ShopeePay".
+	 *
+	 * @return array
+	 */
+	public static function payment_method_labels() {
 		return array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',

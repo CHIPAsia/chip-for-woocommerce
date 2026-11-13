@@ -1,0 +1,282 @@
+/**
+ * CHIP Payment Methods screen.
+ *
+ * Scoped to .chip-blocks so nothing here can leak into other admin screens.
+ * Colours and radii follow the WordPress admin palette (#2271b1 primary,
+ * #1d2327 text, #dcdcde borders, #f6f7f7 surfaces).
+ */
+
+.chip-blocks .chip-blocks__lede {
+	max-width: 860px;
+	color: #50575e;
+}
+
+.chip-blocks .chip-blocks__notice {
+	border-left: 4px solid #72aee6;
+	background: #fff;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 10px 14px;
+	margin: 12px 0 18px;
+	max-width: 1180px;
+}
+
+.chip-blocks .chip-blocks__table {
+	margin-top: 4px;
+}
+
+.chip-blocks .chip-blocks__col-title {
+	width: 26%;
+}
+
+.chip-blocks .chip-blocks__col-cred {
+	width: 14%;
+}
+
+.chip-blocks .chip-blocks__col-status {
+	width: 12%;
+}
+
+.chip-blocks .chip-blocks__col-actions {
+	width: 14%;
+}
+
+.chip-blocks .chip-blocks__meta {
+	color: #646970;
+	font-size: 12px;
+	margin-top: 2px;
+	display: block;
+}
+
+.chip-blocks .chip-blocks__badge {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 0 5px;
+	border: 1px solid #f0e2b0;
+	border-radius: 3px;
+	background: #fcf9e8;
+	color: #8a6d1f;
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.chip-blocks .chip-blocks__chip {
+	display: inline-block;
+	margin: 0 5px 4px 0;
+	padding: 1px 8px;
+	border: 1px solid #c5d9ea;
+	border-radius: 3px;
+	background: #eef4f9;
+	color: #0a4b78;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.chip-blocks .chip-blocks__chip.is-auto {
+	border-color: #dcdcde;
+	background: #f6f7f7;
+	color: #646970;
+}
+
+.chip-blocks .chip-blocks__state {
+	font-size: 12px;
+}
+
+.chip-blocks .chip-blocks__state.is-on,
+.chip-blocks .chip-blocks__state-button.is-on {
+	color: #1a7c31;
+}
+
+.chip-blocks .chip-blocks__state.is-off,
+.chip-blocks .chip-blocks__state-button.is-off {
+	color: #646970;
+}
+
+.chip-blocks .chip-blocks__inline-form {
+	display: inline-block;
+	margin: 0;
+}
+
+.chip-blocks .chip-blocks__actions .button-link {
+	margin-right: 10px;
+}
+
+/* Drawer */
+.chip-blocks .chip-blocks__scrim {
+	position: fixed;
+	top: 32px;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.35);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.18s ease;
+	z-index: 100040;
+}
+
+.chip-blocks .chip-blocks__scrim.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.chip-blocks .chip-blocks__drawer {
+	position: fixed;
+	top: 32px;
+	right: 0;
+	bottom: 0;
+	width: 520px;
+	max-width: 96vw;
+	background: #fff;
+	box-shadow: -4px 0 18px rgba(0, 0, 0, 0.18);
+	transform: translateX(100%);
+	transition: transform 0.22s ease;
+	z-index: 100050;
+	display: flex;
+	flex-direction: column;
+}
+
+.chip-blocks .chip-blocks__drawer.is-open {
+	transform: translateX(0);
+}
+
+.chip-blocks .chip-blocks__drawer form {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	margin: 0;
+}
+
+.chip-blocks .chip-blocks__drawer-head {
+	display: flex;
+	align-items: center;
+	padding: 14px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.chip-blocks .chip-blocks__drawer-head h2 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.chip-blocks .chip-blocks__drawer-close {
+	margin-left: auto;
+	border: 0;
+	background: none;
+	font-size: 22px;
+	line-height: 1;
+	color: #646970;
+	cursor: pointer;
+}
+
+.chip-blocks .chip-blocks__drawer-body {
+	padding: 16px 20px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.chip-blocks .chip-blocks__drawer-foot {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 20px;
+	border-top: 1px solid #dcdcde;
+	background: #f6f7f7;
+}
+
+.chip-blocks .chip-blocks__counter {
+	margin-right: auto;
+	font-size: 12px;
+	color: #646970;
+}
+
+.chip-blocks .chip-blocks__field {
+	margin-bottom: 18px;
+}
+
+.chip-blocks .chip-blocks__field > label,
+.chip-blocks .chip-blocks__label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.chip-blocks .chip-blocks__field input[type="text"],
+.chip-blocks .chip-blocks__field select {
+	width: 100%;
+	max-width: 100%;
+}
+
+.chip-blocks .chip-blocks__hint {
+	margin: 6px 0 0;
+	color: #646970;
+	font-size: 12px;
+}
+
+.chip-blocks .chip-blocks__methods {
+	display: none;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	background: #fff;
+}
+
+.chip-blocks .chip-blocks__methods.is-active {
+	display: block;
+}
+
+.chip-blocks .chip-blocks__method {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 8px 12px;
+	border-bottom: 1px solid #f0f0f1;
+	margin: 0;
+}
+
+.chip-blocks .chip-blocks__method:last-child {
+	border-bottom: 0;
+}
+
+.chip-blocks .chip-blocks__method:hover {
+	background: #f6f7fb;
+}
+
+.chip-blocks .chip-blocks__status {
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #00a32a;
+	background: #f6f7f7;
+	padding: 9px 12px;
+	font-size: 12px;
+	margin-bottom: 18px;
+}
+
+.chip-blocks .chip-blocks__status.is-warn {
+	border-left-color: #dba617;
+	background: #fcf9e8;
+}
+
+.chip-blocks .chip-blocks__preview {
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	padding: 10px 12px;
+	background: #fff;
+}
+
+.chip-blocks .chip-blocks__preview-row {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 6px 0;
+	font-size: 12px;
+}
+
+.chip-blocks .chip-blocks__preview-row.is-new {
+	font-weight: 600;
+}
+
+.chip-blocks .chip-blocks__preview-methods {
+	padding-left: 23px;
+	color: #646970;
+	font-size: 12px;
+}
