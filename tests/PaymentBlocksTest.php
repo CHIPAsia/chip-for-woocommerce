@@ -106,6 +106,137 @@ class PaymentBlocksTest extends GatewayTestCase {
 	}
 
 	/**
+	 * Every id test in the plugin goes through one helper: standard blocks
+	 * ("wc_gateway_chip*") and created blocks ("chip_block_*") are both CHIP.
+	 *
+	 * @return void
+	 */
+	public function test_is_chip_gateway_id_accepts_both_families() {
+		$this->assertTrue( Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( 'wc_gateway_chip' ) );
+		$this->assertTrue( Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( 'wc_gateway_chip_4' ) );
+		$this->assertTrue( Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( 'chip_block_ab12cd34' ) );
+		$this->assertFalse( Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( 'bacs' ) );
+		$this->assertFalse( Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( 'chip_block' ) );
+	}
+
+	/**
+	 * The credential source names the gateway the block inherits from, so the
+	 * settings screen can say so instead of showing empty fields.
+	 *
+	 * @return void
+	 */
+	public function test_credential_source_names_the_primary_gateway() {
+		update_option(
+			'woocommerce_wc_gateway_chip_settings',
+			array(
+				'brand_id'   => 'brand-12345678',
+				'secret_key' => 'secret',
+				'title'      => 'Online Banking (FPX)',
+			)
+		);
+
+		$source = Chip_Woocommerce_Payment_Blocks::credential_source();
+
+		$this->assertTrue( $source['found'] );
+		$this->assertSame( 'wc_gateway_chip', $source['gateway_id'] );
+		$this->assertSame( 'Online Banking (FPX)', $source['title'] );
+		$this->assertSame( 'brand-12345678', $source['brand_id'] );
+	}
+
+	/**
+	 * A block that does hold credentials can also be the source — that is how the
+	 * "Copy from Existing" list and the inheritance fallback stay consistent.
+	 *
+	 * @return void
+	 */
+	public function test_credential_source_falls_back_to_a_created_block() {
+		$id = $this->add_two_wallet_block();
+
+		$settings               = Chip_Woocommerce_Payment_Blocks::get_block_settings( $id );
+		$settings['brand_id']   = 'block-brand';
+		$settings['secret_key'] = 'block-secret';
+		$settings['title']      = 'GrabPay & Touch n Go';
+		update_option( Chip_Woocommerce_Payment_Blocks::settings_key( $id ), $settings );
+
+		$source = Chip_Woocommerce_Payment_Blocks::credential_source();
+
+		$this->assertTrue( $source['found'] );
+		$this->assertSame( Chip_Woocommerce_Payment_Blocks::gateway_id( $id ), $source['gateway_id'] );
+	}
+
+	/**
+	 * The block's settings screen explains where the credentials come from.
+	 *
+	 * @return void
+	 */
+	public function test_settings_screen_explains_inherited_credentials() {
+		update_option(
+			'woocommerce_wc_gateway_chip_settings',
+			array(
+				'brand_id'   => 'brand-12345678',
+				'secret_key' => 'secret',
+				'title'      => 'Online Banking (FPX)',
+			)
+		);
+
+		$id = $this->add_two_wallet_block();
+
+		$gateway = new Chip_Woocommerce_Gateway_Block(
+			array(
+				'id'     => $id,
+				'family' => 'ewallet',
+			)
+		);
+
+		$brand_note = $gateway->form_fields['brand_id']['description'];
+
+		$this->assertStringContainsString( 'inherited from', strtolower( $brand_note ) );
+		$this->assertStringContainsString( 'Online Banking (FPX)', $brand_note );
+		$this->assertStringContainsString( 'bran…78', $brand_note );
+	}
+
+	/**
+	 * A Buy Now Pay Later block forces the Atome redirect like the standard one,
+	 * even though its gateway id is chip_block_*.
+	 *
+	 * @return void
+	 */
+	public function test_bnpl_block_is_recognised_as_atome() {
+		$id = Chip_Woocommerce_Payment_Blocks::add_block( 'bnpl', array( 'methods' => array( 'razer_atome' ) ) );
+
+		$gateway = new Chip_Woocommerce_Gateway_Block(
+			array(
+				'id'     => $id,
+				'family' => 'bnpl',
+			)
+		);
+
+		$this->assertTrue( $this->callBlockMethod( $gateway, 'is_atome_gateway' ) );
+
+		$ewallet_id = $this->add_two_wallet_block();
+		$ewallet    = new Chip_Woocommerce_Gateway_Block(
+			array(
+				'id'     => $ewallet_id,
+				'family' => 'ewallet',
+			)
+		);
+		$this->assertFalse( $this->callBlockMethod( $ewallet, 'is_atome_gateway' ) );
+	}
+
+	/**
+	 * Created blocks join the list of CHIP gateways used for credential copy.
+	 *
+	 * @return void
+	 */
+	public function test_gateway_ids_include_created_blocks() {
+		$id  = $this->add_two_wallet_block();
+		$ids = Chip_Woocommerce_Payment_Blocks::gateway_ids();
+
+		$this->assertContains( 'wc_gateway_chip', $ids );
+		$this->assertContains( Chip_Woocommerce_Payment_Blocks::gateway_id( $id ), $ids );
+	}
+
+	/**
 	 * The admin title follows the block title, so a block is identifiable on
 	 * WooCommerce → Payments instead of duplicating the family label.
 	 *

@@ -67,6 +67,62 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 
 		$this->inherit_credentials();
 		$this->sync_admin_title();
+		$this->annotate_inherited_credentials();
+	}
+
+	/**
+	 * Whether this block is the Buy Now Pay Later (Atome) family.
+	 *
+	 * @return bool
+	 */
+	protected function is_atome_gateway() {
+		return 'bnpl' === $this->block_family;
+	}
+
+	/**
+	 * Say, on the block's settings screen, where its credentials come from.
+	 *
+	 * The fields are intentionally left empty: the block inherits the brand id
+	 * and secret key of the primary CHIP block at run time, so a merchant never
+	 * re-enters a secret per block. Empty fields with no explanation read as
+	 * "not configured", which is how a block gets reported as broken.
+	 *
+	 * @return void
+	 */
+	protected function annotate_inherited_credentials() {
+		if ( ! isset( $this->form_fields['brand_id'], $this->form_fields['secret_key'] ) ) {
+			return;
+		}
+
+		// Ask the stored settings, not the resolved properties: inheritance has
+		// already filled those in, and the point of this note is that the block
+		// itself holds nothing.
+		if ( '' !== (string) $this->get_option( 'brand_id' ) && '' !== (string) $this->get_option( 'secret_key' ) ) {
+			return;
+		}
+
+		$source = Chip_Woocommerce_Payment_Blocks::credential_source();
+
+		if ( $source['found'] ) {
+			$brand  = (string) $source['brand_id'];
+			$masked = strlen( $brand ) > 8
+				? substr( $brand, 0, 4 ) . '…' . substr( $brand, -2 )
+				: '••••';
+
+			$note = sprintf(
+				/* translators: %1$s: gateway the credentials come from, %2$s: masked brand id */
+				__( 'Currently inherited from <strong>%1$s</strong> (brand <code>%2$s</code>). Leave these fields empty to keep inheriting; fill them only to use a different CHIP brand for this block.', 'chip-for-woocommerce' ),
+				esc_html( $source['title'] ),
+				esc_html( $masked )
+			);
+		} else {
+			$note = __( 'No CHIP credentials found on this site yet. Enter the Brand ID and Secret Key here, or save them on another CHIP block and this block will inherit them.', 'chip-for-woocommerce' );
+		}
+
+		foreach ( array( 'brand_id', 'secret_key' ) as $key ) {
+			$existing                                 = isset( $this->form_fields[ $key ]['description'] ) ? $this->form_fields[ $key ]['description'] : '';
+			$this->form_fields[ $key ]['description'] = $note . ( '' !== $existing ? '<br><br>' . $existing : '' );
+		}
 	}
 
 	/**

@@ -3454,11 +3454,23 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @param string $url Base redirect URL.
 	 * @return string URL with the Atome redirect suffix, or the input URL unchanged.
 	 */
-	private function maybe_atome_redirect( $url ) {
-		if ( 'wc_gateway_chip_5' === $this->id ) {
+	protected function maybe_atome_redirect( $url ) {
+		if ( $this->is_atome_gateway() ) {
 			return $url . '?preferred=razer_atome&razer_bank_code=Atome';
 		}
 		return $url;
+	}
+
+	/**
+	 * Whether this gateway is an Atome (Buy Now Pay Later) block.
+	 *
+	 * Keyed on the behaviour rather than the gateway id: a clone created from the
+	 * Buy Now Pay Later family must force the same redirect as the standard one.
+	 *
+	 * @return bool
+	 */
+	protected function is_atome_gateway() {
+		return 'wc_gateway_chip_5' === $this->id;
 	}
 
 	/**
@@ -4601,14 +4613,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array Array of gateway_id => method_title pairs.
 	 */
 	protected function get_existing_api_configurations() {
-		$gateway_ids = array(
-			'wc_gateway_chip',
-			'wc_gateway_chip_2',
-			'wc_gateway_chip_3',
-			'wc_gateway_chip_4',
-			'wc_gateway_chip_5',
-			'wc_gateway_chip_6',
-		);
+		// Standard blocks plus any block the merchant created, so "Copy from
+		// Existing" offers every configured CHIP gateway.
+		$gateway_ids = Chip_Woocommerce_Payment_Blocks::gateway_ids();
 
 		$configurations = array();
 
@@ -4643,14 +4650,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array Array of gateway_id => array('brand_id' => '', 'secret_key' => '') pairs.
 	 */
 	protected function get_api_configuration_data() {
-		$gateway_ids = array(
-			'wc_gateway_chip',
-			'wc_gateway_chip_2',
-			'wc_gateway_chip_3',
-			'wc_gateway_chip_4',
-			'wc_gateway_chip_5',
-			'wc_gateway_chip_6',
-		);
+		$gateway_ids = Chip_Woocommerce_Payment_Blocks::gateway_ids();
 
 		$data = array();
 

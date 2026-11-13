@@ -185,9 +185,7 @@ class Chip_Woocommerce {
 		// fee from the block next to it. Missing the second prefix meant a created
 		// block silently charged nothing at checkout while the order-side fee was
 		// still applied at payment time.
-		$is_chip_gateway = 0 === strpos( $chosen, 'wc_gateway_chip' )
-			|| 0 === strpos( $chosen, Chip_Woocommerce_Payment_Blocks::GATEWAY_PREFIX );
-		if ( ! $is_chip_gateway ) {
+		if ( ! Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( $chosen ) ) {
 			return;
 		}
 

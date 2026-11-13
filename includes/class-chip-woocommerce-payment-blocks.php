@@ -179,6 +179,81 @@ class Chip_Woocommerce_Payment_Blocks {
 	}
 
 	/**
+	 * Is this a CHIP gateway id — a standard block or a created one?
+	 *
+	 * The plugin keys several behaviours off the gateway id (checkout fees,
+	 * capture/void availability, card post). Everything that used to test for the
+	 * "wc_gateway_chip" prefix goes through here, so a created block
+	 * ("chip_block_*") is never silently excluded.
+	 *
+	 * @param string $gateway_id Gateway id.
+	 * @return bool
+	 */
+	public static function is_chip_gateway_id( $gateway_id ) {
+		$gateway_id = (string) $gateway_id;
+
+		return 0 === strpos( $gateway_id, 'wc_gateway_chip' )
+			|| 0 === strpos( $gateway_id, self::GATEWAY_PREFIX );
+	}
+
+	/**
+	 * Every CHIP gateway id on this site: the standard six plus created blocks.
+	 *
+	 * @return array
+	 */
+	public static function gateway_ids() {
+		$ids = array(
+			self::PRIMARY_GATEWAY,
+			'wc_gateway_chip_2',
+			'wc_gateway_chip_3',
+			'wc_gateway_chip_4',
+			'wc_gateway_chip_5',
+			'wc_gateway_chip_6',
+		);
+
+		foreach ( self::get_blocks() as $block ) {
+			$ids[] = self::gateway_id( $block['id'] );
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Where a block's CHIP credentials come from, for display in the settings UI.
+	 *
+	 * @return array {
+	 *     @type string $gateway_id Gateway id supplying the credentials.
+	 *     @type string $title      Human label of that gateway.
+	 *     @type string $brand_id   Brand id it holds.
+	 *     @type bool   $found      Whether usable credentials were found at all.
+	 * }
+	 */
+	public static function credential_source() {
+		foreach ( self::gateway_ids() as $gateway_id ) {
+			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
+			if ( ! is_array( $settings ) || empty( $settings['brand_id'] ) || empty( $settings['secret_key'] ) ) {
+				continue;
+			}
+
+			$title = ! empty( $settings['title'] ) ? $settings['title'] : ( ! empty( $settings['method_title'] ) ? $settings['method_title'] : $gateway_id );
+
+			return array(
+				'gateway_id' => $gateway_id,
+				'title'      => $title,
+				'brand_id'   => (string) $settings['brand_id'],
+				'found'      => true,
+			);
+		}
+
+		return array(
+			'gateway_id' => '',
+			'title'      => '',
+			'brand_id'   => '',
+			'found'      => false,
+		);
+	}
+
+	/**
 	 * Settings option key for a block's gateway instance.
 	 *
 	 * @param string $id Block id.
@@ -393,25 +468,15 @@ class Chip_Woocommerce_Payment_Blocks {
 	 * @return array
 	 */
 	public static function credential_source_settings() {
-		$primary = get_option( 'woocommerce_' . self::PRIMARY_GATEWAY . '_settings', array() );
-		if ( is_array( $primary ) && ! empty( $primary['brand_id'] ) && ! empty( $primary['secret_key'] ) ) {
-			return $primary;
-		}
-
-		$gateway_ids = array(
-			self::PRIMARY_GATEWAY,
-			'wc_gateway_chip_2',
-			'wc_gateway_chip_3',
-			'wc_gateway_chip_4',
-			'wc_gateway_chip_5',
-			'wc_gateway_chip_6',
-		);
-		foreach ( $gateway_ids as $gateway_id ) {
-			$settings = get_option( 'woocommerce_' . $gateway_id . '_settings', array() );
-			if ( is_array( $settings ) && ! empty( $settings['brand_id'] ) && ! empty( $settings['secret_key'] ) ) {
+		$source = self::credential_source();
+		if ( $source['found'] ) {
+			$settings = get_option( 'woocommerce_' . $source['gateway_id'] . '_settings', array() );
+			if ( is_array( $settings ) ) {
 				return $settings;
 			}
 		}
+
+		$primary = get_option( 'woocommerce_' . self::PRIMARY_GATEWAY . '_settings', array() );
 
 		return is_array( $primary ) ? $primary : array();
 	}

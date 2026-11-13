@@ -147,7 +147,7 @@ class Chip_Woocommerce_Void_Payment {
 	 * @return bool
 	 */
 	private function is_chip_order( $order ) {
-		return 0 === strpos( $order->get_payment_method(), 'wc_gateway_chip' );
+		return Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( $order->get_payment_method() );
 	}
 
 	/**
@@ -303,8 +303,9 @@ class Chip_Woocommerce_Void_Payment {
 		// Get the payment method used for this order.
 		$payment_method = $order->get_payment_method();
 
-		// Verify this order uses a CHIP gateway.
-		if ( 0 !== strpos( $payment_method, 'wc_gateway_chip' ) ) {
+		// Verify this order uses a CHIP gateway (a standard block or one the
+		// merchant created — "chip_block_*").
+		if ( ! Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( $payment_method ) ) {
 			wp_send_json_error( array( 'message' => __( 'This order does not use CHIP payment gateway.', 'chip-for-woocommerce' ) ) );
 		}
 

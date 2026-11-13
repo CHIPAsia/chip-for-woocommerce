@@ -69,11 +69,16 @@ jQuery(($) => {
   // The set of CHIP gateway ids present in the DOM with a card form.
   var chipCardGatewayIds = function() {
     var ids = [];
-    $( 'li.wc_payment_method[class*="payment_method_wc_gateway_chip"]' ).each( function() {
+    // Standard blocks are "wc_gateway_chip*", created blocks are
+    // "chip_block_*" — the card form has to bind for both.
+    $( 'li.wc_payment_method[class*="payment_method_wc_gateway_chip"], li.wc_payment_method[class*="payment_method_chip_block_"]' ).each( function() {
       var classes = (this.className || '').split( /\s+/ );
       var methodId = '';
       for ( var i = 0; i < classes.length; i++ ) {
-        if ( classes[i].indexOf( 'payment_method_wc_gateway_chip' ) === 0 ) {
+        if (
+          classes[i].indexOf( 'payment_method_wc_gateway_chip' ) === 0 ||
+          classes[i].indexOf( 'payment_method_chip_block_' ) === 0
+        ) {
           methodId = classes[i].replace( 'payment_method_', '' );
           break;
         }
