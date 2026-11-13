@@ -66,6 +66,33 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 		parent::__construct();
 
 		$this->inherit_credentials();
+		$this->sync_admin_title();
+	}
+
+	/**
+	 * Keep the WooCommerce admin title in step with the block's checkout title.
+	 *
+	 * Blocks created before the titles were linked saved the family label as
+	 * their admin title, so two blocks of one family both read "CHIP E-Wallet"
+	 * on WooCommerce → Payments and the newer block looked missing. Only the
+	 * family default is rewritten, so a merchant who deliberately renamed the
+	 * admin title keeps it.
+	 *
+	 * @return void
+	 */
+	protected function sync_admin_title() {
+		$family = $this->block_family_definition();
+		$title  = $this->get_option( 'title' );
+
+		if ( empty( $family ) || empty( $title ) ) {
+			return;
+		}
+
+		$family_default = sprintf( 'CHIP %s', $family['label'] );
+
+		if ( $this->method_title === $family_default ) {
+			$this->method_title = sprintf( 'CHIP %s', $title );
+		}
 	}
 
 	/**

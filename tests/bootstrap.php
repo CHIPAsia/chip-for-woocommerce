@@ -318,6 +318,24 @@ if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		}
 
 		/**
+		 * Stub for WC_Payment_Gateway::get_method_title().
+		 *
+		 * @return string
+		 */
+		public function get_method_title() {
+			return isset( $this->method_title ) ? $this->method_title : '';
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::get_method_description().
+		 *
+		 * @return string
+		 */
+		public function get_method_description() {
+			return isset( $this->method_description ) ? $this->method_description : '';
+		}
+
+		/**
 		 * Stub for WC_Payment_Gateway::is_available().
 		 *
 		 * @return bool

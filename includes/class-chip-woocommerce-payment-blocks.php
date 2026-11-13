@@ -235,10 +235,16 @@ class Chip_Woocommerce_Payment_Blocks {
 		// a wallet from the block should not keep advertising it in the logo.
 		$default_logo = in_array( $family, array( 'ewallet', 'bnpl' ), true ) ? 'auto' : $family_def['logo'];
 
+		$title = isset( $args['title'] ) && '' !== trim( (string) $args['title'] ) ? (string) $args['title'] : $family_def['title'];
+
 		return array(
 			'enabled'                  => isset( $args['enabled'] ) && 'no' === $args['enabled'] ? 'no' : 'yes',
-			'title'                    => isset( $args['title'] ) && '' !== trim( (string) $args['title'] ) ? (string) $args['title'] : $family_def['title'],
-			'method_title'             => sprintf( 'CHIP %s', $family_def['label'] ),
+			'title'                    => $title,
+			// The admin title has to follow the block, not the family: two blocks
+			// from the same family both labelled "CHIP E-Wallet" are
+			// indistinguishable on WooCommerce → Payments, which is exactly where
+			// a merchant goes to enable or configure the block.
+			'method_title'             => sprintf( 'CHIP %s', $title ),
 			'description'              => isset( $args['description'] ) ? (string) $args['description'] : $family_def['description'],
 			'payment_method_whitelist' => $methods,
 			'display_logo'             => isset( $args['logo'] ) && '' !== $args['logo'] ? (string) $args['logo'] : $default_logo,
@@ -313,6 +319,12 @@ class Chip_Woocommerce_Payment_Blocks {
 			if ( isset( $args[ $key ] ) ) {
 				$settings[ $key ] = (string) $args[ $key ];
 			}
+		}
+		// Keep the admin title in step with the checkout title so the block stays
+		// findable on WooCommerce → Payments (two blocks of one family must not
+		// both read "CHIP E-Wallet").
+		if ( isset( $args['title'] ) && '' !== trim( (string) $args['title'] ) ) {
+			$settings['method_title'] = sprintf( 'CHIP %s', (string) $args['title'] );
 		}
 		if ( isset( $args['methods'] ) ) {
 			$methods = array_values( array_intersect( (array) $args['methods'], $family_def['methods'] ) );

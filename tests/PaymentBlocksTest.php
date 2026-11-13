@@ -106,6 +106,82 @@ class PaymentBlocksTest extends GatewayTestCase {
 	}
 
 	/**
+	 * The admin title follows the block title, so a block is identifiable on
+	 * WooCommerce → Payments instead of duplicating the family label.
+	 *
+	 * @return void
+	 */
+	public function test_admin_title_follows_block_title() {
+		$id = Chip_Woocommerce_Payment_Blocks::add_block(
+			'ewallet',
+			array(
+				'methods' => array( 'shopee_pay' ),
+				'title'   => 'ShopeePay',
+			)
+		);
+
+		$this->assertSame( 'CHIP ShopeePay', Chip_Woocommerce_Payment_Blocks::get_block_settings( $id )['method_title'] );
+	}
+
+	/**
+	 * A block saved before the titles were linked still shows its own name in
+	 * the admin list (in memory, without a write on every page load).
+	 *
+	 * @return void
+	 */
+	public function test_legacy_block_admin_title_is_rebased_on_its_title() {
+		$id = Chip_Woocommerce_Payment_Blocks::add_block(
+			'ewallet',
+			array(
+				'methods' => array( 'shopee_pay' ),
+				'title'   => 'ShopeePay & ShopeePay Later',
+			)
+		);
+
+		// Simulate a row written before this change: family label as admin title.
+		$settings                 = Chip_Woocommerce_Payment_Blocks::get_block_settings( $id );
+		$settings['method_title'] = 'CHIP E-Wallet';
+		update_option( Chip_Woocommerce_Payment_Blocks::settings_key( $id ), $settings );
+
+		$gateway = new Chip_Woocommerce_Gateway_Block(
+			array(
+				'id'     => $id,
+				'family' => 'ewallet',
+			)
+		);
+
+		$this->assertSame( 'CHIP ShopeePay & ShopeePay Later', $gateway->get_method_title() );
+	}
+
+	/**
+	 * A deliberately renamed admin title is left alone.
+	 *
+	 * @return void
+	 */
+	public function test_custom_admin_title_is_preserved() {
+		$id = Chip_Woocommerce_Payment_Blocks::add_block(
+			'ewallet',
+			array(
+				'methods' => array( 'shopee_pay' ),
+				'title'   => 'ShopeePay',
+			)
+		);
+
+		$settings                 = Chip_Woocommerce_Payment_Blocks::get_block_settings( $id );
+		$settings['method_title'] = 'CHIP Wallet — Shopee only';
+		update_option( Chip_Woocommerce_Payment_Blocks::settings_key( $id ), $settings );
+
+		$gateway = new Chip_Woocommerce_Gateway_Block(
+			array(
+				'id'     => $id,
+				'family' => 'ewallet',
+			)
+		);
+
+		$this->assertSame( 'CHIP Wallet — Shopee only', $gateway->get_method_title() );
+	}
+
+	/**
 	 * A selection with nothing from the family is refused instead of saved as
 	 * an empty whitelist (which CHIP reads as "allow everything").
 	 *
