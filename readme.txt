@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet, awisqirani, amirulazreen
 Tags: chip
 Requires at least: 6.3
 Tested up to: 7.1
-Stable tag: 2.1.5
+Stable tag: 2.1.6
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html

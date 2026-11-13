@@ -3,7 +3,10 @@ import { __ } from "@wordpress/i18n";
 import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
 
-const PAYMENT_METHOD_NAME = 'wc_gateway_chip_5';
+// The bundle is shared by every block created from this family, so the
+// gateway name is injected by PHP before this script runs (see
+// Chip_Woocommerce_Gateway_Blocks_Support::get_payment_method_script_handles()).
+const PAYMENT_METHOD_NAME = window.chipBlocksPaymentMethodName || 'wc_gateway_chip_5';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
 const defaultLabel = __("Atome", "chip-for-woocommerce");

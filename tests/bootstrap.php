@@ -198,11 +198,152 @@ if ( ! class_exists( 'WC_Order' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WC_HTTPS' ) ) {
+	/**
+	 * Minimal stub for WC_HTTPS.
+	 */
+	class WC_HTTPS {
+		/**
+		 * Stub for WC_HTTPS::force_https_url().
+		 *
+		 * @param string $url URL.
+		 * @return string
+		 */
+		public static function force_https_url( $url ) {
+			return $url;
+		}
+	}
+}
+
 if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 	/**
 	 * Minimal stub for WC_Payment_Gateway so gateway class can be loaded.
 	 */
 	class WC_Payment_Gateway {
+
+		/** @var string Gateway id. */
+		public $id = '';
+
+		/** @var string Gateway icon URL or HTML. */
+		public $icon = '';
+
+		/** @var array Features the gateway supports. */
+		public $supports = array();
+
+		/** @var bool Whether the gateway renders its own fields. */
+		public $has_fields = false;
+
+		/** @var string Checkout title. */
+		public $title = '';
+
+		/** @var string Admin method title. */
+		public $method_title = '';
+
+		/** @var string Admin method description. */
+		public $method_description = '';
+
+		/** @var string Whether the gateway is enabled ('yes'/'no'). */
+		public $enabled = 'no';
+
+		/** @var array Saved settings. */
+		public $settings = array();
+
+		/** @var array Settings form fields. */
+		public $form_fields = array();
+
+		/**
+		 * Stub for WC_Settings_API::init_settings().
+		 *
+		 * @return void
+		 */
+		public function init_settings() {
+			$settings       = get_option( $this->get_option_key(), array() );
+			$this->settings = is_array( $settings ) ? $settings : array();
+		}
+
+		/**
+		 * Stub for WC_Settings_API::get_option_key().
+		 *
+		 * @return string
+		 */
+		public function get_option_key() {
+			return 'woocommerce_' . $this->id . '_settings';
+		}
+
+		/**
+		 * Stub for WC_Settings_API::get_option().
+		 *
+		 * Mirrors WooCommerce: stored value first, then the form-field default
+		 * when one is non-empty, then the caller's fallback.
+		 *
+		 * @param string $key         Setting name.
+		 * @param mixed  $empty_value Fallback.
+		 * @return mixed
+		 */
+		public function get_option( $key, $empty_value = null ) {
+			if ( empty( $this->settings ) ) {
+				$this->init_settings();
+			}
+
+			if ( ! isset( $this->settings[ $key ] ) ) {
+				$form_fields = isset( $this->form_fields ) ? $this->form_fields : array();
+				if ( isset( $form_fields[ $key ]['default'] ) && ! empty( $form_fields[ $key ]['default'] ) ) {
+					return $form_fields[ $key ]['default'];
+				}
+				return $empty_value;
+			}
+
+			return $this->settings[ $key ];
+		}
+
+		/**
+		 * Stub for WC_Settings_API::update_option().
+		 *
+		 * @param string $key   Setting name.
+		 * @param mixed  $value Value.
+		 * @return bool
+		 */
+		public function update_option( $key, $value ) {
+			$this->settings[ $key ] = $value;
+			return update_option( $this->get_option_key(), $this->settings );
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::get_title().
+		 *
+		 * @return string
+		 */
+		public function get_title() {
+			return isset( $this->title ) ? $this->title : '';
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::get_method_title().
+		 *
+		 * @return string
+		 */
+		public function get_method_title() {
+			return isset( $this->method_title ) ? $this->method_title : '';
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::get_method_description().
+		 *
+		 * @return string
+		 */
+		public function get_method_description() {
+			return isset( $this->method_description ) ? $this->method_description : '';
+		}
+
+		/**
+		 * Stub for WC_Payment_Gateway::is_available().
+		 *
+		 * @return bool
+		 */
+		public function is_available() {
+			return isset( $this->enabled ) && 'yes' === $this->enabled;
+		}
+
 		/**
 		 * Stub for WC_Payment_Gateway::supports().
 		 *
@@ -1051,6 +1192,124 @@ if ( ! class_exists( 'WC_Data_Store' ) ) {
 				public function update_payment_token_ids( $order, $ids ) {}
 			};
 		}
+	}
+}
+
+/**
+ * Stub for update_option(). Options are kept in the in-memory store the
+ * get_option() stub reads, so a test can seed and assert real option writes.
+ *
+ * @param string $key   Option name.
+ * @param mixed  $value Option value.
+ * @return bool
+ */
+if ( ! function_exists( 'update_option' ) ) {
+	function update_option( $key, $value ) {
+		$GLOBALS['__chip_test_options'][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_option' ) ) {
+	/**
+	 * Stub for delete_option().
+	 *
+	 * @param string $key Option name.
+	 * @return bool
+	 */
+	function delete_option( $key ) {
+		unset( $GLOBALS['__chip_test_options'][ $key ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'sanitize_key' ) ) {
+	/**
+	 * Stub for sanitize_key().
+	 *
+	 * @param string $key Key.
+	 * @return string
+	 */
+	function sanitize_key( $key ) {
+		return strtolower( preg_replace( '/[^a-z0-9_\-]/', '', (string) $key ) );
+	}
+}
+
+if ( ! function_exists( 'esc_url' ) ) {
+	/**
+	 * Stub for esc_url().
+	 *
+	 * @param string $url URL.
+	 * @return string
+	 */
+	function esc_url( $url ) {
+		return $url;
+	}
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	/**
+	 * Stub for wp_strip_all_tags().
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function wp_strip_all_tags( $text ) {
+		return strip_tags( (string) $text );
+	}
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	/**
+	 * Stub for wp_json_encode().
+	 *
+	 * @param mixed $data Data.
+	 * @return string
+	 */
+	function wp_json_encode( $data ) {
+		return json_encode( $data );
+	}
+}
+
+if ( ! function_exists( 'wp_add_inline_script' ) ) {
+	/**
+	 * Stub for wp_add_inline_script().
+	 *
+	 * Records the inline payload so a test can assert what is printed before a
+	 * script handle runs.
+	 *
+	 * @param string $handle   Script handle.
+	 * @param string $data     Inline script.
+	 * @param string $position 'before' or 'after'.
+	 * @return bool
+	 */
+	function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+		$GLOBALS['__chip_test_inline_scripts'][ $handle ][ $position ][] = $data;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'admin_url' ) ) {
+	/**
+	 * Stub for admin_url().
+	 *
+	 * @param string $path Path relative to wp-admin.
+	 * @return string
+	 */
+	function admin_url( $path = '' ) {
+		return 'http://example.com/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'plugins_url' ) ) {
+	/**
+	 * Stub for plugins_url().
+	 *
+	 * @param string $path Path relative to the plugin.
+	 * @return string
+	 */
+	function plugins_url( $path = '' ) {
+		return 'http://example.com/wp-content/plugins/chip-for-woocommerce/' . ltrim( (string) $path, '/' );
 	}
 }
 

@@ -56,6 +56,8 @@ class Chip_Woocommerce {
 		include $includes_dir . 'class-chip-woocommerce-api-fpx.php';
 		include $includes_dir . 'class-chip-woocommerce-logger.php';
 		include $includes_dir . 'class-chip-woocommerce-gateway.php';
+		include $includes_dir . 'class-chip-woocommerce-payment-blocks.php';
+		include $includes_dir . 'class-chip-woocommerce-gateway-block.php';
 		include $includes_dir . 'class-chip-woocommerce-queue.php';
 
 		if ( ! defined( 'CHIP_WOOCOMMERCE_DISABLE_GATEWAY_CLONES' ) ) {
@@ -73,6 +75,8 @@ class Chip_Woocommerce {
 			include $includes_dir . 'class-chip-woocommerce-capture-payment.php';
 			include $includes_dir . 'class-chip-woocommerce-payment-details.php';
 			include $includes_dir . 'class-chip-woocommerce-admin-token.php';
+			include $includes_dir . 'class-chip-woocommerce-payment-blocks-admin.php';
+			Chip_Woocommerce_Payment_Blocks_Admin::init();
 		}
 	}
 
@@ -171,7 +175,17 @@ class Chip_Woocommerce {
 		}
 
 		$chosen = WC()->session ? WC()->session->get( 'chosen_payment_method' ) : '';
-		if ( empty( $chosen ) || 0 !== strpos( $chosen, 'wc_gateway_chip' ) ) {
+		if ( empty( $chosen ) ) {
+			return;
+		}
+
+		// CHIP gateway ids: the six standard gateways (wc_gateway_chip*) plus the
+		// blocks a merchant created (chip_block_*). Both carry their own
+		// additional-charges settings, so a created block can charge a different
+		// fee from the block next to it. Missing the second prefix meant a created
+		// block silently charged nothing at checkout while the order-side fee was
+		// still applied at payment time.
+		if ( ! Chip_Woocommerce_Payment_Blocks::is_chip_gateway_id( $chosen ) ) {
 			return;
 		}
 
@@ -427,6 +441,14 @@ class Chip_Woocommerce {
 			$methods[] = Chip_Woocommerce_Gateway_6::class;
 		}
 
+		// Merchant-created blocks (WooCommerce → CHIP Payment Methods). Added
+		// as instantiated objects rather than class names because one class
+		// backs every block; WooCommerce only constructs a gateway when the
+		// entry is a string, so an object is kept as-is.
+		foreach ( Chip_Woocommerce_Payment_Blocks::get_blocks() as $block ) {
+			$methods[] = new Chip_Woocommerce_Gateway_Block( $block );
+		}
+
 		return $methods;
 	}
 
@@ -481,6 +503,7 @@ class Chip_Woocommerce {
 			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-4-blocks-support.php';
 			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-5-blocks-support.php';
 			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-6-blocks-support.php';
+			include plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'includes/blocks/class-chip-woocommerce-gateway-block-blocks-support.php';
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
 				function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
@@ -490,6 +513,19 @@ class Chip_Woocommerce {
 					$payment_method_registry->register( new Chip_Woocommerce_Gateway_4_Blocks_Support() );
 					$payment_method_registry->register( new Chip_Woocommerce_Gateway_5_Blocks_Support() );
 					$payment_method_registry->register( new Chip_Woocommerce_Gateway_6_Blocks_Support() );
+
+					// One support type per created block, reusing its family's
+					// built Blocks asset. Without this the block would render on
+					// the classic checkout only and silently miss Blocks.
+					foreach ( Chip_Woocommerce_Payment_Blocks::get_blocks() as $block ) {
+						$family = Chip_Woocommerce_Payment_Blocks::payment_family( $block['family'] );
+						$payment_method_registry->register(
+							new Chip_Woocommerce_Gateway_Block_Blocks_Support(
+								Chip_Woocommerce_Payment_Blocks::gateway_id( $block['id'] ),
+								$family['script']
+							)
+						);
+					}
 				}
 			);
 		}
