@@ -175,7 +175,19 @@ class Chip_Woocommerce {
 		}
 
 		$chosen = WC()->session ? WC()->session->get( 'chosen_payment_method' ) : '';
-		if ( empty( $chosen ) || 0 !== strpos( $chosen, 'wc_gateway_chip' ) ) {
+		if ( empty( $chosen ) ) {
+			return;
+		}
+
+		// CHIP gateway ids: the six standard gateways (wc_gateway_chip*) plus the
+		// blocks a merchant created (chip_block_*). Both carry their own
+		// additional-charges settings, so a created block can charge a different
+		// fee from the block next to it. Missing the second prefix meant a created
+		// block silently charged nothing at checkout while the order-side fee was
+		// still applied at payment time.
+		$is_chip_gateway = 0 === strpos( $chosen, 'wc_gateway_chip' )
+			|| 0 === strpos( $chosen, Chip_Woocommerce_Payment_Blocks::GATEWAY_PREFIX );
+		if ( ! $is_chip_gateway ) {
 			return;
 		}
 
