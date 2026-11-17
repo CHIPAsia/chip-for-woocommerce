@@ -62,6 +62,11 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 == Changelog ==
 
+= 2.1.6 2026-11-17 =
+* Added - Payment methods screen under WooCommerce → CHIP Payment Methods, where a merchant can split one payment family into several checkout blocks (for example GrabPay + Touch 'n Go eWallet in one block, ShopeePay in another). Each block sends only its own methods to CHIP and inherits the site's brand ID and secret key; the six standard blocks and their saved settings are unchanged.
+* Fixed - Merchant-created blocks now charge their own additional charges, can be captured and voided, redirect BNPL to Atome, submit the card form, appear on the Blocks checkout and carry their own admin title.
+* Fixed - A single-method block is preselected on the Blocks checkout instead of showing an empty dropdown, and a gateway rejection is shown as a readable sentence rather than a raw response array.
+
 = 2.1.5 2026-10-12 =
 * Fixed - The payment method logo now stays visible in the dropdown after a method is chosen. Previously the logo was only shown while the list was open, so the selected method (Stablecoin, DuitNow QR, Card, FPX or an e-wallet) appeared as plain text once picked.
 
