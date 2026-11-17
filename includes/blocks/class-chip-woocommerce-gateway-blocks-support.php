@@ -80,6 +80,15 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			);
 		$script_url        = CHIP_WOOCOMMERCE_URL . $script_path;
 
+		// Version by file mtime, not only by the asset.php hash: a rebuild that
+		// keeps the plugin version constant (hotfix, same-version repackage)
+		// would otherwise re-request the exact same ?ver= URL and a CDN can keep
+		// serving the previous bundle. The classic checkout scripts already do
+		// this for the same reason.
+		$script_ver = file_exists( plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . $script_path )
+			? (string) filemtime( plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . $script_path )
+			: $script_asset['version'];
+
 		// The clone bundles `import UnifiedPaymentMethodList from
 		// 'chip/unified-payment-method-list'`, which webpack resolves to
 		// `window.chip.UnifiedPaymentMethodList`. The shared bundle exposes
@@ -101,7 +110,9 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			'chip-unified-payment-method-list',
 			$shared_script_url,
 			$shared_script_asset['dependencies'],
-			$shared_script_asset['version'],
+			file_exists( plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . $shared_script_path )
+				? (string) filemtime( plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . $shared_script_path )
+				: $shared_script_asset['version'],
 			true
 		);
 
@@ -114,7 +125,7 @@ class Chip_Woocommerce_Gateway_Blocks_Support extends AbstractPaymentMethodType 
 			"wc-{$this->name}-blocks",
 			$script_url,
 			$clone_dependencies,
-			$script_asset['version'],
+			$script_ver,
 			true
 		);
 

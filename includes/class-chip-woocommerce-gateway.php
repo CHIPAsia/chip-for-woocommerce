@@ -790,6 +790,59 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Turn a CHIP validation payload into a message a shopper can actually read.
+	 *
+	 * The API answers validation problems with a field => list of
+	 * `array( 'message' => '...' )` entries. Printing that array straight into a
+	 * checkout notice shows the shopper a raw `Array ( ... )` dump, so flatten it
+	 * to plain sentences instead. The untouched payload stays in the order log.
+	 *
+	 * @param mixed $payload Error payload returned by the API.
+	 * @return string
+	 */
+	private function describe_payment_error( $payload ) {
+		$messages = array();
+
+		if ( is_array( $payload ) ) {
+			foreach ( $payload as $field => $entries ) {
+				if ( ! is_array( $entries ) ) {
+					if ( is_string( $entries ) && '' !== trim( $entries ) ) {
+						$messages[] = trim( $entries );
+					}
+					continue;
+				}
+
+				foreach ( $entries as $entry ) {
+					$message = '';
+					if ( is_array( $entry ) && isset( $entry['message'] ) ) {
+						$message = (string) $entry['message'];
+					} elseif ( is_string( $entry ) ) {
+						$message = $entry;
+					}
+
+					$message = trim( $message );
+					if ( '' === $message ) {
+						continue;
+					}
+
+					// '__all__' is not a real field: show the sentence alone.
+					$messages[] = '__all__' === $field ? $message : sprintf( '%s: %s', $field, $message );
+				}
+			}
+		}
+
+		if ( empty( $messages ) ) {
+			return __( 'Your payment could not be created. Please try again or contact the store owner.', 'chip-for-woocommerce' );
+		}
+
+		return sprintf(
+			/* translators: %s: one or more messages from the payment gateway. */
+			__( 'Your payment could not be created. %s', 'chip-for-woocommerce' ),
+			implode( ' ', array_unique( $messages ) )
+		);
+	}
+
+	/**
 	 * Handle callback from CHIP.
 	 *
 	 * @return void
@@ -2049,7 +2102,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					wc_add_notice( 'Amount: ' . $params['purchase']['currency'] . ' ' . number_format( $params['purchase']['total_override'] / 100, 2 ), 'error' );
 				}
 			} else {
-				wc_add_notice( wc_print_r( $payment, true ), 'error' );
+				wc_add_notice( $this->describe_payment_error( $payment ), 'error' );
 			}
 			$this->log_order_info( 'create payment failed. message: ' . wc_print_r( $payment, true ), $order );
 			return array(
