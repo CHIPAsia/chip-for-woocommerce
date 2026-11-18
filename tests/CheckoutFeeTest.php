@@ -169,4 +169,72 @@ class CheckoutFeeTest extends \PHPUnit\Framework\TestCase {
 
 		$this->assertCount( 2, $cart->fees );
 	}
+
+	/**
+	 * A created block ("chip_block_*") charges its own fee.
+	 *
+	 * The checkout fee used to be gated on the "wc_gateway_chip" id prefix, so a
+	 * block created from the Payment Methods screen charged nothing at checkout
+	 * while its order-side fee was still applied at payment time — the customer
+	 * saw one total and the order carried another.
+	 *
+	 * @return void
+	 */
+	public function test_fee_applied_for_created_block() {
+		$GLOBALS['__chip_test_chosen_payment_method'] = 'chip_block_ab12cd34';
+		$GLOBALS['__chip_test_payment_gateways']      = array(
+			'chip_block_ab12cd34' => new Chip_Test_Fee_Gateway(
+				array(
+					'enable_additional_charges' => 'yes',
+					'fixed_charges'             => 150,
+					'percent_charges'           => 0,
+				)
+			),
+		);
+		$cart        = new Chip_Test_Cart();
+		$cart->total = 45.00;
+
+		Chip_Woocommerce::get_instance()->add_checkout_fee( $cart );
+
+		$this->assertCount( 1, $cart->fees );
+		$this->assertSame( 'Fixed Processing Fee', $cart->fees[0]['name'] );
+		$this->assertEquals( 1.5, $cart->fees[0]['amount'] );
+	}
+
+	/**
+	 * Two blocks can charge different fees: the fee follows the chosen block,
+	 * not a global setting.
+	 *
+	 * @return void
+	 */
+	public function test_each_block_charges_its_own_fee() {
+		$GLOBALS['__chip_test_payment_gateways'] = array(
+			'chip_block_grab' => new Chip_Test_Fee_Gateway(
+				array(
+					'enable_additional_charges' => 'yes',
+					'fixed_charges'             => 100,
+					'percent_charges'           => 0,
+				)
+			),
+			'chip_block_shopee' => new Chip_Test_Fee_Gateway(
+				array(
+					'enable_additional_charges' => 'yes',
+					'fixed_charges'             => 250,
+					'percent_charges'           => 0,
+				)
+			),
+		);
+
+		$GLOBALS['__chip_test_chosen_payment_method'] = 'chip_block_grab';
+		$cart                                          = new Chip_Test_Cart();
+		$cart->total                                   = 45.00;
+		Chip_Woocommerce::get_instance()->add_checkout_fee( $cart );
+		$this->assertEquals( 1.0, $cart->fees[0]['amount'] );
+
+		$GLOBALS['__chip_test_chosen_payment_method'] = 'chip_block_shopee';
+		$cart                                          = new Chip_Test_Cart();
+		$cart->total                                   = 45.00;
+		Chip_Woocommerce::get_instance()->add_checkout_fee( $cart );
+		$this->assertEquals( 2.5, $cart->fees[0]['amount'] );
+	}
 }

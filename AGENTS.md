@@ -52,6 +52,30 @@ The Razer e-wallet switch's `case 'duitnow-qr':` branch in `bypass_chip()` and t
 
 Gateway 6 (the DuitNow QR-only clone) defaults `payment_method_whitelist = ['duitnow_qr']` via its preset; the constructor expands it to the full group at load time.
 
+### Merchant-created payment blocks
+
+`Chip_Woocommerce_Payment_Blocks` (registry) + `Chip_Woocommerce_Gateway_Block` (one gateway
+instance per block) let a merchant split one payment family into several checkout rows — e.g.
+GrabPay + Touch 'n Go in one block and ShopeePay in another.
+
+- The registry option `chip_woocommerce_payment_blocks` stores **identity only** (`id`, `family`).
+  Title, description, `payment_method_whitelist`, logo and `enabled` live in the block's own
+  `woocommerce_chip_block_<id>_settings` option, i.e. the same row WooCommerce's standard gateway
+  settings screen edits. Do not add a second copy of those fields.
+- Blocks are registered through `woocommerce_payment_gateways` as **instantiated objects** (WooCommerce
+  only constructs a gateway when the entry is a string) and each one needs its own
+  `Chip_Woocommerce_Gateway_Block_Blocks_Support` registration, or it renders on the classic checkout
+  only and silently misses the Blocks checkout.
+- `default_settings()` writes a complete settings row at creation time. A block created without one
+  would have an empty whitelist, which CHIP reads as *allow every method*.
+- Credentials are inherited from `woocommerce_wc_gateway_chip_settings` (falling back to the first
+  CHIP gateway that has them) so a new block never asks for the secret key again.
+- A block holding a single e-wallet renders a hidden `chip_payment_method_<gateway id>` input with a
+  `razer:<DisplayCode>` value instead of a one-option dropdown.
+- Admin screen: `Chip_Woocommerce_Payment_Blocks_Admin`, assets in
+  `assets/css/chip-payment-blocks-admin.css` and `assets/js/chip-payment-blocks-admin.js` (plain
+  files, not part of the webpack build).
+
 ### External callbacks (CHIP → WordPress)
 CHIP sends payment results to `WC()->api_request_url( $this->id )`, which produces URLs like `https://store.com/wc-api/wc_gateway_chip/?id=123`. WooCommerce fires `do_action( 'woocommerce_api_wc_gateway_chip' )`, routed to `Chip_Woocommerce_Gateway::handle_callback()`. This is the legacy REST API stub kept in WooCommerce core specifically for payment gateway callbacks.
 

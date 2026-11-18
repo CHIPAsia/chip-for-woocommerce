@@ -5,7 +5,10 @@ import { decodeEntities } from "@wordpress/html-entities";
 import { getSetting } from "@woocommerce/settings";
 import { useState, useEffect, useCallback } from "@wordpress/element";
 
-const PAYMENT_METHOD_NAME = 'wc_gateway_chip_2';
+// The bundle is shared by every block created from this family, so the
+// gateway name is injected by PHP before this script runs (see
+// Chip_Woocommerce_Gateway_Blocks_Support::get_payment_method_script_handles()).
+const PAYMENT_METHOD_NAME = window.chipBlocksPaymentMethodName || 'wc_gateway_chip_2';
 const settings = getSetting( PAYMENT_METHOD_NAME + '_data', {} );
 
 // Add card form styles to match WooCommerce Blocks styling.

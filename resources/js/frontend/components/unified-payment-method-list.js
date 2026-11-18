@@ -66,6 +66,17 @@ const UnifiedPaymentMethodList = ( props ) => {
                     disabled: unavailable.indexOf( tag ) !== -1,
                 } ) );
                 setOptions( entries );
+
+                // A block limited to a single payment method has nothing to
+                // choose: preselect it. Classic checkout submits such blocks
+                // directly, so forcing an extra pick here would be a step the
+                // shopper never asked for (and an empty select blocks Place
+                // Order with "Please choose a payment method").
+                const selectable = entries.filter( ( entry ) => ! entry.disabled );
+                if ( selectable.length === 1 ) {
+                    setValue( selectable[ 0 ].value );
+                }
+
                 setLoading( false );
             } )
             .catch( ( err ) => {

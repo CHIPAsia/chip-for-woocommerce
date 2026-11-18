@@ -790,6 +790,59 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Turn a CHIP validation payload into a message a shopper can actually read.
+	 *
+	 * The API answers validation problems with a field => list of
+	 * `array( 'message' => '...' )` entries. Printing that array straight into a
+	 * checkout notice shows the shopper a raw `Array ( ... )` dump, so flatten it
+	 * to plain sentences instead. The untouched payload stays in the order log.
+	 *
+	 * @param mixed $payload Error payload returned by the API.
+	 * @return string
+	 */
+	private function describe_payment_error( $payload ) {
+		$messages = array();
+
+		if ( is_array( $payload ) ) {
+			foreach ( $payload as $field => $entries ) {
+				if ( ! is_array( $entries ) ) {
+					if ( is_string( $entries ) && '' !== trim( $entries ) ) {
+						$messages[] = trim( $entries );
+					}
+					continue;
+				}
+
+				foreach ( $entries as $entry ) {
+					$message = '';
+					if ( is_array( $entry ) && isset( $entry['message'] ) ) {
+						$message = (string) $entry['message'];
+					} elseif ( is_string( $entry ) ) {
+						$message = $entry;
+					}
+
+					$message = trim( $message );
+					if ( '' === $message ) {
+						continue;
+					}
+
+					// '__all__' is not a real field: show the sentence alone.
+					$messages[] = '__all__' === $field ? $message : sprintf( '%s: %s', $field, $message );
+				}
+			}
+		}
+
+		if ( empty( $messages ) ) {
+			return __( 'Your payment could not be created. Please try again or contact the store owner.', 'chip-for-woocommerce' );
+		}
+
+		return sprintf(
+			/* translators: %s: one or more messages from the payment gateway. */
+			__( 'Your payment could not be created. %s', 'chip-for-woocommerce' ),
+			implode( ' ', array_unique( $messages ) )
+		);
+	}
+
+	/**
 	 * Handle callback from CHIP.
 	 *
 	 * @return void
@@ -2049,7 +2102,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					wc_add_notice( 'Amount: ' . $params['purchase']['currency'] . ' ' . number_format( $params['purchase']['total_override'] / 100, 2 ), 'error' );
 				}
 			} else {
-				wc_add_notice( wc_print_r( $payment, true ), 'error' );
+				wc_add_notice( $this->describe_payment_error( $payment ), 'error' );
 			}
 			$this->log_order_info( 'create payment failed. message: ' . wc_print_r( $payment, true ), $order );
 			return array(
@@ -3454,11 +3507,23 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @param string $url Base redirect URL.
 	 * @return string URL with the Atome redirect suffix, or the input URL unchanged.
 	 */
-	private function maybe_atome_redirect( $url ) {
-		if ( 'wc_gateway_chip_5' === $this->id ) {
+	protected function maybe_atome_redirect( $url ) {
+		if ( $this->is_atome_gateway() ) {
 			return $url . '?preferred=razer_atome&razer_bank_code=Atome';
 		}
 		return $url;
+	}
+
+	/**
+	 * Whether this gateway is an Atome (Buy Now Pay Later) block.
+	 *
+	 * Keyed on the behaviour rather than the gateway id: a clone created from the
+	 * Buy Now Pay Later family must force the same redirect as the standard one.
+	 *
+	 * @return bool
+	 */
+	protected function is_atome_gateway() {
+		return 'wc_gateway_chip_5' === $this->id;
 	}
 
 	/**
@@ -4024,6 +4089,20 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function get_payment_method_list() {
+		return self::payment_method_labels();
+	}
+
+	/**
+	 * Payment method key => user-facing label.
+	 *
+	 * Static so configuration screens (the payment-block page) can render the
+	 * same labels the gateway uses, without constructing a gateway instance.
+	 * Labels must match the shared string list: "DuitNow QR", "Stablecoin",
+	 * "Touch 'n Go eWallet", "ShopeePay".
+	 *
+	 * @return array
+	 */
+	public static function payment_method_labels() {
 		return array(
 			'fpx'             => 'FPX',
 			'fpx_b2b1'        => 'FPX B2B1',
@@ -4587,14 +4666,9 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array Array of gateway_id => method_title pairs.
 	 */
 	protected function get_existing_api_configurations() {
-		$gateway_ids = array(
-			'wc_gateway_chip',
-			'wc_gateway_chip_2',
-			'wc_gateway_chip_3',
-			'wc_gateway_chip_4',
-			'wc_gateway_chip_5',
-			'wc_gateway_chip_6',
-		);
+		// Standard blocks plus any block the merchant created, so "Copy from
+		// Existing" offers every configured CHIP gateway.
+		$gateway_ids = Chip_Woocommerce_Payment_Blocks::gateway_ids();
 
 		$configurations = array();
 
@@ -4629,14 +4703,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return array Array of gateway_id => array('brand_id' => '', 'secret_key' => '') pairs.
 	 */
 	protected function get_api_configuration_data() {
-		$gateway_ids = array(
-			'wc_gateway_chip',
-			'wc_gateway_chip_2',
-			'wc_gateway_chip_3',
-			'wc_gateway_chip_4',
-			'wc_gateway_chip_5',
-			'wc_gateway_chip_6',
-		);
+		$gateway_ids = Chip_Woocommerce_Payment_Blocks::gateway_ids();
 
 		$data = array();
 
