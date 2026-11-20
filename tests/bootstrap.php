@@ -242,6 +242,9 @@ if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		/** @var string Admin method description. */
 		public $method_description = '';
 
+		/** @var string Checkout description shown under the payment method. */
+		public $description = '';
+
 		/** @var string Whether the gateway is enabled ('yes'/'no'). */
 		public $enabled = 'no';
 
