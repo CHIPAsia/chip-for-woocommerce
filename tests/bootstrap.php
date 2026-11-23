@@ -173,10 +173,10 @@ if ( ! class_exists( 'WC_Order' ) ) {
 		public function get_id() { return 0; }
 		public function get_total() { return $GLOBALS['__chip_test_order_total'] ?? 0.0; }
 		public function get_currency() { return $GLOBALS['__chip_test_order_currency'] ?? 'MYR'; }
-		public function get_billing_email() { return ''; }
-		public function get_billing_phone() { return ''; }
-		public function get_billing_first_name() { return ''; }
-		public function get_billing_last_name() { return ''; }
+		public function get_billing_email() { return $GLOBALS['__chip_test_order_billing']['email'] ?? ''; }
+		public function get_billing_phone() { return $GLOBALS['__chip_test_order_billing']['phone'] ?? ''; }
+		public function get_billing_first_name() { return $GLOBALS['__chip_test_order_billing']['first_name'] ?? ''; }
+		public function get_billing_last_name() { return $GLOBALS['__chip_test_order_billing']['last_name'] ?? ''; }
 		public function get_billing_address_1() { return ''; }
 		public function get_billing_address_2() { return ''; }
 		public function get_billing_country() { return ''; }

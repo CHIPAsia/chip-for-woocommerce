@@ -1,5 +1,9 @@
 == Changelog ==
 
+= 2.1.7 2026-11-23 =
+* Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer details the order is missing — the mobile number above all — instead of creating a purchase without them. The BNPL provider requires the buyer's mobile number, and WooCommerce does not require a billing phone: without one the payer reached a payment page that never moved on and the purchase expired hours later with no money moved. Only the details that are actually missing are requested from the payer, so nobody is asked for a value they already entered, and the number they enter is the one sent to the provider.
+* Changed - The request for buyer details applies to Buy Now Pay Later purchases only. Card, FPX, DuitNow QR, e-wallet and Stablecoin purchases send exactly the same request as before.
+
 = 2.1.6 2026-11-17 =
 * Added - Payment methods screen under WooCommerce → CHIP Payment Methods. A merchant can create additional payment blocks from a payment family, so one family can be split into several checkout blocks — for example GrabPay + Touch 'n Go eWallet in one block and ShopeePay in another. Each block offers only the methods selected for it, sends exactly those to CHIP as the payment-method whitelist, inherits the site's brand ID and secret key, and submits a single e-wallet directly instead of showing a one-option dropdown. The six standard blocks and their saved settings are unchanged; a site that never opens the screen behaves exactly as before.
 * Fixed - A merchant-created block now charges the additional charges configured on that block. Previously the checkout fee only ran for the six standard gateway ids, so the customer total and the order total disagreed once a fee was set.
