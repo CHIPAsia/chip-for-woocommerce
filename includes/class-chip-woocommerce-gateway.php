@@ -2037,6 +2037,18 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$params['client']['email'] = $this->email_fallback;
 		}
 
+		// A Buy Now Pay Later purchase carries the buyer's full name and mobile
+		// number to the provider, and the provider requires both. Ask the CHIP
+		// payment page to collect whichever of the two this order leaves empty,
+		// so the payer supplies their mobile number instead of the purchase
+		// being created without it. Scoped to BNPL on purpose: a non-empty
+		// request_client_details makes CHIP return a null direct_post_url, which
+		// breaks the card direct-post flow.
+		$request_client_details = $this->request_client_details_for_bnpl( $order );
+		if ( ! empty( $request_client_details ) ) {
+			$params['request_client_details'] = $request_client_details;
+		}
+
 		// Start of logic for WooCommerce Pre-orders.
 		if ( $this->order_contains_pre_order( $order ) && $this->order_requires_payment_tokenization( $order ) ) {
 
@@ -3524,6 +3536,131 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 */
 	protected function is_atome_gateway() {
 		return 'wc_gateway_chip_5' === $this->id;
+	}
+
+	/**
+	 * Payment methods that belong to the Buy Now Pay Later family.
+	 *
+	 * Taken from the family registry rather than hardcoded, so a second BNPL
+	 * provider added to the family is covered without touching this guard.
+	 *
+	 * @return array
+	 */
+	protected function bnpl_payment_methods() {
+		$family = Chip_Woocommerce_Payment_Blocks::payment_family( 'bnpl' );
+
+		return isset( $family['methods'] ) && is_array( $family['methods'] )
+			? $family['methods']
+			: array( 'razer_atome' );
+	}
+
+	/**
+	 * Whether a unified-dropdown selection resolves to a Buy Now Pay Later method.
+	 *
+	 * The dropdown posts tag-encoded values ('razer:Atome', 'fpx:MB2U0227',
+	 * 'dnqr'), so compare both the raw method key and its user-facing label.
+	 *
+	 * @param string $selection    Posted selection.
+	 * @param array  $bnpl_methods BNPL method keys.
+	 * @return bool
+	 */
+	protected function selection_is_bnpl( $selection, array $bnpl_methods ) {
+		$parts  = explode( ':', (string) $selection );
+		$value  = end( $parts );
+		$labels = self::payment_method_labels();
+
+		foreach ( $bnpl_methods as $method ) {
+			if ( $value === $method ) {
+				return true;
+			}
+			if ( isset( $labels[ $method ] ) && $value === $labels[ $method ] ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether this checkout is about to submit a Buy Now Pay Later payment.
+	 *
+	 * True when the gateway itself is the BNPL block (the standard one or a
+	 * merchant-created one), when the shopper picked a BNPL method from the
+	 * unified dropdown, or when the whitelist leaves nothing but BNPL methods
+	 * to submit. A whitelist that also offers other methods is not BNPL
+	 * unless the shopper selected one.
+	 *
+	 * @return bool
+	 */
+	protected function is_bnpl_payment() {
+		if ( $this->is_atome_gateway() ) {
+			return true;
+		}
+
+		$bnpl_methods = $this->bnpl_payment_methods();
+		$selection    = $this->get_posted_payment_method();
+
+		if ( '' !== $selection ) {
+			return $this->selection_is_bnpl( $selection, $bnpl_methods );
+		}
+
+		$whitelist = is_array( $this->payment_method_whitelist ) ? $this->payment_method_whitelist : array();
+
+		// An empty whitelist means "let CHIP offer everything": the shopper
+		// picks a method on the CHIP payment page, so what this checkout will
+		// submit is not known here and must not be blocked.
+		if ( empty( $whitelist ) ) {
+			return false;
+		}
+
+		return empty( array_diff( $whitelist, $bnpl_methods ) );
+	}
+
+	/**
+	 * Buyer details the CHIP payment page must collect for a Buy Now Pay Later
+	 * purchase, or an empty list when the order already has them all.
+	 *
+	 * A BNPL purchase carries the buyer's full name and mobile number to the
+	 * provider, and the provider requires both. WooCommerce
+	 * does not require a billing phone, so an order without one sent an empty
+	 * mobile number and the provider could never complete the purchase: the
+	 * payer reached a payment page that never moved on and the purchase expired
+	 * hours later, with no money moved.
+	 *
+	 * `purchase.request_client_details` asks the CHIP payment page to collect
+	 * exactly the fields that are missing from `client` before the payment
+	 * runs, so the payer can supply their mobile number instead of the purchase
+	 * being created without it.
+	 *
+	 * Only fields the payload actually leaves empty are requested: CHIP removes
+	 * every value it was given from the list itself, and asking for a value the
+	 * payer already entered is friction for no reason.
+	 *
+	 * @param WC_Order $order Order being paid.
+	 * @return array Field names from the ClientDetails enum, possibly empty.
+	 */
+	protected function request_client_details_for_bnpl( $order ) {
+		// Never on a non-BNPL purchase: a non-empty request_client_details
+		// makes CHIP return a null direct_post_url, which would break the card
+		// direct-post flow.
+		if ( ! $this->is_bnpl_payment() ) {
+			return array();
+		}
+
+		$details = array();
+
+		// Full name and mobile number only. Email is not requested: a purchase
+		// has to carry a buyer email before it can be created at all, so by the
+		// time this runs it is never the missing field.
+		if ( '' === trim( $this->filter_customer_full_name( trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ) ) ) ) {
+			$details[] = 'full_name';
+		}
+
+		if ( '' === trim( (string) $order->get_billing_phone() ) ) {
+			$details[] = 'phone';
+		}
+
+		return $details;
 	}
 
 	/**
