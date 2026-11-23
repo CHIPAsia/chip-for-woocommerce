@@ -2046,7 +2046,10 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 		// breaks the card direct-post flow.
 		$request_client_details = $this->request_client_details_for_bnpl( $order );
 		if ( ! empty( $request_client_details ) ) {
-			$params['request_client_details'] = $request_client_details;
+			// This is a Purchase field, not a top-level one: sent at the root
+			// the API ignores it silently and the purchase is created without
+			// ever asking the payer for their mobile number.
+			$params['purchase']['request_client_details'] = $request_client_details;
 		}
 
 		// Start of logic for WooCommerce Pre-orders.
