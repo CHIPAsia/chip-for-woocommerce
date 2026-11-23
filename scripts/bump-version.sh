@@ -168,6 +168,12 @@ fi
 echo "📦 Staging changes..."
 git add -A
 
+# `git add -A` also stages a local `vendor` / `node_modules` SYMLINK (the shape
+# used when dependencies are linked into a worktree). A trailing-slash ignore
+# pattern only matches directories, so the symlink slipped into the index and
+# shipped an absolute host path into the repo. Never stage these.
+git rm --cached --quiet --ignore-unmatch vendor node_modules 2>/dev/null || true
+
 echo ""
 echo "✅ Version bumped to ${NEW_VERSION}"
 
