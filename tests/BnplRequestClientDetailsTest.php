@@ -118,6 +118,7 @@ class BnplRequestClientDetailsTest extends GatewayTestCase {
 
 		$params = $this->capturePurchaseParams( $gateway );
 		$this->assertArrayNotHasKey( 'request_client_details', $params );
+		$this->assertArrayNotHasKey( 'request_client_details', $params['purchase'] );
 	}
 
 	/**
@@ -137,7 +138,9 @@ class BnplRequestClientDetailsTest extends GatewayTestCase {
 
 		$params = $this->capturePurchaseParams( $gateway );
 
-		$this->assertSame( array( 'phone' ), $params['request_client_details'] );
+		// A Purchase field: at the top level the API ignores it silently.
+		$this->assertArrayNotHasKey( 'request_client_details', $params );
+		$this->assertSame( array( 'phone' ), $params['purchase']['request_client_details'] );
 		$this->assertArrayNotHasKey( 'phone', $params['client'] );
 	}
 
@@ -221,6 +224,7 @@ class BnplRequestClientDetailsTest extends GatewayTestCase {
 
 		$params = $this->capturePurchaseParams( $gateway );
 		$this->assertArrayNotHasKey( 'request_client_details', $params );
+		$this->assertArrayNotHasKey( 'request_client_details', $params['purchase'] );
 	}
 
 	/**
