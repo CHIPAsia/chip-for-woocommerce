@@ -2037,11 +2037,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$params['client']['email'] = $this->email_fallback;
 		}
 
-		// A Buy Now Pay Later purchase carries the buyer's full name, email and
-		// mobile number to the provider, and the provider requires all three.
-		// Ask the CHIP payment page to collect the ones this order leaves empty,
-		// so the payer supplies their mobile number instead of the purchase being
-		// created without it. Scoped to BNPL on purpose: a non-empty
+		// A Buy Now Pay Later purchase carries the buyer's full name and mobile
+		// number to the provider, and the provider requires both. Ask the CHIP
+		// payment page to collect whichever of the two this order leaves empty,
+		// so the payer supplies their mobile number instead of the purchase
+		// being created without it. Scoped to BNPL on purpose: a non-empty
 		// request_client_details makes CHIP return a null direct_post_url, which
 		// breaks the card direct-post flow.
 		$request_client_details = $this->request_client_details_for_bnpl( $order );
@@ -3620,8 +3620,8 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * Buyer details the CHIP payment page must collect for a Buy Now Pay Later
 	 * purchase, or an empty list when the order already has them all.
 	 *
-	 * A BNPL purchase carries the buyer's full name, email address and mobile
-	 * number to the provider, and the provider requires all three. WooCommerce
+	 * A BNPL purchase carries the buyer's full name and mobile number to the
+	 * provider, and the provider requires both. WooCommerce
 	 * does not require a billing phone, so an order without one sent an empty
 	 * mobile number and the provider could never complete the purchase: the
 	 * payer reached a payment page that never moved on and the purchase expired
@@ -3649,14 +3649,11 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 
 		$details = array();
 
+		// Full name and mobile number only. Email is not requested: a purchase
+		// has to carry a buyer email before it can be created at all, so by the
+		// time this runs it is never the missing field.
 		if ( '' === trim( $this->filter_customer_full_name( trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ) ) ) ) {
 			$details[] = 'full_name';
-		}
-
-		// The purchase falls back to the configured email when the order has
-		// none, so a fallback address is a present email.
-		if ( '' === trim( (string) $order->get_billing_email() ) && '' === trim( (string) $this->email_fallback ) ) {
-			$details[] = 'email';
 		}
 
 		if ( '' === trim( (string) $order->get_billing_phone() ) ) {

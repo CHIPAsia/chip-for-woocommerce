@@ -2,8 +2,8 @@
 /**
  * Tests for the Buy Now Pay Later request-client-details behaviour.
  *
- * A BNPL purchase carries the buyer's full name, email address and mobile
- * number, and the BNPL provider requires all three. WooCommerce does not
+ * A BNPL purchase carries the buyer's full name and mobile number, and the
+ * BNPL provider requires both. WooCommerce does not
  * require a billing phone, so an order without one used to send an empty
  * mobile number and the provider could never complete the purchase: the payer
  * reached a payment page that never moved on and the purchase expired hours
@@ -170,30 +170,32 @@ class BnplRequestClientDetailsTest extends GatewayTestCase {
 	}
 
 	/**
-	 * Every gap is requested when the order has no buyer details at all.
+	 * Full name and phone are the only fields ever requested, even when the
+	 * order carries no buyer email at all: a purchase cannot be created
+	 * without one, so email is never the missing field here.
 	 *
 	 * @return void
 	 */
-	public function test_bnpl_without_any_buyer_details_requests_all_three() {
+	public function test_bnpl_without_any_buyer_details_requests_name_and_phone() {
 		$gateway = $this->newBnplGateway();
 
 		$details = $this->callGatewayMethod( $gateway, 'request_client_details_for_bnpl', array( $this->newOrder( '', '', '', '' ) ) );
 
-		$this->assertSame( array( 'full_name', 'email', 'phone' ), $details );
+		$this->assertSame( array( 'full_name', 'phone' ), $details );
 	}
 
 	/**
-	 * The configured email fallback is what the purchase sends when the order
-	 * has no billing email, so email is not requested then.
+	 * A missing buyer email is not requested; the configured fallback address
+	 * is what the purchase sends, and email is mandatory anyway.
 	 *
 	 * @return void
 	 */
-	public function test_email_fallback_is_not_requested() {
+	public function test_email_is_never_requested() {
 		$gateway = $this->newBnplGateway( array( 'email_fallback' => 'store@example.com' ) );
 
 		$this->assertSame(
-			array(),
-			$this->callGatewayMethod( $gateway, 'request_client_details_for_bnpl', array( $this->newOrder( 'Aisyah', 'Rahman', '', '+60123456789' ) ) )
+			array( 'phone' ),
+			$this->callGatewayMethod( $gateway, 'request_client_details_for_bnpl', array( $this->newOrder( 'Aisyah', 'Rahman', '', '' ) ) )
 		);
 	}
 

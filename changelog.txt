@@ -1,7 +1,7 @@
 == Changelog ==
 
 = 2.1.7 2026-11-23 =
-* Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer details the order is missing — the mobile number above all — instead of creating a purchase without them. The BNPL provider requires the buyer's mobile number, and WooCommerce does not require a billing phone: without one the payer reached a payment page that never moved on and the purchase expired hours later with no money moved. Only the details that are actually missing are requested from the payer, so nobody is asked for a value they already entered, and the number they enter is the one sent to the provider.
+* Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer's full name and mobile number when the order does not carry them, instead of creating a purchase that the provider can never complete. The BNPL provider requires both, and WooCommerce does not require a billing phone: without one the payer reached a payment page that never moved on and the purchase expired hours later with no money moved. Only a detail that is actually missing is requested from the payer, so nobody is asked to re-enter what the order already holds, and the value they enter is the one sent to the provider.
 * Changed - The request for buyer details applies to Buy Now Pay Later purchases only. Card, FPX, DuitNow QR, e-wallet and Stablecoin purchases send exactly the same request as before.
 
 = 2.1.6 2026-11-17 =

@@ -63,7 +63,7 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 == Changelog ==
 
 = 2.1.7 2026-11-23 =
-* Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer details the order is missing — the mobile number above all — instead of creating a purchase without them, which the provider could never complete. Only the missing details are requested, so a customer is never asked to re-enter what the order already holds. All other payment methods send exactly the same request as before.
+* Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer's full name and mobile number when the order does not carry them, instead of creating a purchase the provider could never complete. Only a missing detail is requested, so a customer is never asked to re-enter what the order already holds. All other payment methods send exactly the same request as before.
 
 [See changelog for all versions](https://raw.githubusercontent.com/CHIPAsia/chip-for-woocommerce/main/changelog.txt).
 
