@@ -38,6 +38,22 @@ abstract class GatewayTestCase extends PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * Make a reflection member accessible on PHP older than 8.1 only.
+	 *
+	 * ReflectionProperty::setAccessible() and ReflectionMethod::setAccessible() have had no
+	 * effect since PHP 8.1 and are deprecated since PHP 8.5, so calling them on a modern
+	 * runtime only produces a deprecation notice.
+	 *
+	 * @param ReflectionProperty|ReflectionMethod $member Reflection member.
+	 * @return void
+	 */
+	protected function makeAccessible( $member ) {
+		if ( PHP_VERSION_ID < 80100 ) {
+			$member->setAccessible( true );
+		}
+	}
+
+	/**
 	 * Set a property on the gateway via reflection.
 	 *
 	 * @param Chip_Woocommerce_Gateway $gateway Gateway instance.
@@ -47,7 +63,7 @@ abstract class GatewayTestCase extends PHPUnit\Framework\TestCase {
 	 */
 	protected function setGatewayProperty( $gateway, $name, $value ) {
 		$prop = new ReflectionProperty( 'Chip_Woocommerce_Gateway', $name );
-		$prop->setAccessible( true );
+		$this->makeAccessible( $prop );
 		$prop->setValue( $gateway, $value );
 	}
 
@@ -60,7 +76,7 @@ abstract class GatewayTestCase extends PHPUnit\Framework\TestCase {
 	 */
 	protected function getGatewayProperty( $gateway, $name ) {
 		$prop = new ReflectionProperty( 'Chip_Woocommerce_Gateway', $name );
-		$prop->setAccessible( true );
+		$this->makeAccessible( $prop );
 		return $prop->getValue( $gateway );
 	}
 
@@ -74,7 +90,7 @@ abstract class GatewayTestCase extends PHPUnit\Framework\TestCase {
 	 */
 	protected function callGatewayMethod( $gateway, $name, array $args = array() ) {
 		$method = new ReflectionMethod( 'Chip_Woocommerce_Gateway', $name );
-		$method->setAccessible( true );
+		$this->makeAccessible( $method );
 		return $method->invokeArgs( $gateway, $args );
 	}
 
