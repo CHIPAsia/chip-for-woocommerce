@@ -7,6 +7,25 @@ on:
     branches: [ main ]
 
 jobs:
+  no-tracked-dependency-links:
+    name: No tracked vendor / node_modules symlinks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # A worktree that links its dependencies stages `vendor` and `node_modules`
+      # as SYMLINKS with absolute host paths. Guard the repo against that: these
+      # paths must never be tracked, in any shape.
+      - name: Reject tracked dependency links
+        run: |
+          bad=$(git ls-files -s vendor node_modules | awk '$1 == "120000" {print $4}')
+          if [ -n "$bad" ]; then
+            echo "::error::Tracked as symlinks: $(echo $bad | tr '\n' ' ')— remove with: git rm --cached vendor node_modules"
+            exit 1
+          fi
+          echo "OK: vendor / node_modules are not tracked."
+
   phpunit:
     name: PHPUnit + phpcs (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
