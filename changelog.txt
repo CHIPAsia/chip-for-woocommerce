@@ -1,5 +1,11 @@
 == Changelog ==
 
+= 2.2.0 2026-11-24 =
+* Added - Display Logo now offers "ShopeePay Only" — the ShopeePay logo without CHIP branding — for stores whose checkout only takes ShopeePay.
+* Added - Display Logo now offers "Custom", which shows a logo the merchant uploaded instead of a bundled one. The image is chosen from the WordPress media library on a new Custom Logo Image field — only images already in the store's media library can be used — and it appears on both the classic and the Blocks checkout.
+* Added - The CHIP Payment Methods screen offers the ShopeePay Only logo for merchant-created blocks.
+* Changed - Selecting Custom before uploading an image falls back to the CHIP logo instead of a broken image.
+
 = 2.1.7 2026-11-23 =
 * Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer's full name and mobile number when the order does not carry them, instead of creating a purchase that the provider can never complete. The BNPL provider requires both, and WooCommerce does not require a billing phone: without one the payer reached a payment page that never moved on and the purchase expired hours later with no money moved. Only a detail that is actually missing is requested from the payer, so nobody is asked to re-enter what the order already holds, and the value they enter is the one sent to the provider.
 * Changed - The request for buyer details applies to Buy Now Pay Later purchases only. Card, FPX, DuitNow QR, e-wallet and Stablecoin purchases send exactly the same request as before.

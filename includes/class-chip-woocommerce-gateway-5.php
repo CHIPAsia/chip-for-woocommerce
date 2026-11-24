@@ -91,6 +91,7 @@ class Chip_Woocommerce_Gateway_5 extends Chip_Woocommerce_Gateway {
 		$this->form_fields['payment_method_whitelist']['default'] = array( 'razer_atome' );
 		$this->form_fields['description']['default']              = __( 'Buy now pay later with Atome. <br>The bill will be split into three easy payments. <br>No hidden fees, 0% interest. <br><br><a href="https://www.atome.my">Terms & Conditions</a>', 'chip-for-woocommerce' );
 		unset( $this->form_fields['display_logo'] );
+		unset( $this->form_fields['custom_logo'] );
 		unset( $this->form_fields['disable_recurring_support'] );
 		unset( $this->form_fields['payment_method_whitelist'] );
 		unset( $this->form_fields['payment_action'] );

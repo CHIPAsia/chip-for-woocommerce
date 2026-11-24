@@ -433,15 +433,7 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	protected function init_icon() {
-		$logo = $this->get_option( 'display_logo', 'logo' );
-
-		$file_extension = 'png';
-		$file_path      = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/' . $logo . '.png';
-		if ( ! file_exists( $file_path ) ) {
-			$file_extension = 'svg';
-		}
-
-		$this->icon = plugins_url( "assets/{$logo}.{$file_extension}", CHIP_WOOCOMMERCE_FILE );
+		$this->icon = $this->resolve_display_logo_url( $this->get_option( 'display_logo', 'logo' ) );
 		if ( has_filter( 'wc_' . $this->id . '_load_icon' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $this->id is not output.
 			_deprecated_hook( 'wc_' . $this->id . '_load_icon', '2.0.0', 'chip_' . $this->id . '_load_icon' );
@@ -449,6 +441,38 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			$this->icon = apply_filters( 'wc_' . $this->id . '_load_icon', $this->icon );
 		}
 		$this->icon = apply_filters( 'chip_' . $this->id . '_load_icon', $this->icon );
+	}
+
+	/**
+	 * Resolve the checkout icon URL for a Display Logo selection.
+	 *
+	 * Bundled logos resolve to assets/<key>.png (or .svg). The 'custom'
+	 * selection resolves to the image the merchant uploaded, and falls back to
+	 * the CHIP logo when nothing has been uploaded yet — an unresolved custom
+	 * key would otherwise point at a file that does not exist and render as a
+	 * broken image on checkout.
+	 *
+	 * @param string $logo Display Logo key.
+	 * @return string Icon URL.
+	 */
+	protected function resolve_display_logo_url( $logo ) {
+		$logo = sanitize_key( (string) $logo );
+
+		if ( 'custom' === $logo ) {
+			$custom = $this->custom_logo_url();
+			if ( '' !== $custom ) {
+				return $custom;
+			}
+			$logo = 'logo';
+		}
+
+		$file_extension = 'png';
+		$file_path      = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/' . $logo . '.png';
+		if ( ! file_exists( $file_path ) ) {
+			$file_extension = 'svg';
+		}
+
+		return plugins_url( "assets/{$logo}.{$file_extension}", CHIP_WOOCOMMERCE_FILE );
 	}
 
 	/**
@@ -1241,11 +1265,24 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 					'fpx_only'                => __( 'FPX Only — FPX logo without CHIP branding', 'chip-for-woocommerce' ),
 					'fpx_b2b1_only'           => __( 'FPX B2B1 Only — Corporate FPX logo without CHIP branding', 'chip-for-woocommerce' ),
 					'ewallet_only'            => __( 'E-Wallet Only — E-Wallet logo without CHIP branding', 'chip-for-woocommerce' ),
+					'shopee_pay_only'         => __( 'ShopeePay Only — ShopeePay logo without CHIP branding', 'chip-for-woocommerce' ),
 					'card_only'               => __( 'Card Only — Card logo without CHIP branding', 'chip-for-woocommerce' ),
 					'card_international_only' => __( 'Card with Maestro Only — Includes Maestro, no CHIP branding', 'chip-for-woocommerce' ),
 					'duitnow_only'            => __( 'DuitNow QR Only — DuitNow logo without CHIP branding', 'chip-for-woocommerce' ),
 				),
+				// Custom Logo (Merchant-supplied image).
+				__( 'Custom Logo', 'chip-for-woocommerce' ) => array(
+					'custom' => __( 'Custom — use the image uploaded below', 'chip-for-woocommerce' ),
+				),
 			),
+		);
+
+		$this->form_fields['custom_logo'] = array(
+			'title'             => __( 'Custom Logo Image', 'chip-for-woocommerce' ),
+			'type'              => 'chip_custom_logo',
+			'description'       => __( 'Used when <strong>Display Logo</strong> is set to <em>Custom</em>. Choose an image from the media library: PNG, JPG, GIF, WebP or SVG, with a transparent background and a wide image (about 3:1) looking best. Leaving it empty falls back to the CHIP logo. The checkout page shows it at a maximum height of about 50px.', 'chip-for-woocommerce' ),
+			'sanitize_callback' => 'absint',
+			'default'           => 0,
 		);
 
 		$this->form_fields['bypass_chip'] = array(
@@ -1490,7 +1527,92 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			'paywithchip_fpx'         => $base_url . 'paywithchip_fpx.png',
 			'duitnow'                 => $base_url . 'duitnow.svg',
 			'duitnow_only'            => $base_url . 'duitnow_only.svg',
+			'shopee_pay_only'         => $base_url . 'shopee_pay_only.png',
+			// The uploaded image is stored as a media-library attachment id, so
+			// its URL is resolved here. The picker refreshes the preview as soon
+			// as the merchant chooses a different image.
+			'custom'                  => $this->custom_logo_url(),
 		);
+	}
+
+	/**
+	 * Resolve the uploaded custom logo to an image URL.
+	 *
+	 * The image is stored as a media-library attachment id, so a merchant can
+	 * only use an image that is actually in the store's media library. An id that
+	 * no longer resolves (the attachment was deleted, or the value is not an
+	 * image) yields an empty string, which makes callers fall back to a bundled
+	 * logo instead of rendering a broken image on checkout.
+	 *
+	 * @return string Image URL, or '' when nothing usable is stored.
+	 */
+	protected function custom_logo_url() {
+		$attachment_id = absint( $this->get_option( 'custom_logo' ) );
+
+		if ( $attachment_id <= 0 || ! wp_attachment_is_image( $attachment_id ) ) {
+			return '';
+		}
+
+		$url = wp_get_attachment_image_url( $attachment_id, 'full' );
+
+		return $url ? (string) $url : '';
+	}
+
+	/**
+	 * Render the Custom Logo Image field.
+	 *
+	 * A media-library image picker: the stored value is an attachment id, and the
+	 * screen shows the image that id resolves to. There is no free-text URL, so
+	 * the logo used at checkout is always an image the merchant uploaded to this
+	 * store.
+	 *
+	 * @param string $key  Field key.
+	 * @param array  $data Field data.
+	 * @return string
+	 */
+	public function generate_chip_custom_logo_html( $key, $data ) {
+		$field_key = $this->get_field_key( $key );
+		$defaults  = array(
+			'title'             => '',
+			'disabled'          => false,
+			'class'             => '',
+			'css'               => '',
+			'placeholder'       => '',
+			'desc_tip'          => false,
+			'description'       => '',
+			'custom_attributes' => array(),
+		);
+
+		$data     = wp_parse_args( $data, $defaults );
+		$image_id = absint( $this->get_option( $key ) );
+		$image    = $this->custom_logo_url();
+		$state    = '' !== $image ? '' : ' hidden';
+
+		ob_start();
+		?>
+	<tr valign="top">
+		<th scope="row" class="titledesc">
+			<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_tooltip_html() escapes its own output. ?></label>
+		</th>
+		<td class="forminp">
+			<fieldset class="chip-custom-logo">
+				<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span></legend>
+				<input class="chip-custom-logo__value <?php echo esc_attr( $data['class'] ); ?>" type="hidden" name="<?php echo esc_attr( $field_key ); ?>" id="<?php echo esc_attr( $field_key ); ?>" value="<?php echo esc_attr( $image_id > 0 ? (string) $image_id : '' ); ?>" <?php echo $this->get_custom_attribute_html( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_custom_attribute_html() escapes each attribute. ?> />
+				<p class="chip-custom-logo__row" style="margin: 0 0 8px;">
+					<button type="button" class="button chip-custom-logo__upload"<?php disabled( $data['disabled'], true ); ?>><?php esc_html_e( 'Choose image', 'chip-for-woocommerce' ); ?></button>
+					<button type="button" class="button-link button-link-delete chip-custom-logo__remove"<?php echo esc_attr( $state ); ?>><?php esc_html_e( 'Remove', 'chip-for-woocommerce' ); ?></button>
+				</p>
+				<p class="chip-custom-logo__preview" style="margin: 0 0 8px; padding: 15px; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; text-align: center; min-height: 60px;">
+					<img class="chip-custom-logo__img" src="<?php echo esc_url( $image ); ?>" alt="" style="height: 50px; width: auto; max-width: 100%;"<?php echo esc_attr( $state ); ?> />
+					<span class="chip-custom-logo__empty"<?php echo esc_attr( '' !== $image ? ' hidden' : '' ); ?>><?php esc_html_e( 'No image chosen yet.', 'chip-for-woocommerce' ); ?></span>
+				</p>
+				<?php echo $this->get_description_html( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_description_html() sanitizes the description with wp_kses_post(). ?>
+			</fieldset>
+		</td>
+	</tr>
+		<?php
+
+		return ob_get_clean();
 	}
 
 	/**
@@ -4071,11 +4193,25 @@ class Chip_Woocommerce_Gateway extends WC_Payment_Gateway {
 			true
 		);
 
+		// The Custom Logo field picks its image from the media library.
+		wp_enqueue_media();
+
 		// Pass logo URLs to JavaScript.
 		wp_localize_script(
 			'chip-admin-logo-preview',
 			'chipLogoUrls_' . $this->id,
 			$this->get_logo_urls()
+		);
+
+		wp_localize_script(
+			'chip-admin-logo-preview',
+			'chipLogoAdmin',
+			array(
+				'i18n' => array(
+					'title'  => __( 'Choose a logo image', 'chip-for-woocommerce' ),
+					'button' => __( 'Use this image', 'chip-for-woocommerce' ),
+				),
+			)
 		);
 
 		// Add copy configuration script if there are existing configurations.
