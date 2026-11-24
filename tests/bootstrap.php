@@ -254,6 +254,59 @@ if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		/** @var array Settings form fields. */
 		public $form_fields = array();
 
+		/** @var string Settings field name prefix. */
+		public $plugin_id = 'woocommerce_';
+
+		/**
+		 * Stub for WC_Settings_API::get_field_key().
+		 *
+		 * @param string $key Field key.
+		 * @return string
+		 */
+		public function get_field_key( $key ) {
+			return $this->plugin_id . $this->id . '_' . $key;
+		}
+
+		/**
+		 * Stub for WC_Settings_API::get_tooltip_html(). Settings screens are not
+		 * rendered in tests, so a tooltip is just an empty string.
+		 *
+		 * @param array $data Field data.
+		 * @return string
+		 */
+		public function get_tooltip_html( $data ) {
+			return '';
+		}
+
+		/**
+		 * Stub for WC_Settings_API::get_custom_attribute_html().
+		 *
+		 * @param array $data Field data.
+		 * @return string
+		 */
+		public function get_custom_attribute_html( $data ) {
+			$attributes = array();
+			if ( ! empty( $data['custom_attributes'] ) && is_array( $data['custom_attributes'] ) ) {
+				foreach ( $data['custom_attributes'] as $name => $value ) {
+					$attributes[] = esc_attr( $name ) . '="' . esc_attr( $value ) . '"';
+				}
+			}
+			return implode( ' ', $attributes );
+		}
+
+		/**
+		 * Stub for WC_Settings_API::get_description_html().
+		 *
+		 * @param array $data Field data.
+		 * @return string
+		 */
+		public function get_description_html( $data ) {
+			if ( empty( $data['description'] ) ) {
+				return '';
+			}
+			return '<p class="description">' . wp_kses_post( $data['description'] ) . '</p>';
+		}
+
 		/**
 		 * Stub for WC_Settings_API::init_settings().
 		 *
@@ -1247,6 +1300,36 @@ if ( ! function_exists( 'esc_url' ) ) {
 	 */
 	function esc_url( $url ) {
 		return $url;
+	}
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	/**
+	 * Stub for esc_url_raw().
+	 *
+	 * @param string $url URL.
+	 * @return string
+	 */
+	function esc_url_raw( $url ) {
+		return trim( (string) $url );
+	}
+}
+
+if ( ! function_exists( 'disabled' ) ) {
+	/**
+	 * Stub for disabled().
+	 *
+	 * @param mixed $helper        Whether the control is disabled.
+	 * @param mixed $current       Value to compare against (unused).
+	 * @param bool  $display       Whether to echo.
+	 * @return string
+	 */
+	function disabled( $helper, $current = true, $display = true ) {
+		$result = (string) $helper === (string) $current ? " disabled='disabled'" : '';
+		if ( $display ) {
+			echo $result; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static markup.
+		}
+		return $result;
 	}
 }
 

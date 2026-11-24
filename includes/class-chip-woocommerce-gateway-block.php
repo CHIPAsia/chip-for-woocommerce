@@ -185,9 +185,10 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 	/**
 	 * Initialize the icon.
 	 *
-	 * The base implementation resolves "assets/<logo>.png|svg". The "Auto"
-	 * logo has no file of its own — it is composed in get_icon() — so it is
-	 * anchored to the family's standard image here.
+	 * The base implementation resolves a Display Logo key to a bundled asset or,
+	 * for "custom", to the merchant's uploaded image. The "Auto" logo has no
+	 * file of its own — it is composed in get_icon() — so it is anchored to the
+	 * family's standard image here.
 	 *
 	 * @return void
 	 */
@@ -198,13 +199,7 @@ class Chip_Woocommerce_Gateway_Block extends Chip_Woocommerce_Gateway {
 			$logo   = isset( $family['logo'] ) ? $family['logo'] : 'logo';
 		}
 
-		$file_extension = 'png';
-		$file_path      = plugin_dir_path( CHIP_WOOCOMMERCE_FILE ) . 'assets/' . $logo . '.png';
-		if ( ! file_exists( $file_path ) ) {
-			$file_extension = 'svg';
-		}
-
-		$this->icon = plugins_url( "assets/{$logo}.{$file_extension}", CHIP_WOOCOMMERCE_FILE );
+		$this->icon = $this->resolve_display_logo_url( $logo );
 	}
 
 	/**

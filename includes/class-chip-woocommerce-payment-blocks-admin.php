@@ -493,6 +493,7 @@ class Chip_Woocommerce_Payment_Blocks_Admin {
 								<option value="logo"><?php esc_html_e( 'CHIP logo', 'chip-for-woocommerce' ); ?></option>
 								<option value="ewallet"><?php esc_html_e( 'E-Wallet logos with CHIP branding', 'chip-for-woocommerce' ); ?></option>
 								<option value="ewallet_only"><?php esc_html_e( 'E-Wallet logos only', 'chip-for-woocommerce' ); ?></option>
+								<option value="shopee_pay_only"><?php esc_html_e( 'ShopeePay only', 'chip-for-woocommerce' ); ?></option>
 								<option value="fpx"><?php esc_html_e( 'FPX with CHIP branding', 'chip-for-woocommerce' ); ?></option>
 								<option value="fpx_only"><?php esc_html_e( 'FPX only', 'chip-for-woocommerce' ); ?></option>
 								<option value="card"><?php esc_html_e( 'Card with CHIP branding', 'chip-for-woocommerce' ); ?></option>
