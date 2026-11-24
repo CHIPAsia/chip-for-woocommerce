@@ -1333,6 +1333,53 @@ if ( ! function_exists( 'disabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'absint' ) ) {
+	/**
+	 * Stub for absint().
+	 *
+	 * @param mixed $maybeint Value to convert.
+	 * @return int
+	 */
+	function absint( $maybeint ) {
+		return abs( (int) $maybeint );
+	}
+}
+
+if ( ! function_exists( 'wp_attachment_is_image' ) ) {
+	/**
+	 * Stub for wp_attachment_is_image().
+	 *
+	 * Media-library attachments are registered in
+	 * $GLOBALS['__chip_test_attachments'][ id ] = array( 'url' => ..., 'is_image' => bool ).
+	 *
+	 * @param int|string $post Attachment id.
+	 * @return bool
+	 */
+	function wp_attachment_is_image( $post = null ) {
+		$attachments = isset( $GLOBALS['__chip_test_attachments'] ) ? $GLOBALS['__chip_test_attachments'] : array();
+		$id          = absint( $post );
+
+		return isset( $attachments[ $id ] ) && ! empty( $attachments[ $id ]['image'] );
+	}
+}
+
+if ( ! function_exists( 'wp_get_attachment_image_url' ) ) {
+	/**
+	 * Stub for wp_get_attachment_image_url().
+	 *
+	 * @param int    $attachment_id Attachment id.
+	 * @param string $size          Image size (unused).
+	 * @param bool   $icon          Icon fallback (unused).
+	 * @return string|false
+	 */
+	function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false ) {
+		$attachments = isset( $GLOBALS['__chip_test_attachments'] ) ? $GLOBALS['__chip_test_attachments'] : array();
+		$id          = absint( $attachment_id );
+
+		return isset( $attachments[ $id ] ) ? $attachments[ $id ]['url'] : false;
+	}
+}
+
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	/**
 	 * Stub for wp_strip_all_tags().

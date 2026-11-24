@@ -128,6 +128,7 @@ abstract class GatewayTestCase extends PHPUnit\Framework\TestCase {
 		$GLOBALS['__chip_test_is_add_payment_method_page'] = false;
 		$GLOBALS['__chip_test_is_order_pay']              = false;
 		$GLOBALS['__chip_test_form_fields']               = array();
+		$GLOBALS['__chip_test_attachments']               = array();
 		unset( $_POST['chip_payment_method'], $_POST['wc-wc_gateway_chip-payment-token'], $_POST['token'] );
 	}
 }

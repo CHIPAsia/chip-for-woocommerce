@@ -2,7 +2,7 @@
 
 = 2.2.0 2026-11-24 =
 * Added - Display Logo now offers "ShopeePay Only" — the ShopeePay logo without CHIP branding — for stores whose checkout only takes ShopeePay.
-* Added - Display Logo now offers "Custom", which shows a logo the merchant uploaded instead of a bundled one. The image is chosen from the WordPress media library on a new Custom Logo Image field, or pasted as a URL, and appears on both the classic and the Blocks checkout.
+* Added - Display Logo now offers "Custom", which shows a logo the merchant uploaded instead of a bundled one. The image is chosen from the WordPress media library on a new Custom Logo Image field — only images already in the store's media library can be used — and it appears on both the classic and the Blocks checkout.
 * Added - The CHIP Payment Methods screen offers the ShopeePay Only logo for merchant-created blocks.
 * Changed - Selecting Custom before uploading an image falls back to the CHIP logo instead of a broken image.
 

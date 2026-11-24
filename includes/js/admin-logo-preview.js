@@ -4,12 +4,13 @@
  * Two jobs, both additive:
  *
  *  1. keep the Display Logo preview in step with the selected option, including
- *     the "Custom" option whose image URL lives in its own field;
+ *     the "Custom" option whose image comes from the merchant's media library;
  *  2. let the Custom Logo Image field pick an image from the WordPress media
- *     library instead of pasting a URL by hand.
+ *     library. The stored value is the attachment id and nothing else, so the
+ *     logo used at checkout is always an image uploaded to this store.
  *
- * The screen works without this file: the field is a plain text input holding a
- * URL, so a merchant who never touches the picker still gets the right logo.
+ * Without this file the field still saves and still renders its stored image;
+ * only the picker and the live preview need JavaScript.
  */
 (function ($) {
 	'use strict';
@@ -17,25 +18,19 @@
 	var strings = (window.chipLogoAdmin && window.chipLogoAdmin.i18n) || {};
 
 	/**
-	 * Refresh the thumbnail inside one Custom Logo field.
+	 * Refresh the thumbnail and buttons inside one Custom Logo field.
 	 *
 	 * @param {jQuery} $field The .chip-custom-logo fieldset.
 	 */
 	function refreshCustomField($field) {
-		var url = $.trim(String($field.find('.chip-custom-logo__value').val() || ''));
+		var hasImage = '' !== String($field.find('.chip-custom-logo__value').val() || '').trim();
 		var $img = $field.find('.chip-custom-logo__img');
 		var $empty = $field.find('.chip-custom-logo__empty');
 		var $remove = $field.find('.chip-custom-logo__remove');
 
-		if (url) {
-			$img.attr('src', url).prop('hidden', false);
-			$empty.prop('hidden', true);
-			$remove.prop('hidden', false);
-		} else {
-			$img.attr('src', '').prop('hidden', true);
-			$empty.prop('hidden', false);
-			$remove.prop('hidden', true);
-		}
+		$img.prop('hidden', !hasImage);
+		$empty.prop('hidden', hasImage);
+		$remove.prop('hidden', !hasImage);
 	}
 
 	/**
@@ -59,9 +54,10 @@
 			var attachment = frame.state().get('selection').first().toJSON();
 			var url = attachment.sizes && attachment.sizes.full ? attachment.sizes.full.url : attachment.url;
 
-			// Triggering 'change' lets the Display Logo preview pick the value up
-			// through its own handler instead of duplicating the lookup here.
-			$field.find('.chip-custom-logo__value').val(url).trigger('change');
+			// The attachment id is what gets saved; the URL only drives the
+			// previews, and saving re-resolves it from the media library.
+			$field.find('.chip-custom-logo__img').attr('src', url);
+			$field.find('.chip-custom-logo__value').val(attachment.id).trigger('change');
 
 			// The frame is built directly with wp.media(), whose "Use this image"
 			// button only fires this event — closing is the consumer's job.
@@ -80,10 +76,12 @@
 
 		$(document).on('click', '.chip-custom-logo__remove', function (event) {
 			event.preventDefault();
-			$(this).closest('.chip-custom-logo').find('.chip-custom-logo__value').val('').trigger('change');
+			var $field = $(this).closest('.chip-custom-logo');
+			$field.find('.chip-custom-logo__img').removeAttr('src');
+			$field.find('.chip-custom-logo__value').val('').trigger('change');
 		});
 
-		$(document).on('input change', '.chip-custom-logo__value', function () {
+		$(document).on('change', '.chip-custom-logo__value', function () {
 			refreshCustomField($(this).closest('.chip-custom-logo'));
 		});
 
@@ -102,6 +100,7 @@
 			var previewImgId = 'chip-logo-preview-img-' + gatewayId;
 			var $previewImg = $('#' + previewImgId);
 			var $customInput = $('#woocommerce_' + gatewayId + '_custom_logo');
+			var $customImg = $customInput.closest('tr').find('.chip-custom-logo__img');
 
 			// Check if logo URLs are available for this gateway.
 			if ('undefined' === typeof window['chipLogoUrls_' + gatewayId]) {
@@ -114,10 +113,14 @@
 				var selectedValue = $select.val();
 				var url = logoUrls[selectedValue];
 
-				// "Custom" has no bundled file: its image is whatever the merchant
-				// uploaded (or pasted) into the field below.
+				// "Custom" has no bundled file: it shows the image currently in the
+				// field, which the picker keeps in the thumbnail. Read the src, not
+				// the hidden state: the thumbnail is unhidden by the same change
+				// event that runs this, and handler order is not a contract.
 				if ('custom' === selectedValue) {
-					url = $.trim(String($customInput.val() || ''));
+					url = $customImg.length && $customImg.attr('src')
+						? $customImg.attr('src')
+						: (logoUrls[selectedValue] || '');
 				}
 
 				if (url) {
@@ -130,8 +133,8 @@
 			// Update on change.
 			$select.on('change', updatePreview);
 
-			// A pasted, typed or picked custom URL changes what the preview shows.
-			$customInput.on('input change', updatePreview);
+			// Picking or removing an image changes what the preview shows.
+			$customInput.on('change', updatePreview);
 
 			// Initial update.
 			updatePreview();

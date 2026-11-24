@@ -64,7 +64,7 @@ Integrate your WooCommerce site with CHIP as documented in our [API Documentatio
 
 = 2.2.0 2026-11-24 =
 * Added - Two new choices in Display Logo. "ShopeePay Only" shows the ShopeePay logo on its own, without CHIP branding; "Custom" shows a logo the merchant uploads, so a store can use its own brand image at checkout.
-* Added - A Custom Logo Image field on every CHIP block's settings screen, with a Choose image button that opens the WordPress media library. Pasting an image URL also works, and the preview below Display Logo updates as soon as the image is chosen. A store that never selects Custom keeps the logo it already has.
+* Added - A Custom Logo Image field on every CHIP block's settings screen, with a Choose image button that opens the WordPress media library; the image must come from the store's own media library. The preview below Display Logo updates as soon as an image is chosen. A store that never selects Custom keeps the logo it already has.
 
 = 2.1.7 2026-11-23 =
 * Fixed - A Buy Now Pay Later (Atome) purchase now asks the CHIP payment page to collect the buyer's full name and mobile number when the order does not carry them, instead of creating a purchase the provider could never complete. Only a missing detail is requested, so a customer is never asked to re-enter what the order already holds. All other payment methods send exactly the same request as before.

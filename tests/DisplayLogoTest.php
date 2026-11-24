@@ -8,8 +8,10 @@
  *  1. a logo key that has no file behind it renders a broken icon on checkout,
  *     so every offered key — including the new "custom" one before anything is
  *     uploaded — has to resolve to an image that exists;
- *  2. the custom image is a saved URL, so it must win over the bundled map as
- *     soon as it is set, on the standard gateways and on created blocks alike.
+ *  2. the custom image is a media-library attachment, so it must win over the
+ *     bundled map as soon as one is chosen, on the standard gateways and on
+ *     created blocks alike — and a value that is not a usable image (an old URL,
+ *     a PDF, a deleted attachment) must fall back rather than break checkout.
  *
  * @package CHIP_For_WooCommerce
  */
@@ -147,11 +149,49 @@ class DisplayLogoTest extends GatewayTestCase {
 	}
 
 	/**
-	 * A standard gateway renders the uploaded image once one is saved.
+	 * Register a media-library image for the attachment stubs.
+	 *
+	 * @param int    $id        Attachment id.
+	 * @param string $url       Image URL.
+	 * @param bool   $is_image  Whether the attachment is an image.
+	 * @return void
+	 */
+	protected function register_attachment( $id, $url, $is_image = true ) {
+		$GLOBALS['__chip_test_attachments'][ $id ] = array(
+			'url'   => $url,
+			'image' => $is_image,
+		);
+	}
+
+	/**
+	 * A standard gateway renders the media-library image once one is chosen.
 	 *
 	 * @return void
 	 */
 	public function test_custom_logo_uses_the_uploaded_image() {
+		$this->register_attachment( 42, 'https://shop.example.com/wp-content/uploads/2026/11/logo.png' );
+
+		update_option(
+			'woocommerce_wc_gateway_chip_settings',
+			array(
+				'display_logo' => 'custom',
+				'custom_logo'  => 42,
+			)
+		);
+
+		$gateway = $this->newGateway( array( 'id' => 'wc_gateway_chip' ) );
+		$this->callGatewayMethod( $gateway, 'init_icon' );
+
+		$this->assertSame( 'https://shop.example.com/wp-content/uploads/2026/11/logo.png', $gateway->icon );
+	}
+
+	/**
+	 * The logo is restricted to the media library: a stored URL is not an
+	 * attachment id, so it resolves to nothing and the CHIP logo is used.
+	 *
+	 * @return void
+	 */
+	public function test_custom_logo_ignores_a_stored_url() {
 		update_option(
 			'woocommerce_wc_gateway_chip_settings',
 			array(
@@ -163,7 +203,30 @@ class DisplayLogoTest extends GatewayTestCase {
 		$gateway = $this->newGateway( array( 'id' => 'wc_gateway_chip' ) );
 		$this->callGatewayMethod( $gateway, 'init_icon' );
 
-		$this->assertSame( 'https://cdn.example.com/logo.png', $gateway->icon );
+		$this->assertStringEndsWith( 'assets/logo.png', $gateway->icon );
+	}
+
+	/**
+	 * An attachment that is not an image (a PDF invoice, say) must not be used
+	 * as the checkout logo.
+	 *
+	 * @return void
+	 */
+	public function test_custom_logo_ignores_a_non_image_attachment() {
+		$this->register_attachment( 43, 'https://shop.example.com/wp-content/uploads/2026/11/invoice.pdf', false );
+
+		update_option(
+			'woocommerce_wc_gateway_chip_settings',
+			array(
+				'display_logo' => 'custom',
+				'custom_logo'  => 43,
+			)
+		);
+
+		$gateway = $this->newGateway( array( 'id' => 'wc_gateway_chip' ) );
+		$this->callGatewayMethod( $gateway, 'init_icon' );
+
+		$this->assertStringEndsWith( 'assets/logo.png', $gateway->icon );
 	}
 
 	/**
@@ -191,46 +254,54 @@ class DisplayLogoTest extends GatewayTestCase {
 	 * @return void
 	 */
 	public function test_created_block_honours_custom_and_shopee_pay_logos() {
+		$this->register_attachment( 44, 'https://shop.example.com/wp-content/uploads/2026/11/block-logo.png' );
+
 		$custom = $this->new_block_gateway(
 			array(
 				'display_logo' => 'custom',
-				'custom_logo'  => 'https://cdn.example.com/block-logo.svg',
+				'custom_logo'  => 44,
 			)
 		);
-		$this->assertSame( 'https://cdn.example.com/block-logo.svg', $custom->icon );
+		$this->assertSame( 'https://shop.example.com/wp-content/uploads/2026/11/block-logo.png', $custom->icon );
 
 		$shopee = $this->new_block_gateway( array( 'display_logo' => 'shopee_pay_only' ) );
 		$this->assertStringEndsWith( 'assets/shopee_pay_only.png', $shopee->icon );
 	}
 
 	/**
-	 * The field posts exactly one setting under the gateway's own option name,
-	 * and its markup carries the picker the merchant sees.
+	 * The field saves an attachment id, not a URL, and its markup carries the
+	 * picker instead of a free-text field.
 	 *
 	 * @return void
 	 */
-	public function test_custom_logo_field_renders_one_pickable_url_input() {
+	public function test_custom_logo_field_stores_an_attachment_id() {
+		$this->register_attachment( 42, 'https://shop.example.com/wp-content/uploads/2026/11/logo.png' );
+
 		update_option(
 			'woocommerce_wc_gateway_chip_settings',
-			array( 'custom_logo' => 'https://cdn.example.com/logo.png' )
+			array( 'custom_logo' => 42 )
 		);
 
 		$gateway = $this->newGateway( array( 'id' => 'wc_gateway_chip' ) );
 		$gateway->init_form_fields();
 
 		$this->assertArrayHasKey( 'custom_logo', $gateway->form_fields );
+		$this->assertSame( 'absint', $gateway->form_fields['custom_logo']['sanitize_callback'] );
 
 		$html = $gateway->generate_chip_custom_logo_html( 'custom_logo', $gateway->form_fields['custom_logo'] );
 
-		// One submitted value, under the key WooCommerce saves.
+		// One submitted value, under the key WooCommerce saves, carrying the id.
 		$this->assertSame( 1, substr_count( $html, 'name="woocommerce_wc_gateway_chip_custom_logo"' ) );
 		$this->assertSame( 1, substr_count( $html, 'chip-custom-logo__value' ) );
+		$this->assertStringContainsString( 'value="42"', $html );
+
+		// No free-text URL input: the image can only come from the media library.
+		$this->assertStringNotContainsString( 'type="text"', $html );
 
 		// The picker and the current image.
 		$this->assertStringContainsString( 'chip-custom-logo__upload', $html );
 		$this->assertStringContainsString( 'chip-custom-logo__remove', $html );
-		$this->assertStringContainsString( 'src="https://cdn.example.com/logo.png"', $html );
-		$this->assertStringContainsString( 'value="https://cdn.example.com/logo.png"', $html );
+		$this->assertStringContainsString( 'src="https://shop.example.com/wp-content/uploads/2026/11/logo.png"', $html );
 	}
 
 	/**
